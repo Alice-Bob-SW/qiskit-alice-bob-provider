@@ -1,0 +1,35 @@
+# python's bytecode compiled files
+__pycache__/
+*.pyc
+
+# distribution / packaging
+*.egg-info/
+build/
+dist/
+
+# IDE settings directory
+.idea/
+.vscode/
+
+# macOS specific
+.DS_Store
+
+# Jupyter Notebook backups
+.ipynb_checkpoints/
+
+# pytest and pytest-cov specific
+.pytest_cache/
+htmlcov/
+.coverage
+
+# mypy specific
+.mypy_cache/
+
+# pyenv
+.python-version
+
+# poetry
+poetry.lock
+
+# virtual environments
+venv/
