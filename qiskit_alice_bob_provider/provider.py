@@ -53,4 +53,6 @@ class AliceBobProvider(ProviderV1):
             backends = [
                 backend for backend in self._backends if backend.name == name
             ]
+        else:
+            backends = self._backends
         return filter_backends(backends, **kwargs)

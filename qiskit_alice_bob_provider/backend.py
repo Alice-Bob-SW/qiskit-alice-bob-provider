@@ -43,6 +43,9 @@ class CatSimulatorBackend(BackendV2):
         super().__init__(name='SINGLE_CAT_SIMULATOR', backend_version=1)
         self._api_client = api_client
 
+    def __repr__(self) -> str:
+        return f'<CatSimulatorBackend(name={self.name})>'
+
     @property
     def target(self) -> Target:
         target = Target(num_qubits=1)

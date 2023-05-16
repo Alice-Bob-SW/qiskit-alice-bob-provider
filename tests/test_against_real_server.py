@@ -17,7 +17,7 @@
 import pytest
 from qiskit import QuantumCircuit, execute
 
-from qiskit_alice_bob_provider.provider import AliceBobProvider
+from qiskit_alice_bob_provider import AliceBobProvider
 
 realserver = pytest.mark.skipif(
     "not config.getoption('api_key') and not config.getoption('base_url')"
