@@ -12,7 +12,7 @@ $(VENV):
 install: $(VENV)
 	ls
 	ls venv/
-	ls venv/bin/
+	ls venv/*
 	$(VENV)/bin/pip install -e .[dev]
 
 clear:
