@@ -1,5 +1,5 @@
 VENV=venv
-PYTHON=python3
+PYTHON=python
 MODULES=qiskit_alice_bob_provider tests
 BASE_URL=
 API_KEY=
