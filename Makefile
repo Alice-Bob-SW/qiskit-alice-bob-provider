@@ -10,6 +10,9 @@ $(VENV):
 	$(PYTHON) -m venv $(VENV)
 
 install: $(VENV)
+	ls
+	ls venv/
+	ls venv/bin/
 	$(VENV)/bin/pip install -e .[dev]
 
 clear:
