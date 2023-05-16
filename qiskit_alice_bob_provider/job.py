@@ -17,7 +17,7 @@
 import csv
 from dataclasses import dataclass
 from io import StringIO
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional
 
 from qiskit import QuantumCircuit
 from qiskit.providers import JobStatus, JobV1
@@ -73,8 +73,8 @@ class AliceBobJob(JobV1):
         self._circuit = circuit
         self._last_response: Optional[dict] = None
         self._status: Optional[JobStatus] = None
-        self._counts: Optional[dict[str, int]] = None
-        self._files: dict[str, _DownloadedFile] = {}
+        self._counts: Optional[Dict[str, int]] = None
+        self._files: Dict[str, _DownloadedFile] = {}
 
     def _refresh(self) -> None:
         """If the job status is not final, refresh the description of the API
@@ -128,7 +128,7 @@ class AliceBobJob(JobV1):
             lambda: jobs.download_output(self._api_client, self.job_id()),
         )
 
-    def _get_counts(self) -> dict[str, int]:
+    def _get_counts(self) -> Dict[str, int]:
         """Transform a histogram returned by the API into Qiskit's histogram
         format.
         """
