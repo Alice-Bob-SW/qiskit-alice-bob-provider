@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Optional
+from typing import List, Optional
 
 from qiskit.providers import BackendV2, ProviderV1
 from qiskit.providers.providerutils import filter_backends
@@ -38,7 +38,7 @@ class AliceBobProvider(ProviderV1):
 
     def backends(
         self, name: Optional[str] = None, **kwargs
-    ) -> list[BackendV2]:
+    ) -> List[BackendV2]:
         """Return a list of backends matching the specified filtering.
 
         Args:
@@ -47,7 +47,7 @@ class AliceBobProvider(ProviderV1):
             **kwargs: additional parameters for filtering
 
         Returns:
-            list[Backend]: the list of maching backends.
+            List[Backend]: the list of maching backends.
         """
         if name:
             backends = [

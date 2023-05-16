@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 from qiskit.circuit import Instruction, Reset
@@ -83,7 +83,7 @@ class StatePreparationPlugin(PassManagerStagePlugin):
         return PassManager([StatePreparationPass()])
 
 
-_State = Union[list[str], list[complex]]
+_State = Union[List[str], List[complex]]
 
 
 # pylint: disable=too-many-return-statements,too-many-branches

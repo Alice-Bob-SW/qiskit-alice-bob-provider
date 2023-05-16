@@ -14,6 +14,8 @@
 #    limitations under the License.
 ##############################################################################
 
+from typing import List
+
 import pytest
 from requests_mock.mocker import Mocker
 
@@ -45,7 +47,7 @@ def api_key(request):
     return request.config.getoption('api_key')
 
 
-def _response(job_id: str, events: list[dict], errors: list[dict]) -> dict:
+def _response(job_id: str, events: List[dict], errors: List[dict]) -> dict:
     return {
         'inputDataFormat': 'HUMAN_QIR',
         'outputDataFormat': 'HISTOGRAM',
