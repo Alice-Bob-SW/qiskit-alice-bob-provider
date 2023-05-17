@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qiskit_alice_bob_provider"
+authors = [
+    {name = "Alice & Bob Software Team"},
+]
+version = "0.1.0"
+description = "Provider for running Qiskit circuits on Alice & Bob QPUs and simulators"
+license = {text = "Apache 2.0"}
+keywords = ["Qiskit", "Alice & Bob", "Quantum", "SDK"]
+classifiers=[
+    "Environment :: Console",
+    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+urls = {homepage = "https://alice-bob.com/"}
+requires-python = ">=3.7"
+dependencies = [
+    "requests",
+    "qiskit-terra",
+    "qiskit-qir @ git+https://github.com/microsoft/qiskit-qir"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black==23.1.0",
+    "codespell==2.2.2",
+    "coverage==7.2.2",
+    "flake8>=5.0.4",
+    "flake8-quotes==3.3.2",
+    "isort>=5.11.5",
+    "mypy==1.0.0",
+    "mypy-extensions==1.0.0",
+    "pre-commit>=2.21.0",
+    "pylint==2.16.1",
+    "pytest==7.2.1",
+    "requests-mock==1.10.0",
+    "types-requests==2.30.0.0"
+]
+
+[project.entry-points."qiskit.transpiler.translation"]
+state_preparation = "qiskit_alice_bob_provider.translation_plugin:StatePreparationPlugin"
+
+[tool.setuptools]
+packages = ["qiskit_alice_bob_provider"]
+
+[tool.black]
+skip-string-normalization = true
+line-length = 79
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[[tool.mypy.overrides]]
+module = [
+    "setuptools",
+    "qiskit.*",
+    "qiskit_qir.*"
+]
+ignore_missing_imports = true
