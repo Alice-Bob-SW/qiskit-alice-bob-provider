@@ -20,6 +20,33 @@ import pytest
 from requests_mock.mocker import Mocker
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        '--base-url',
+        action='store',
+        dest='base_url',
+        default=None,
+    )
+    parser.addoption(
+        '--api-key',
+        action='store',
+        dest='api_key',
+        default=None,
+    )
+
+
+@pytest.fixture
+def base_url(request):
+    """Loads the provided hardware config if any."""
+    return request.config.getoption('base_url')
+
+
+@pytest.fixture
+def api_key(request):
+    """Loads the provided hardware config if any."""
+    return request.config.getoption('api_key')
+
+
 def _response(job_id: str, events: List[dict], errors: List[dict]) -> dict:
     return {
         'inputDataFormat': 'HUMAN_QIR',
