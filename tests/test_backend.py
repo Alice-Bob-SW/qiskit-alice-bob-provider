@@ -23,6 +23,7 @@ from qiskit.transpiler.exceptions import TranspilerError
 from requests_mock.mocker import Mocker
 
 from qiskit_alice_bob_provider.api.client import AliceBobApiException
+from qiskit_alice_bob_provider.backend import _qiskit_to_qir
 from qiskit_alice_bob_provider.provider import AliceBobProvider
 
 
@@ -111,3 +112,17 @@ def test_failed_server_side_validation(failed_validation_job: Mocker) -> None:
     backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
     with pytest.raises(AliceBobApiException):
         execute(c, backend)
+
+
+def test_delay_instruction_recognized() -> None:
+    c = QuantumCircuit(1, 2)
+    c.initialize('+', 0)
+    c.measure_x(0, 0)
+    c.delay(3000, 0, unit='ns')
+    c.measure(0, 1)
+    qir = _qiskit_to_qir(c)
+    delay_call = (
+        'call void @__quantum__qis__delay__body'
+        '(double 3.000000e+00, %Qubit* null)'
+    )
+    assert delay_call in qir
