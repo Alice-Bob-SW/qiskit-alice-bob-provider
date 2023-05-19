@@ -18,12 +18,16 @@
 
 import pytest
 from qiskit import QiskitError, QuantumCircuit, execute
+from qiskit.providers import Options
 from qiskit.result import Result
 from qiskit.transpiler.exceptions import TranspilerError
 from requests_mock.mocker import Mocker
 
 from qiskit_alice_bob_provider.api.client import AliceBobApiException
-from qiskit_alice_bob_provider.backend import _qiskit_to_qir
+from qiskit_alice_bob_provider.backend import (
+    _ab_input_params_from_options,
+    _qiskit_to_qir,
+)
 from qiskit_alice_bob_provider.provider import AliceBobProvider
 
 
@@ -126,3 +130,9 @@ def test_delay_instruction_recognized() -> None:
         '(double 3.000000e+00, %Qubit* null)'
     )
     assert delay_call in qir
+
+
+def test_ab_input_params_from_options() -> None:
+    options = Options(shots=43, average_nb_photons=3.2, foo_hey='bar')
+    params = _ab_input_params_from_options(options)
+    assert params == {'nbShots': 43, 'averageNbPhotons': 3.2, 'fooHey': 'bar'}
