@@ -27,7 +27,7 @@ from qiskit_alice_bob_provider.backend import _qiskit_to_qir
 from qiskit_alice_bob_provider.provider import AliceBobProvider
 
 
-def test_options_validation(requests_mock) -> None:
+def test_options_validation(mocked_targets) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobProvider(api_key='foo')
     backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
@@ -43,7 +43,7 @@ def test_options_validation(requests_mock) -> None:
         execute(c, backend, shots=1e10)
 
 
-def test_too_many_qubits_clients_side(requests_mock) -> None:
+def test_too_many_qubits_clients_side(mocked_targets) -> None:
     c = QuantumCircuit(3, 1)
     provider = AliceBobProvider(api_key='foo')
     backend = provider.get_backend('SINGLE_CAT_SIMULATOR')

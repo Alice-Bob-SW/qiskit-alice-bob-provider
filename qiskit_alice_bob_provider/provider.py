@@ -20,7 +20,8 @@ from qiskit.providers import BackendV2, ProviderV1
 from qiskit.providers.providerutils import filter_backends
 
 from .api.client import ApiClient
-from .backend import CatSimulatorBackend
+from .api.targets import list_targets
+from .backend import AliceBobBackend
 
 
 class AliceBobProvider(ProviderV1):
@@ -34,7 +35,9 @@ class AliceBobProvider(ProviderV1):
                 Defaults to 'https://api.alice-bob.com/'.
         """
         client = ApiClient(api_key=api_key, url=url)
-        self._backends = [CatSimulatorBackend(client)]
+        self._backends = []
+        for ab_target in list_targets(client):
+            self._backends.append(AliceBobBackend(client, ab_target))
 
     def backends(
         self, name: Optional[str] = None, **kwargs

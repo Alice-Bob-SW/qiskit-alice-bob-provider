@@ -14,65 +14,48 @@
 #    limitations under the License.
 ##############################################################################
 
-import numpy as np
+from typing import Dict
+
 from qiskit import QuantumCircuit
-from qiskit.circuit import Delay, Measure, Reset
-from qiskit.circuit.library import RZGate, XGate, ZGate
-from qiskit.circuit.parameter import Parameter
-from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.providers import BackendV2, Options
 from qiskit.transpiler import Target
 from qiskit_qir import to_qir_module
 
 from .api import jobs
 from .api.client import ApiClient
-from .custom_instructions import MeasureX
 from .job import AliceBobJob
+from .qir_to_qiskit import ab_target_to_qiskit_target
+from .utils import camel_to_snake_case
 
 
-class CatSimulatorBackend(BackendV2):
+class AliceBobBackend(BackendV2):
     """Class representing the single cat simulator target accessible via the
     Alice & Bob API"""
 
-    def __init__(self, api_client: ApiClient):
+    def __init__(self, api_client: ApiClient, target_description: Dict):
         """This class should be instantiated by the AliceBobProvider.
 
         Args:
             api_client (ApiClient): a client for the Alice & Bob API.
+            target_description (dict): a description of the API target behind
+                the Qiskit backend, as returned by the Alice & Bob API targets
+                endpoint.
         """
-        super().__init__(name='SINGLE_CAT_SIMULATOR', backend_version=1)
+        super().__init__(name=target_description['name'], backend_version=1)
         self._api_client = api_client
+        self._target = ab_target_to_qiskit_target(target_description)
+        self._options = _options_from_ab_target(target_description)
 
     def __repr__(self) -> str:
-        return f'<CatSimulatorBackend(name={self.name})>'
+        return f'<AliceBobBackend(name={self.name})>'
 
     @property
     def target(self) -> Target:
-        target = Target(num_qubits=1)
-        phi = Parameter('ϕ')
-        duration = Parameter('t')
-        target.add_instruction(Delay(duration, unit='us'))
-        target.add_instruction(Reset(), name='prepare_0')
-        target.add_instruction(Initialize([0, 1]), name='prepare_1')
-        target.add_instruction(
-            Initialize([1 / np.sqrt(2), 1 / np.sqrt(2)]), name='prepare_plus'
-        )
-        target.add_instruction(
-            Initialize([1 / np.sqrt(2), -1 / np.sqrt(2)]), name='prepare_minus'
-        )
-        target.add_instruction(MeasureX())
-        target.add_instruction(Measure())
-        target.add_instruction(XGate())
-        target.add_instruction(ZGate())
-        target.add_instruction(RZGate(phi))
-        return target
+        return self._target
 
     @classmethod
     def _default_options(cls) -> Options:
-        default = Options(shots=1000, average_nb_photons=3)
-        default.set_validator('shots', (1, 10000000))
-        default.set_validator('average_nb_photons', (1, 10))
-        return default
+        return Options()
 
     @property
     def max_circuits(self):
@@ -90,7 +73,7 @@ class CatSimulatorBackend(BackendV2):
         Args:
             run_input (QuantumCircuit): a Qiskit circuit
             **kwargs: additional arguments are interpreted as backend options.
-                List all options by calling :func:`CatSimulatorBackend.options`
+                List all options by calling :func:`AliceBobBackend.options`
 
         Returns:
             AliceBobJob: A Qiskit job that is a reference to the job created in
@@ -121,3 +104,19 @@ class CatSimulatorBackend(BackendV2):
 def _qiskit_to_qir(circuit: QuantumCircuit) -> str:
     """Transform a Qiskit circuit into a human-readable QIR program"""
     return str(to_qir_module(circuit)[0])
+
+
+def _options_from_ab_target(ab_target: Dict) -> Options:
+    """Extract Qiskit options from an Alice & Bob target description"""
+    options = Options()
+    for camel_name, desc in ab_target['inputParams'].items():
+        name = camel_to_snake_case(camel_name)
+        if name == 'nb_shots':  # special case
+            name = 'shots'
+        options[name] = desc['default']
+        for constraint in desc['constraints']:
+            if 'min' in constraint and 'max' in constraint:
+                options.set_validator(
+                    name, (constraint['min'], constraint['max'])
+                )
+    return options
