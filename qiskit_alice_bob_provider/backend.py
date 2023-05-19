@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Dict
+from typing import Any, Dict
 
 from qiskit import QuantumCircuit
 from qiskit.providers import BackendV2, Options
@@ -25,7 +25,7 @@ from .api import jobs
 from .api.client import ApiClient
 from .job import AliceBobJob
 from .qir_to_qiskit import ab_target_to_qiskit_target
-from .utils import camel_to_snake_case
+from .utils import camel_to_snake_case, snake_to_camel_case
 
 
 class AliceBobBackend(BackendV2):
@@ -85,10 +85,7 @@ class AliceBobBackend(BackendV2):
             if not hasattr(options, key):
                 raise ValueError(f'Backend does not support option "{key}"')
             options.update_options(**{key: value})
-        input_params = {
-            'nbShots': options.get('shots'),
-            'averageNbPhotons': options.get('average_nb_photons'),
-        }
+        input_params = _ab_input_params_from_options(options)
         job = jobs.create_job(self._api_client, self.name, input_params)
         jobs.upload_input(
             self._api_client, job['id'], _qiskit_to_qir(run_input)
@@ -120,3 +117,14 @@ def _options_from_ab_target(ab_target: Dict) -> Options:
                     name, (constraint['min'], constraint['max'])
                 )
     return options
+
+
+def _ab_input_params_from_options(options: Options) -> Dict:
+    """Extract Qiskit options from an Alice & Bob target description"""
+    input_params: Dict[str, Any] = {}
+    for snake_name, value in options.__dict__.items():
+        name = snake_to_camel_case(snake_name)
+        if name == 'shots':  # special case
+            name = 'nbShots'
+        input_params[name] = value
+    return input_params

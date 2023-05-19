@@ -21,3 +21,8 @@ _CAMEL_PATTERN = re.compile(r'(?<!^)(?=[A-Z])')
 
 def camel_to_snake_case(name: str) -> str:
     return _CAMEL_PATTERN.sub('_', name).lower()
+
+
+def snake_to_camel_case(name: str) -> str:
+    upper_camel = ''.join(x.capitalize() for x in name.lower().split('_'))
+    return upper_camel[0].lower() + upper_camel[1:]
