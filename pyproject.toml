@@ -54,8 +54,8 @@ dev = [
 [project.entry-points."qiskit.transpiler.translation"]
 state_preparation = "qiskit_alice_bob_provider.translation_plugin:StatePreparationPlugin"
 
-[tool.setuptools]
-packages = ["qiskit_alice_bob_provider"]
+[tool.setuptools.packages.find]
+include = ["qiskit_alice_bob_provider*"]
 
 [tool.black]
 skip-string-normalization = true
