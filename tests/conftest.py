@@ -14,7 +14,9 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import List
+# pylint: disable=redefined-outer-name
+
+from typing import Dict, List
 
 import pytest
 from requests_mock.mocker import Mocker
@@ -191,7 +193,24 @@ def all_instructions_target() -> dict:
     }
 
 
-def _response(job_id: str, events: List[dict], errors: List[dict]) -> dict:
+@pytest.fixture
+def targets(
+    single_cat_target: Dict, all_instructions_target: Dict
+) -> List[Dict]:
+    return [single_cat_target, all_instructions_target]
+
+
+@pytest.fixture
+def mocked_targets(targets: List[Dict], requests_mock: Mocker) -> Mocker:
+    requests_mock.register_uri(
+        'GET',
+        '/v1/targets/',
+        json=targets,
+    )
+    return requests_mock
+
+
+def _job_response(job_id: str, events: List[Dict], errors: List[Dict]) -> dict:
     return {
         'inputDataFormat': 'HUMAN_QIR',
         'outputDataFormat': 'HISTOGRAM',
@@ -207,23 +226,23 @@ def _response(job_id: str, events: List[dict], errors: List[dict]) -> dict:
 
 
 @pytest.fixture
-def successful_job(requests_mock: Mocker) -> Mocker:
+def successful_job(mocked_targets: Mocker) -> Mocker:
     job_id = 'my-job'
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         '/v1/jobs/',
-        json=_response(
+        json=_job_response(
             job_id,
             [{'type': 'CREATED', 'createdAt': '2023-05-14T14:53:21.772892'}],
             [],
         ),
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}',
         [
             {
-                'json': _response(
+                'json': _job_response(
                     job_id,
                     [
                         {
@@ -247,7 +266,7 @@ def successful_job(requests_mock: Mocker) -> Mocker:
                 ),
             },
             {
-                'json': _response(
+                'json': _job_response(
                     job_id,
                     [
                         {
@@ -288,46 +307,46 @@ def successful_job(requests_mock: Mocker) -> Mocker:
             },
         ],
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         f'/v1/jobs/{job_id}/input',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/input',
         text='foo',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/transpiled',
         text='bar',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/output',
         text='11,12\n10,474\n01,6\n00,508\n',
     )
-    return requests_mock
+    return mocked_targets
 
 
 @pytest.fixture
-def failed_transpilation_job(requests_mock: Mocker) -> Mocker:
+def failed_transpilation_job(mocked_targets: Mocker) -> Mocker:
     job_id = 'my-job'
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         '/v1/jobs/',
-        json=_response(
+        json=_job_response(
             job_id,
             [{'type': 'CREATED', 'createdAt': '2023-05-14T14:53:21.772892'}],
             [],
         ),
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}',
         [
             {
-                'json': _response(
+                'json': _job_response(
                     job_id,
                     [
                         {
@@ -351,7 +370,7 @@ def failed_transpilation_job(requests_mock: Mocker) -> Mocker:
                 ),
             },
             {
-                'json': _response(
+                'json': _job_response(
                     job_id,
                     [
                         {
@@ -394,16 +413,16 @@ def failed_transpilation_job(requests_mock: Mocker) -> Mocker:
             },
         ],
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         f'/v1/jobs/{job_id}/input',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/input',
         text='foo',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/transpiled',
         status_code=409,
@@ -417,7 +436,7 @@ def failed_transpilation_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/output',
         status_code=409,
@@ -431,27 +450,27 @@ def failed_transpilation_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    return requests_mock
+    return mocked_targets
 
 
 @pytest.fixture
-def failed_execution_job(requests_mock: Mocker) -> Mocker:
+def failed_execution_job(mocked_targets: Mocker) -> Mocker:
     job_id = 'my-job'
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         '/v1/jobs/',
-        json=_response(
+        json=_job_response(
             job_id,
             [{'type': 'CREATED', 'createdAt': '2023-05-14T14:53:21.772892'}],
             [],
         ),
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}',
         [
             {
-                'json': _response(
+                'json': _job_response(
                     job_id,
                     [
                         {
@@ -475,7 +494,7 @@ def failed_execution_job(requests_mock: Mocker) -> Mocker:
                 ),
             },
             {
-                'json': _response(
+                'json': _job_response(
                     job_id,
                     [
                         {
@@ -523,21 +542,21 @@ def failed_execution_job(requests_mock: Mocker) -> Mocker:
             },
         ],
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         f'/v1/jobs/{job_id}/input',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/input',
         text='foo',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/transpiled',
         text='bar',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/output',
         status_code=409,
@@ -551,27 +570,27 @@ def failed_execution_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    return requests_mock
+    return mocked_targets
 
 
 @pytest.fixture
-def cancellable_job(requests_mock: Mocker) -> Mocker:
+def cancellable_job(mocked_targets: Mocker) -> Mocker:
     job_id = 'my-job'
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         '/v1/jobs/',
-        json=_response(
+        json=_job_response(
             job_id,
             [{'type': 'CREATED', 'createdAt': '2023-05-14T14:53:21.772892'}],
             [],
         ),
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}',
         [
             {
-                'json': _response(
+                'json': _job_response(
                     job_id,
                     [
                         {
@@ -595,7 +614,7 @@ def cancellable_job(requests_mock: Mocker) -> Mocker:
                 ),
             },
             {
-                'json': _response(
+                'json': _job_response(
                     job_id,
                     [
                         {
@@ -632,10 +651,10 @@ def cancellable_job(requests_mock: Mocker) -> Mocker:
             },
         ],
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'DELETE',
         f'/v1/jobs/{job_id}',
-        json=_response(
+        json=_job_response(
             job_id,
             [
                 {
@@ -670,21 +689,21 @@ def cancellable_job(requests_mock: Mocker) -> Mocker:
             [],
         ),
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         f'/v1/jobs/{job_id}/input',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/input',
         text='foo',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/transpiled',
         text='bar',
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/output',
         status_code=409,
@@ -698,13 +717,13 @@ def cancellable_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    return requests_mock
+    return mocked_targets
 
 
 @pytest.fixture
-def failed_validation_job(requests_mock: Mocker) -> Mocker:
+def failed_validation_job(mocked_targets: Mocker) -> Mocker:
     job_id = 'my-job'
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         '/v1/jobs/',
         status_code=400,
@@ -718,7 +737,7 @@ def failed_validation_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}',
         status_code=404,
@@ -732,7 +751,7 @@ def failed_validation_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'POST',
         f'/v1/jobs/{job_id}/input',
         status_code=404,
@@ -746,7 +765,7 @@ def failed_validation_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/input',
         status_code=404,
@@ -760,7 +779,7 @@ def failed_validation_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/transpiled',
         status_code=404,
@@ -774,7 +793,7 @@ def failed_validation_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    requests_mock.register_uri(
+    mocked_targets.register_uri(
         'GET',
         f'/v1/jobs/{job_id}/output',
         status_code=404,
@@ -788,4 +807,4 @@ def failed_validation_job(requests_mock: Mocker) -> Mocker:
             }
         },
     )
-    return requests_mock
+    return mocked_targets

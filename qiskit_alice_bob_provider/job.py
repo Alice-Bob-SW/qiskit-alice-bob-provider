@@ -57,7 +57,7 @@ class AliceBobJob(JobV1):
         circuit: QuantumCircuit,
     ):
         """A job should not be instantiated manually but created by calling
-        :func:`CatSimulatorBackend.run` or :func:`qiskit.execute`.
+        :func:`AliceBobBackend.run` or :func:`qiskit.execute`.
 
         Args:
             backend (BackendV2): a reference to the backend that created this
