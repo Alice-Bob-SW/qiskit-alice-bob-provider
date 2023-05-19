@@ -17,7 +17,7 @@
 from requests_mock import ANY
 from requests_mock.mocker import Mocker
 
-from qiskit_alice_bob_provider.api import jobs
+from qiskit_alice_bob_provider.api import jobs, targets
 from qiskit_alice_bob_provider.api.client import ApiClient
 
 
@@ -100,3 +100,9 @@ def test_create_job(requests_mock: Mocker) -> None:
     payload = requests_mock.request_history[0].json()
     assert payload['target'] == target
     assert payload['inputParams'] == input_params
+
+
+def test_list_targets(requests_mock: Mocker) -> None:
+    requests_mock.register_uri('GET', '/v1/targets/', json=[{}, {}])
+    client = ApiClient(api_key='foo', url='https://api.alice-bob.com/')
+    targets.list_targets(client)

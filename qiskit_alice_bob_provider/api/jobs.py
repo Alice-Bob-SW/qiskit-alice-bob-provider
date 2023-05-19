@@ -14,12 +14,12 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Optional
+from typing import Dict, Optional
 
 from .client import AliceBobApiException, ApiClient
 
 
-def create_job(client: ApiClient, target: str, input_params: dict) -> dict:
+def create_job(client: ApiClient, target: str, input_params: Dict) -> Dict:
     """Create a job in the Alice & Bob API
 
     Args:
