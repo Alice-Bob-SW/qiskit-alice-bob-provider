@@ -47,6 +47,150 @@ def api_key(request):
     return request.config.getoption('api_key')
 
 
+@pytest.fixture
+def single_cat_target() -> dict:
+    return {
+        'name': 'SINGLE_CAT_SIMULATOR',
+        'numQubits': 1,
+        'instructions': [
+            {'signature': '__quantum__qis__read_result__body:i1 (%Result*)'},
+            {'signature': '__quantum__qis__z__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__x__body:void (%Qubit*)'},
+            {
+                'signature': (
+                    '__quantum__qis__mz__body:void ' '(%Qubit*, %Result*)'
+                )
+            },
+            {'signature': '__quantum__qis__m__body:void (%Qubit*, %Result*)'},
+            {
+                'signature': (
+                    '__quantum__qis__measure__body:void (%Qubit*, %Result*)'
+                )
+            },
+            {
+                'signature': (
+                    '__quantum__qis__mx__body:void (%Qubit*, %Result*)'
+                )
+            },
+            {'signature': '__quantum__qis__reset__body:void (%Qubit*)'},
+            {
+                'signature': (
+                    '__quantum__qis__delay__body:void (double, %Qubit*)'
+                )
+            },
+            {
+                'signature': (
+                    '__quantum__qis__prepare_x__body:void (i1, %Qubit*)'
+                )
+            },
+            {
+                'signature': (
+                    '__quantum__qis__prepare_z__body:void (i1, %Qubit*)'
+                )
+            },
+            {'signature': '__quantum__qis__rz__body:void (double, %Qubit*)'},
+        ],
+        'inputParams': {
+            'nbShots': {
+                'required': True,
+                'default': 1000,
+                'constraints': [{'min': 1, 'max': 10000000}],
+            },
+            'averageNbPhotons': {
+                'required': True,
+                'default': 4.0,
+                'constraints': [{'min': 1.0, 'max': 10.0}],
+            },
+        },
+    }
+
+
+@pytest.fixture
+def all_instructions_target() -> dict:
+    return {
+        'name': 'ALL_INSTRUCTIONS',
+        'numQubits': 7,
+        'instructions': [
+            {'signature': '__quantum__qis__read_result__body:i1 (%Result*)'},
+            {'signature': '__quantum__qis__z__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__x__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__mz__body:void (%Qubit*, %Result*)'},
+            {'signature': '__quantum__qis__m__body:void (%Qubit*, %Result*)'},
+            {
+                'signature': (
+                    '__quantum__qis__measure__body:void (%Qubit*, %Result*)'
+                )
+            },
+            {'signature': '__quantum__qis__mx__body:void (%Qubit*, %Result*)'},
+            {'signature': '__quantum__qis__reset__body:void (%Qubit*)'},
+            {
+                'signature': (
+                    '__quantum__qis__delay__body:void (double, %Qubit*)'
+                )
+            },
+            {
+                'signature': (
+                    '__quantum__qis__prepare_x__body:void (i1, %Qubit*)'
+                )
+            },
+            {
+                'signature': (
+                    '__quantum__qis__prepare_z__body:void (i1, %Qubit*)'
+                )
+            },
+            {'signature': '__quantum__qis__rx__body:void (double, %Qubit*)'},
+            {'signature': '__quantum__qis__ry__body:void (double, %Qubit*)'},
+            {'signature': '__quantum__qis__rz__body:void (double, %Qubit*)'},
+            {
+                'signature': (
+                    '__quantum__qis__cnot__body:void (%Qubit*, %Qubit*)'
+                )
+            },
+            {'signature': '__quantum__qis__cx__body:void (%Qubit*, %Qubit*)'},
+            {
+                'signature': (
+                    '__quantum__qis__ccx__body:void '
+                    '(%Qubit*, %Qubit*, %Qubit*)'
+                )
+            },
+            {
+                'signature': (
+                    '__quantum__qis__toffoli__body:void '
+                    '(%Qubit*, %Qubit*, %Qubit*)'
+                )
+            },
+            {'signature': '__quantum__qis__cz__body:void (%Qubit*, %Qubit*)'},
+            {'signature': '__quantum__qis__y__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__h__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__s__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__t__body:void (%Qubit*)'},
+            {
+                'signature': (
+                    '__quantum__qis__rzz__body:void (double, %Qubit*, %Qubit*)'
+                )
+            },
+            {'signature': '__quantum__qis__barrier__body:void ()'},
+            {
+                'signature': (
+                    '__quantum__qis__swap__body:void (%Qubit*, %Qubit*)'
+                )
+            },
+        ],
+        'inputParams': {
+            'nbShots': {
+                'required': True,
+                'default': 1000,
+                'constraints': [{'min': 1, 'max': 10000000}],
+            },
+            'averageNbPhotons': {
+                'required': False,
+                'default': None,
+                'constraints': [],
+            },
+        },
+    }
+
+
 def _response(job_id: str, events: List[dict], errors: List[dict]) -> dict:
     return {
         'inputDataFormat': 'HUMAN_QIR',
