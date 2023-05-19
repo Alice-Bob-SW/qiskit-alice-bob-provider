@@ -80,14 +80,14 @@ class AliceBobBackend(BackendV2):
                 the Alice & Bob API. The job is already started. Wait for the
                 results by calling :func:`AliceBobJob.result`.
         """
-        options = self.options
+        options: Options = self.options
         for key, value in kwargs.items():
             if not hasattr(options, key):
                 raise ValueError(f'Backend does not support option "{key}"')
-            options[key] = value
+            options.update_options(**{key: value})
         input_params = {
-            'nbShots': options['shots'],
-            'averageNbPhotons': options['average_nb_photons'],
+            'nbShots': options.get('shots'),
+            'averageNbPhotons': options.get('average_nb_photons'),
         }
         job = jobs.create_job(self._api_client, self.name, input_params)
         jobs.upload_input(
@@ -113,7 +113,7 @@ def _options_from_ab_target(ab_target: Dict) -> Options:
         name = camel_to_snake_case(camel_name)
         if name == 'nb_shots':  # special case
             name = 'shots'
-        options[name] = desc['default']
+        options.update_options(**{name: desc['default']})
         for constraint in desc['constraints']:
             if 'min' in constraint and 'max' in constraint:
                 options.set_validator(
