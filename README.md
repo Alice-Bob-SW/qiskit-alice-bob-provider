@@ -16,6 +16,8 @@ will always install the  latest (and well-tested) version.
 
 ## Use your Alice & Bob API key
 
+To obtain an API key, please [contact Alice & Bob](https://alice-bob.com/contact/).
+
 You can initialize the Alice & Bob provider using your API key locally with:
 
 ```python
