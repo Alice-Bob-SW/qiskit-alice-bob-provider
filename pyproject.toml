@@ -9,6 +9,7 @@ authors = [
 ]
 version = "0.1.0"
 description = "Provider for running Qiskit circuits on Alice & Bob QPUs and simulators"
+readme = "README.md"
 license = {text = "Apache 2.0"}
 keywords = ["Qiskit", "Alice & Bob", "Quantum", "SDK"]
 classifiers=[
@@ -26,12 +27,12 @@ classifiers=[
     "Programming Language :: Python :: 3.10",
     "Topic :: Scientific/Engineering :: Physics",
 ]
-urls = {homepage = "https://alice-bob.com/"}
+urls = {Homepage = "https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider", "Alice & Bob" = "https://alice-bob.com/"}
 requires-python = ">=3.7"
 dependencies = [
     "requests",
     "qiskit-terra",
-    "qiskit-qir @ git+https://github.com/jrj-d/qiskit-qir@add_delay_instruction_using_an_extern"
+    "qiskit-qir-alice-bob-fork"
 ]
 
 [project.optional-dependencies]
@@ -48,7 +49,9 @@ dev = [
     "pylint==2.16.1",
     "pytest==7.2.1",
     "requests-mock==1.10.0",
-    "types-requests==2.30.0.0"
+    "types-requests==2.30.0.0",
+    "twine==4.0.2",
+    "build==0.10.0"
 ]
 
 [project.entry-points."qiskit.transpiler.translation"]
