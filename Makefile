@@ -1,6 +1,7 @@
 VENV=venv
 PYTHON=python
 MODULES=qiskit_alice_bob_provider tests
+BUILD_DIR=dist
 BASE_URL=
 API_KEY=
 ifeq ($(OS),Windows_NT)
@@ -70,3 +71,16 @@ coverage:
 		&& open htmlcov/index.html
 
 test: lint unit-tests
+
+
+#### Build
+
+build:
+	rm -rf $(BUILD_DIR)
+	. $(ACTIVATE) && python -m build -o $(BUILD_DIR)
+
+test-publish: build
+	twine upload -r testpypi dist/*
+
+publish: build
+	twine upload dist/*
