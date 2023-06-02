@@ -17,6 +17,12 @@
 import urllib.parse
 
 import requests
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 
 class AliceBobApiException(Exception):
@@ -33,7 +39,13 @@ class ApiClient:
     This wrapper adds authentication and the base URL to all requests.
     """
 
-    def __init__(self, api_key: str, url: str):
+    def __init__(
+        self,
+        api_key: str,
+        url: str,
+        retries: int = 5,
+        wait_between_retries_seconds: int = 1,
+    ):
         """
         Args:
             api_key (str): an API key provided by Alice & Bob
@@ -42,12 +54,19 @@ class ApiClient:
         self._url = url
         self._session = requests.Session()
         self._session.headers.update({'Authorization': f'Basic {api_key}'})
+        self._retries = retries
+        self._wait_between_retries_seconds = wait_between_retries_seconds
 
     def _request(
         self, method: str, endpoint: str, **kwargs
     ) -> requests.Response:
         url = urllib.parse.urljoin(self._url, endpoint)
-        resp = self._session.request(method=method, url=url, **kwargs)
+        resp = retry(
+            reraise=True,
+            wait=wait_fixed(self._wait_between_retries_seconds),
+            retry=retry_if_exception_type(requests.ConnectionError),
+            stop=stop_after_attempt(self._retries),
+        )(self._session.request)(method=method, url=url, **kwargs)
         try:
             resp.raise_for_status()
         except requests.HTTPError as e:

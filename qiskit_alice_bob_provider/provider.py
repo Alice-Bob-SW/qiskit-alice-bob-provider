@@ -27,14 +27,25 @@ from .backend import AliceBobBackend
 class AliceBobProvider(ProviderV1):
     """Class listing and providing access to all Alice & Bob backends."""
 
-    def __init__(self, api_key: str, url: str = 'https://api.alice-bob.com/'):
+    def __init__(
+        self,
+        api_key: str,
+        url: str = 'https://api.alice-bob.com/',
+        retries: int = 5,
+        wait_between_retries_seconds: int = 1,
+    ):
         """
         Args:
             api_key (str): an API key for the Alice & Bob API
             url (str): Base URL of the Alice & Bob API.
                 Defaults to 'https://api.alice-bob.com/'.
         """
-        client = ApiClient(api_key=api_key, url=url)
+        client = ApiClient(
+            api_key=api_key,
+            url=url,
+            retries=retries,
+            wait_between_retries_seconds=wait_between_retries_seconds,
+        )
         self._backends = []
         for ab_target in list_targets(client):
             self._backends.append(AliceBobBackend(client, ab_target))

@@ -32,7 +32,8 @@ requires-python = ">=3.7"
 dependencies = [
     "requests",
     "qiskit-terra",
-    "qiskit-qir-alice-bob-fork"
+    "qiskit-qir-alice-bob-fork",
+    "tenacity"
 ]
 
 [project.optional-dependencies]
