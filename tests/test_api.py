@@ -14,6 +14,8 @@
 #    limitations under the License.
 ##############################################################################
 
+import pytest
+import requests
 from requests_mock import ANY
 from requests_mock.mocker import Mocker
 
@@ -106,3 +108,40 @@ def test_list_targets(requests_mock: Mocker) -> None:
     requests_mock.register_uri('GET', '/v1/targets/', json=[{}, {}])
     client = ApiClient(api_key='foo', url='https://api.alice-bob.com/')
     targets.list_targets(client)
+
+
+def test_connection_aborted(requests_mock: Mocker) -> None:
+    requests_mock.register_uri(
+        'GET', '/v1/targets/', exc=requests.ConnectionError
+    )
+    client = ApiClient(
+        api_key='foo',
+        url='https://api.alice-bob.com/',
+        wait_between_retries_seconds=0,
+    )
+    with pytest.raises(requests.ConnectionError):
+        targets.list_targets(client)
+    assert requests_mock.call_count == 5
+
+    requests_mock.register_uri('GET', '/v1/targets/', exc=requests.HTTPError)
+    client = ApiClient(
+        api_key='foo',
+        url='https://api.alice-bob.com/',
+        wait_between_retries_seconds=0,
+    )
+    with pytest.raises(requests.HTTPError):
+        targets.list_targets(client)
+    assert requests_mock.call_count == 5 + 1
+
+    requests_mock.register_uri(
+        'GET', '/v1/targets/', exc=requests.ConnectionError
+    )
+    client = ApiClient(
+        api_key='foo',
+        url='https://api.alice-bob.com/',
+        retries=4,
+        wait_between_retries_seconds=0,
+    )
+    with pytest.raises(requests.ConnectionError):
+        targets.list_targets(client)
+    assert requests_mock.call_count == 5 + 1 + 4
