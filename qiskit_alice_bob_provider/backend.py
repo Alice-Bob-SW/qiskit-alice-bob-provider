@@ -18,11 +18,12 @@ from typing import Any, Dict
 
 from qiskit import QuantumCircuit
 from qiskit.providers import BackendV2, Options
-from qiskit.transpiler import Target
+from qiskit.transpiler import PassManager, Target
 from qiskit_qir import to_qir_module
 
 from .api import jobs
 from .api.client import ApiClient
+from .ensure_preparation_pass import EnsurePreparationPass
 from .job import AliceBobJob
 from .qir_to_qiskit import ab_target_to_qiskit_target
 from .utils import camel_to_snake_case, snake_to_camel_case
@@ -87,6 +88,7 @@ class AliceBobBackend(BackendV2):
             options.update_options(**{key: value})
         input_params = _ab_input_params_from_options(options)
         job = jobs.create_job(self._api_client, self.name, input_params)
+        run_input = PassManager([EnsurePreparationPass()]).run(run_input)
         jobs.upload_input(
             self._api_client, job['id'], _qiskit_to_qir(run_input)
         )
