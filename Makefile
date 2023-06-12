@@ -75,12 +75,12 @@ test: lint unit-tests
 
 #### Build
 
-build:
+build: install
 	rm -rf $(BUILD_DIR)
 	. $(ACTIVATE) && python -m build -o $(BUILD_DIR)
 
 test-publish: build
-	twine upload -r testpypi dist/*
+	. $(ACTIVATE) && python -m twine upload -r testpypi dist/*
 
 publish: build
-	twine upload dist/*
+	. $(ACTIVATE) && python -m twine upload dist/*
