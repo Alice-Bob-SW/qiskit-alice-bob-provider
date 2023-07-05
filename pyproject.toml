@@ -31,7 +31,7 @@ urls = {Homepage = "https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider", 
 requires-python = ">=3.7"
 dependencies = [
     "requests",
-    "qiskit-terra",
+    "qiskit-terra>=0.22.0",  # first version with backend transpiler plugins
     "qiskit-qir-alice-bob-fork",
     "tenacity"
 ]
