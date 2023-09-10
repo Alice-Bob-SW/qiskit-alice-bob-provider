@@ -15,7 +15,7 @@
 ##############################################################################
 
 from enum import Enum
-from typing import Iterator, Optional, Protocol, Tuple, Union
+from typing import Iterator, Optional, Tuple, Union
 
 import numpy as np
 from scipy import interpolate
@@ -28,19 +28,14 @@ from qiskit_alice_bob_provider.processor.description import (
 from ..description import ProcessorDescription
 from .model import SerializedInstruction, SerializedProcessor
 
-
-class Interpolator(Protocol):
-    """A function that is the output of an interpolation method.
-
-    In this context, interpolation is used to obtain estimates of quantum
-    errors and instruction durations for parameter values that were not in the
-    generated simulation data.
-    For instance, we may have simulated errors for the values 3 and 4 of nbar.
-    This interpolation function will be able to generate an error estimate for
-    nbar=3.5."""
-
-    def __call__(self, x: Union[float, list[float], np.ndarray]) -> np.ndarray:
-        ...
+# A function that is the output of an interpolation method.
+# In this context, interpolation is used to obtain estimates of quantum
+# errors and instruction durations for parameter values that were not in the
+# generated simulation data.
+# For instance, we may have simulated errors for the values 3 and 4 of nbar.
+# This interpolation function will be able to generate an error estimate for
+# nbar=3.5.
+Interpolator = Callable[[Union[float, List[float], np.ndarray]], np.ndarray]
 
 
 class InterpolatedProcessor(ProcessorDescription):
