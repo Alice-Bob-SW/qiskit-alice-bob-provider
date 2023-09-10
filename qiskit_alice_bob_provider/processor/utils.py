@@ -14,19 +14,19 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Union
+from typing import Dict, List, Union
 
 import numpy as np
 
 
-def pauli_errors_to_chi(pauli_errors: dict[str, float]) -> np.ndarray:
+def pauli_errors_to_chi(pauli_errors: Dict[str, float]) -> np.ndarray:
     """Convert a collection of Pauli errors into a quantum process tomography
     Chi matrix.
 
     https://qiskit.org/documentation/stubs/qiskit.quantum_info.Chi.html
 
     Args:
-        pauli_errors (dict[str, float]): a dict of Pauli errors where the key
+        pauli_errors (Dict[str, float]): a dict of Pauli errors where the key
         is the type of Pauli error as a string (e.g., 'I', 'X', 'XI', 'XZX')
         and the value is the probability of this Pauli error.
         The "no error" case (e.g., 'I', 'II', 'III', etc) should not be
@@ -63,7 +63,7 @@ def is_diagonal(m: np.ndarray) -> bool:
     return np.count_nonzero(m - np.diag(np.diag(m))) == 0
 
 
-def chi_to_pauli_errors(chi: np.ndarray) -> dict[str, float]:
+def chi_to_pauli_errors(chi: np.ndarray) -> Dict[str, float]:
     """Convert a quantum process tomography Chi matrix into a collection of
     Pauli errors.
 
@@ -76,7 +76,7 @@ def chi_to_pauli_errors(chi: np.ndarray) -> dict[str, float]:
     Returns:
         np.ndarray: a quantum process tomography Chi matrix. The Qiskit link
         above is a good description of a Chi matrix.
-        dict[str, float]: a dict of Pauli errors where the key
+        Dict[str, float]: a dict of Pauli errors where the key
         is the type of Pauli error as a string (e.g., 'I', 'X', 'XI', 'XZX')
         and the value is the probability of this Pauli error.
     """
@@ -114,7 +114,7 @@ def index_to_pauli_label(n_qubits: int, index: int) -> str:
 
 
 def full_flip_error(
-    linearized_probs: Union[np.ndarray, list[float], list[list[float]]]
+    linearized_probs: Union[np.ndarray, List[float], List[List[float]]]
 ) -> np.ndarray:
     """The general formula for the probabilities of Pauli errors from their
     linearized versions in the region close to 0.

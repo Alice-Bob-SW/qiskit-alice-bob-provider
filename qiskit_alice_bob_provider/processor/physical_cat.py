@@ -15,7 +15,7 @@
 ##############################################################################
 
 from itertools import product
-from typing import Iterator, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple
 
 import numpy as np
 
@@ -53,7 +53,7 @@ class PhysicalCatProcessor(ProcessorDescription):
         kappa_2: float = 10_000_000,
         alpha: float = 4,
         clock_cycle: float = 1e-9,
-        coupling_map: Optional[list[Tuple[int, int]]] = None,
+        coupling_map: Optional[List[Tuple[int, int]]] = None,
     ):
         self._n_qubits = n_qubits
         if alpha < 2.0:
@@ -104,7 +104,7 @@ class PhysicalCatProcessor(ProcessorDescription):
             yield InstructionProperties(name='cx', params=[], qubits=(i, j))
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         if name == 'mx':
             duration, errors = _mx_error(

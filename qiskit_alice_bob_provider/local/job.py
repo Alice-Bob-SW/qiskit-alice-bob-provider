@@ -14,6 +14,8 @@
 #    limitations under the License.
 ##############################################################################
 
+from typing import List
+
 from qiskit import QuantumCircuit
 from qiskit.providers import JobV1
 from qiskit.providers.backend import Backend
@@ -31,8 +33,8 @@ class ProcessorSimulationJob(JobV1):
         self,
         backend: Backend,
         wrapped_job: AerJob,
-        circuits: list[QuantumCircuit],
-        noisy_circuits: list[QuantumCircuit],
+        circuits: List[QuantumCircuit],
+        noisy_circuits: List[QuantumCircuit],
         **kwargs,
     ) -> None:
         super().__init__(backend, wrapped_job.job_id(), **kwargs)
@@ -52,12 +54,12 @@ class ProcessorSimulationJob(JobV1):
     def status(self):
         return self._wrapped_job.status()
 
-    def circuits(self) -> list[QuantumCircuit]:
+    def circuits(self) -> List[QuantumCircuit]:
         """Return the list of QuantumCircuit augmented with the quantum noise
         instructions."""
         return self._circuits
 
-    def noisy_circuits(self) -> list[QuantumCircuit]:
+    def noisy_circuits(self) -> List[QuantumCircuit]:
         """Return the list of QuantumCircuit augmented with the quantum noise
         instructions."""
         return self._noisy_circuits

@@ -15,7 +15,7 @@
 ##############################################################################
 
 import warnings
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from qiskit.circuit import Barrier, Delay, Instruction, Parameter, Qubit
 from qiskit.transpiler.instruction_durations import (
@@ -120,7 +120,7 @@ class ProcessorInstructionDurations(InstructionDurations):
     def _get(
         self,
         name: str,
-        qubits: list[int],
+        qubits: List[int],
         to_unit: str,
         parameters: Optional[Iterable[float]] = None,
     ) -> float:
@@ -162,7 +162,7 @@ class ProcessorInstructionDurations(InstructionDurations):
 
 
 def _instruction_not_found(
-    name: str, qubits: list[int], parameters: list[float]
+    name: str, qubits: List[int], parameters: List[float]
 ) -> str:
     return (
         f'The processor does not support instruction "{name}" on qubits'
@@ -170,8 +170,8 @@ def _instruction_not_found(
     )
 
 
-_InstructionDict = dict[
-    Tuple[str, Tuple[int, ...]], list[Tuple[Instruction, str]]
+_InstructionDict = Dict[
+    Tuple[str, Tuple[int, ...]], List[Tuple[Instruction, str]]
 ]
 
 
@@ -191,7 +191,7 @@ def _from_qiskit_to_proc_instructions(
     return out
 
 
-def _have_same_params(requested: list[Any], definition: list[Any]) -> bool:
+def _have_same_params(requested: List[Any], definition: List[Any]) -> bool:
     """Compare the parameters provided by the Qiskit instruction in the circuit
     with the parameters of a reference Qiskit instruction."""
     if len(requested) != len(definition):

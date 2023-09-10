@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from qiskit import QuantumCircuit, execute
 from qiskit.providers import BackendV2, Options
@@ -127,7 +127,7 @@ class ProcessorSimulator(BackendV2):
         return None
 
     def run(
-        self, run_input: Union[QuantumCircuit, list[QuantumCircuit]], **options
+        self, run_input: Union[QuantumCircuit, List[QuantumCircuit]], **options
     ) -> ProcessorSimulationJob:
         """Simulate the execution of one or multiple circuits on a QPU.
 
@@ -138,7 +138,7 @@ class ProcessorSimulator(BackendV2):
         directly.
 
         Args:
-            run_input (Union[QuantumCircuit, list[QuantumCircuit]]): one or
+            run_input (Union[QuantumCircuit, List[QuantumCircuit]]): one or
             multiple circuits to simulate.
             **options: additional arguments are interpreted as options for
             the underlying execution backend, usually an instance of

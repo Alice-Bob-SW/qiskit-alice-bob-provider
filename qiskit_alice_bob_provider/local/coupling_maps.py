@@ -14,10 +14,10 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Tuple
+from typing import List, Tuple
 
 
-def bidirect_map(map: list[Tuple[int, int]]) -> list[Tuple[int, int]]:
+def bidirect_map(map: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
     """From a coupling map where edges flow in one direction only, add
     edges pointing in the opposite direction."""
     out = []
@@ -27,7 +27,7 @@ def bidirect_map(map: list[Tuple[int, int]]) -> list[Tuple[int, int]]:
     return out
 
 
-def circular_map(n_qubits: int) -> list[Tuple[int, int]]:
+def circular_map(n_qubits: int) -> List[Tuple[int, int]]:
     """A bidirected coupling map where qubits form a circle"""
     return bidirect_map([(i, (i + 1) % n_qubits) for i in range(n_qubits)])
 
@@ -36,7 +36,7 @@ def _rect_index(width: int, i: int, j: int) -> int:
     return i * width + j
 
 
-def rectangular_map(height: int, width: int) -> list[Tuple[int, int]]:
+def rectangular_map(height: int, width: int) -> List[Tuple[int, int]]:
     """A bidrected coupling map where qubits are aligned on a grid"""
     map = []
     for i in range(height):

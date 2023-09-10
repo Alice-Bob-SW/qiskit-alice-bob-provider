@@ -1,3 +1,5 @@
+from typing import List
+
 from qiskit import QuantumCircuit, execute, transpile
 from qiskit.extensions.quantum_initializer import Initialize
 
@@ -17,7 +19,7 @@ def _check_initialize(circuit: QuantumCircuit, expected: str) -> None:
     assert params == list(expected)
 
 
-def _check_initializes(circuit: QuantumCircuit, expected: list[str]) -> None:
+def _check_initializes(circuit: QuantumCircuit, expected: List[str]) -> None:
     initializes = circuit.get_instructions('initialize')
     assert len(initializes) == len(expected)
     for initialize in initializes:

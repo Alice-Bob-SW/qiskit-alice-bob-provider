@@ -14,6 +14,8 @@
 #    limitations under the License.
 ##############################################################################
 
+from typing import Dict, List
+
 from qiskit.circuit import Delay, Instruction, Measure, Parameter
 from qiskit.circuit.library.standard_gates import (
     get_standard_gate_name_mapping,
@@ -50,16 +52,16 @@ def processor_to_qiskit_instruction(
 
 
 _standard_gates = get_standard_gate_name_mapping()
-_known_no_arg_unitaries: dict[str, type] = {
+_known_no_arg_unitaries: Dict[str, type] = {
     name: inst.__class__
     for name, inst in _standard_gates.items()
     if len(inst.params) == 0
 }
-_known_rotations: dict[str, type] = {
+_known_rotations: Dict[str, type] = {
     name: _standard_gates[name].__class__ for name in ['rx', 'ry', 'rz']
 }
-_known_preparations: list[str] = ['p0', 'p+', 'p1', 'p-']
-_known_measurements: dict[str, type] = {
+_known_preparations: List[str] = ['p0', 'p+', 'p1', 'p-']
+_known_measurements: Dict[str, type] = {
     'mz': Measure,
     'mx': MeasureX,
 }

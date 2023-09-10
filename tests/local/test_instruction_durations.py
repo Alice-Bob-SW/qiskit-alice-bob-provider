@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 
-from typing import Iterator, Tuple
+from typing import Iterator, List, Tuple
 
 import pytest
 from qiskit.circuit import Barrier, Delay
@@ -19,9 +19,9 @@ from qiskit_alice_bob_provider.processor.description import (
 class _TestProcessor(ProcessorDescription):
     def __init__(self, clock_cycle: float):
         self.clock_cycle = clock_cycle
-        self._delay_qubits: list[Tuple[int, ...]] = [(0,), (1,)]
-        self._ccx_qubits: list[Tuple[int, ...]] = [(0, 1, 2), (0, 2, 1)]
-        self._rx_qubits: list[Tuple[int, ...]] = [(2,)]
+        self._delay_qubits: List[Tuple[int, ...]] = [(0,), (1,)]
+        self._ccx_qubits: List[Tuple[int, ...]] = [(0, 1, 2), (0, 2, 1)]
+        self._rx_qubits: List[Tuple[int, ...]] = [(2,)]
 
     def all_instructions(self) -> Iterator[InstructionProperties]:
         for tup in self._delay_qubits:
@@ -36,7 +36,7 @@ class _TestProcessor(ProcessorDescription):
             )
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         if name == 'delay':
             return AppliedInstruction(

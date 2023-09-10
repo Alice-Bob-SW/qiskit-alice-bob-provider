@@ -71,7 +71,7 @@ class AliceBobJob(JobV1):
         self._backend_v2 = backend
         self._api_client = api_client
         self._circuit = circuit
-        self._last_response: Optional[dict] = None
+        self._last_response: Optional[Dict] = None
         self._status: Optional[JobStatus] = None
         self._counts: Optional[Dict[str, int]] = None
         self._files: Dict[str, _DownloadedFile] = {}
