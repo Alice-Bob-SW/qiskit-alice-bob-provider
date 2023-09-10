@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -39,7 +39,7 @@ class InterpolationPoint(BaseModel):
     # Indices should with the first qubit to the right.
     # Example for one qubit: I, X, Y, Z
     # Example for two qubits: II, IX, IY, IZ, XI, ...
-    pauli_probabilities: Optional[list[float]] = None
+    pauli_probabilities: Optional[List[float]] = None
 
     # The duration of the instruction
     duration: float
@@ -47,7 +47,7 @@ class InterpolationPoint(BaseModel):
     # The parameters for which the above Pauli error probabilities and duration
     # are valid. Example parameters: nbar, gate_duration_ns (for delay), angle
     # (for a rotation).
-    params: dict[str, float]
+    params: Dict[str, float]
 
 
 class SerializedInstruction(BaseModel):
@@ -61,7 +61,7 @@ class SerializedInstruction(BaseModel):
     # lists.
     # Example: noise model for x gate on qubits 1, 3, 5: [[1], [3], [5]]
     # Example: noise model for cx gate on qubits 1-2, 3-4: [[1, 2], [3, 4]]
-    qubits: list[list[int]]
+    qubits: List[List[int]]
 
     # The parameters for which this noise model provides a grid of values.
     # The parameters names in the InterpolationPoint.params dictionary must
@@ -69,15 +69,15 @@ class SerializedInstruction(BaseModel):
     # Example for a rotation around the y-basis: ['angle', 'nbar']
     # Example for a delay instruction: ['gate_duration_ns', 'nbar']
     # Example for a x gate: ['nbar']
-    free_params: list[str]
+    free_params: List[str]
 
     # The list of parameters that were used in the simulation that generated
     # this noise model. This dictionary is here for debugging purposes only.
-    fixed_params: dict[str, float]
+    fixed_params: Dict[str, float]
 
     # A list of objects representing the quantum noise and the instruction
     # duration when the instruction is applied with a given set of parameters.
-    interpolation_points: list[InterpolationPoint]
+    interpolation_points: List[InterpolationPoint]
 
     # Probability of reading an incorrect value when measuring the state of
     # a qubit. Only measurement instructions (mz and mx) should contain the
@@ -85,7 +85,7 @@ class SerializedInstruction(BaseModel):
     # It is assumed that the readout errors are independent of the free params.
     # Format: [P(1|0), P(0|1)].
     # Example: ideal = no readout noise = [0.0, 0.0]
-    readout_errors: Optional[list[float]] = None
+    readout_errors: Optional[List[float]] = None
 
 
 class SerializedProcessor(BaseModel):
@@ -97,4 +97,4 @@ class SerializedProcessor(BaseModel):
     representation."""
 
     metadata: ProcessorMetadata
-    instructions: list[SerializedInstruction]
+    instructions: List[SerializedInstruction]

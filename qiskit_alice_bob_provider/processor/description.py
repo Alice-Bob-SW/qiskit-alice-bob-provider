@@ -16,7 +16,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Iterator, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple
 
 import numpy as np
 
@@ -33,7 +33,7 @@ class InstructionProperties:
     qubits: Tuple[int, ...]
 
     # The names of the parameters of the instruction
-    params: list[str]
+    params: List[str]
 
     # The readout assignment errors of a measurement instruction.
     # A value of [0.01, 0.02] is understood as P(read 1 | qubit in 0) = 0.01
@@ -41,7 +41,7 @@ class InstructionProperties:
     # Use this attribute when the readout errors are independent of the
     # instruction params. If param-dependent readout errors are found in
     # AppliedInstruction, they should take precedence.
-    readout_errors: Optional[list[float]] = None
+    readout_errors: Optional[List[float]] = None
 
 
 @dataclass
@@ -63,7 +63,7 @@ class AppliedInstruction:
     # Use this attribute when the readout errors depend on the
     # instruction params. They should take precedence over param-independent
     # readout errors found in InstructionProperties.
-    readout_errors: Optional[list[float]]
+    readout_errors: Optional[List[float]]
 
 
 class ProcessorDescription(ABC):
@@ -88,7 +88,7 @@ class ProcessorDescription(ABC):
 
     @abstractmethod
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         """For a given instruction, return the instruction duration and noise.
 

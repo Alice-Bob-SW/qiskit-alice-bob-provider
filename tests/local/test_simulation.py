@@ -1,4 +1,4 @@
-from typing import Iterator, Tuple
+from typing import Iterator, List, Set, Tuple
 
 import numpy as np
 import pytest
@@ -24,7 +24,7 @@ from qiskit_alice_bob_provider.processor.utils import pauli_errors_to_chi
 from .processor_fixture import OneQubitProcessor, SimpleProcessor
 
 
-def gen_circuits() -> Iterator[Tuple[str, QuantumCircuit, set[str]]]:
+def gen_circuits() -> Iterator[Tuple[str, QuantumCircuit, Set[str]]]:
     circ = QuantumCircuit(2, 2)
     circ.initialize('0', 0)
     circ.initialize('+', 1)
@@ -36,7 +36,7 @@ def gen_circuits() -> Iterator[Tuple[str, QuantumCircuit, set[str]]]:
 
 
 @pytest.mark.parametrize('tup', gen_circuits())
-def test_circuit(tup: Tuple[str, QuantumCircuit, set[str]]) -> None:
+def test_circuit(tup: Tuple[str, QuantumCircuit, Set[str]]) -> None:
     _, circ, expected_keys = tup
     backend = ProcessorSimulator(SimpleProcessor())
     job: ProcessorSimulationJob = execute(circ, backend)
@@ -88,7 +88,7 @@ class _CXProcessor(ProcessorDescription):
         yield InstructionProperties(name='cx', params=[], qubits=(1, 0))
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         if name == 'cx':
             return AppliedInstruction(

@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 from qiskit import QuantumCircuit
 from qiskit.extensions.quantum_initializer import Initialize
@@ -39,7 +41,7 @@ def test_int_to_label() -> None:
         pm.run(circ)
 
 
-def _check_initializes(circuit: QuantumCircuit, expected: list[str]) -> None:
+def _check_initializes(circuit: QuantumCircuit, expected: List[str]) -> None:
     initializes = circuit.get_instructions('initialize')
     assert len(initializes) == len(expected)
     for initialize in initializes:

@@ -15,7 +15,7 @@
 ##############################################################################
 
 import warnings
-from typing import Optional
+from typing import Optional, Set, Tuple
 
 from qiskit_aer.noise import NoiseModel, ReadoutError
 
@@ -42,7 +42,7 @@ def build_readout_noise_model(
     """
 
     qiskit_noise_model = NoiseModel()
-    qubits_with_readout_error: set[tuple[int, ...]] = set()
+    qubits_with_readout_error: Set[Tuple[int, ...]] = set()
 
     for instr in proc.all_instructions():
         if instr.readout_errors is None:

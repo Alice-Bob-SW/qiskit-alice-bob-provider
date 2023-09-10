@@ -15,7 +15,7 @@
 ##############################################################################
 
 from enum import Enum
-from typing import Iterator, Optional, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy import interpolate
@@ -49,13 +49,13 @@ class InterpolatedProcessor(ProcessorDescription):
         clock_cycle: float = 1e-9,
     ) -> None:
         self.clock_cycle = clock_cycle
-        self._instructions: dict[
+        self._instructions: Dict[
             Tuple[str, Tuple[int, ...]], SerializedInstruction
         ] = {}
-        self._pauli_interp: dict[
+        self._pauli_interp: Dict[
             Tuple[str, Tuple[int, ...]], Optional[Interpolator]
         ] = {}
-        self._duration_interp: dict[
+        self._duration_interp: Dict[
             Tuple[str, Tuple[int, ...]], Interpolator
         ] = {}
         for instr in serialized_processor.instructions:
@@ -86,7 +86,7 @@ class InterpolatedProcessor(ProcessorDescription):
             )
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         pauli_interp = self._pauli_interp[(name, qubits)]
         duration_interp = self._duration_interp[(name, qubits)]
@@ -135,7 +135,7 @@ def _build_interpolator(
             # Can't use "_" because this would cause mypy to not understand
             # that this function is an Interpolator.
             # pylint: disable=unused-argument
-            x: Union[float, list[float], np.ndarray]
+            x: Union[float, List[float], np.ndarray]
         ) -> np.ndarray:
             return np.array(constant)
 
@@ -165,7 +165,7 @@ def _build_interpolator(
         )
 
     def protected_interpolator(
-        x: Union[float, list[float], np.ndarray]
+        x: Union[float, List[float], np.ndarray]
     ) -> np.ndarray:
         error_message = (
             f'Could not interpolate requested point ({x}) because it is '

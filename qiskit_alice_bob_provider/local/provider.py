@@ -16,7 +16,7 @@
 
 from functools import partial
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from qiskit.providers import BackendV2, ProviderV1
 
@@ -38,7 +38,7 @@ class AliceBobLocalProvider(ProviderV1):
 
     def __init__(self) -> None:
         self._backends: List[ProcessorSimulator] = []
-        self._backend_builders: dict[
+        self._backend_builders: Dict[
             str, Callable[..., ProcessorSimulator]
         ] = {}
         self._backend_builders['PHYSICAL_CATS_6'] = partial(
@@ -89,7 +89,7 @@ class AliceBobLocalProvider(ProviderV1):
         kappa_2: float = 10_000_000,
         alpha: float = 4,
         clock_cycle: float = 1e-9,
-        coupling_map: Optional[list[Tuple[int, int]]] = None,
+        coupling_map: Optional[List[Tuple[int, int]]] = None,
         name: Optional[str] = None,
     ) -> ProcessorSimulator:
         """Build a backend simulating a quantum processor made of physical cat

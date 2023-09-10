@@ -1,4 +1,4 @@
-from typing import Iterator, Tuple
+from typing import Iterator, List, Tuple
 
 from qiskit_alice_bob_provider.local.instruction_durations import (
     ProcessorInstructionDurations,
@@ -26,7 +26,7 @@ class _TestProcessor(ProcessorDescription):
         yield InstructionProperties(name='ccx', params=[], qubits=(0, 2, 1))
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         raise NotImplementedError()
 

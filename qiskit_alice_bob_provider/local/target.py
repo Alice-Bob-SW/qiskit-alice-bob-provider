@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 from qiskit.circuit import Instruction
 from qiskit.transpiler import Target
@@ -67,14 +67,14 @@ def processor_to_target(processor: ProcessorDescription) -> Target:
     target = Target(dt=processor.clock_cycle)
 
     # qiskit name -> supported qubit combinations
-    qubits: dict[str, list[Tuple[int, ...]]] = {}
+    qubits: Dict[str, List[Tuple[int, ...]]] = {}
 
     # Qiskit name -> a given Qiskit implementation of this instruction
     # As a consequence, if two proc instructions are implemented using the same
     # Qiskit implementation, they will conflict here. This is not an issue
     # though, because the Qiskit Target's instructions are only used for
     # gate basis conversion.
-    example_instructions: dict[str, Instruction] = {}
+    example_instructions: Dict[str, Instruction] = {}
 
     for instruction in processor.all_instructions():
         qiskit_instr = processor_to_qiskit_instruction(instruction)

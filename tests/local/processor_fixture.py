@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Iterator, Tuple
+from typing import Iterator, List, Tuple
 
 from qiskit.quantum_info.operators import Chi
 from qiskit_aer.noise import amplitude_damping_error
@@ -40,7 +40,7 @@ class SimpleProcessor(ProcessorDescription):
             )
 
     def apply_instruction(  # pylint: disable=too-many-return-statements
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         if name == 'delay':
             return AppliedInstruction(
@@ -128,7 +128,7 @@ class ReadoutErrorProcessor(ProcessorDescription):
         )
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         if name == 'mx':
             return AppliedInstruction(
@@ -160,7 +160,7 @@ class ConflictingReadoutErrorsProcessor(ProcessorDescription):
         )
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         if name == 'mx':
             return AppliedInstruction(
@@ -186,7 +186,7 @@ class OneQubitProcessor(ProcessorDescription):
         yield InstructionProperties(name='mx', params=[], qubits=(0,))
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         if name == 'mx':
             return AppliedInstruction(

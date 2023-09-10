@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Callable, Optional
+from typing import Callable, Dict, List, Optional
 
 from qiskit.circuit import Delay, Instruction, QuantumCircuit
 from qiskit.circuit.equivalence_library import (
@@ -35,7 +35,7 @@ from .proc_to_qiskit import processor_to_qiskit_instruction
 
 def build_quantum_error_passes(
     processor: ProcessorDescription,
-) -> list[TransformationPass]:
+) -> List[TransformationPass]:
     """From the description of a processor, build transpilation passes
     that insert quantum noise instructions representing the imperfection of the
     quantum processor.
@@ -88,7 +88,7 @@ class _MzMarkerGate(_MeasureMarkerGate):
         super().__init__(name='measure_z_marker', label=label)
 
 
-_marker_gate_types: dict[str, type] = {
+_marker_gate_types: Dict[str, type] = {
     'measure': _MzMarkerGate,
     'measure_x': _MxMarkerGate,
 }
@@ -128,7 +128,7 @@ class _AddMeasureMarkerPass(TransformationPass):
 
 # The signature of the kind of functions accepted by qiskit_aer's
 # LocalNoisePass.
-_Pass = Callable[[Instruction, list[int]], Optional[Instruction]]
+_Pass = Callable[[Instruction, List[int]], Optional[Instruction]]
 
 
 def _transpilation_pass_from_instruction(
@@ -174,7 +174,7 @@ def _pass_factory(
     param_handler_func = _param_handler_factory(processor, instr_properties)
 
     def _pass(
-        instruction: Instruction, qubits: list[int]
+        instruction: Instruction, qubits: List[int]
     ) -> Optional[Instruction]:
         if tuple(qubits) != instr_properties.qubits:
             # if qubits don't match, insert nothing in circuit
@@ -237,7 +237,7 @@ def _pass_factory(
 # If the return value is None, it means the params do not match the
 # requirements for the ongoing transpilation pass (e.g., reading Initialize(+)
 # when testing for Initialize(0)).
-_ParamHandler = Callable[[Instruction], Optional[list]]
+_ParamHandler = Callable[[Instruction], Optional[List]]
 
 
 def _param_handler_factory(
@@ -252,7 +252,7 @@ def _param_handler_factory(
 
         def _handle_initialize_params(
             requested: Instruction,
-        ) -> Optional[list]:
+        ) -> Optional[List]:
             if (
                 len(requested.params) != 1
                 or requested.params[0] != reference.params[0]
@@ -263,7 +263,7 @@ def _param_handler_factory(
         return _handle_initialize_params
     elif isinstance(reference, Delay):
 
-        def _handle_delay_params(requested: Instruction) -> Optional[list]:
+        def _handle_delay_params(requested: Instruction) -> Optional[List]:
             multipliers = {
                 's': 1,
                 'ms': 1e-3,
@@ -278,7 +278,7 @@ def _param_handler_factory(
         return _handle_delay_params
     else:
 
-        def _handle_regular_params(requested: Instruction) -> Optional[list]:
+        def _handle_regular_params(requested: Instruction) -> Optional[List]:
             return requested.params
 
         return _handle_regular_params

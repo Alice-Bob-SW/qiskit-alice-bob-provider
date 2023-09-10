@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Iterator, Tuple
+from typing import Dict, Iterator, List, Tuple
 
 import numpy as np
 
@@ -49,7 +49,7 @@ class InterpolatedCatProcessor(ProcessorDescription):
         )
         self.clock_cycle = clock_cycle
         self._alpha = alpha
-        self._instructions: dict[
+        self._instructions: Dict[
             Tuple[str, Tuple[int, ...]], SerializedInstruction
         ] = {}
         for instr in serialized_processor.instructions:
@@ -66,7 +66,7 @@ class InterpolatedCatProcessor(ProcessorDescription):
             )
 
     def apply_instruction(
-        self, name: str, qubits: Tuple[int, ...], params: list[float]
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
     ) -> AppliedInstruction:
         instr = self._instructions[(name, qubits)]
         idx = 0
