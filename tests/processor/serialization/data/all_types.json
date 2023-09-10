@@ -1,0 +1,389 @@
+{
+    "metadata": {
+        "schema_version": "str",
+        "generated_at": "str",
+        "name": "str"
+    },
+    "instructions": [
+        {
+            "name": "x",
+            "qubits": [
+                [
+                    0
+                ]
+            ],
+            "free_params": [
+                "nbar"
+            ],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.92,
+                        0.05,
+                        0.01,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 4
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.94,
+                        0.01,
+                        0.02,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6
+                    }
+                }
+            ]
+        },
+        {
+            "name": "y",
+            "qubits": [
+                [
+                    0
+                ]
+            ],
+            "free_params": [],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "duration": 1e-4,
+                    "params": {}
+                }
+            ]
+        },
+        {
+            "name": "rz",
+            "qubits": [
+                [
+                    0
+                ]
+            ],
+            "free_params": [
+                "nbar",
+                "angle"
+            ],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.92,
+                        0.05,
+                        0.01,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 4,
+                        "angle": 0
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.94,
+                        0.01,
+                        0.02,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 4,
+                        "angle": 3.14
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.94,
+                        0.02,
+                        0.02,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6,
+                        "angle": 0
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.94,
+                        0.03,
+                        0.02,
+                        0.01
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6,
+                        "angle": 3.14
+                    }
+                }
+            ]
+        },
+        {
+            "name": "delay",
+            "qubits": [
+                [
+                    0
+                ]
+            ],
+            "free_params": [
+                "nbar",
+                "gate_duration_ns"
+            ],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.85,
+                        0.05,
+                        0.04,
+                        0.06
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6,
+                        "gate_duration_ns": 1000
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.94,
+                        0.01,
+                        0.02,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6,
+                        "gate_duration_ns": 100
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.94,
+                        0.01,
+                        0.02,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 3,
+                        "gate_duration_ns": 1000
+                    }
+                }
+            ]
+        },
+        {
+            "name": "p+",
+            "qubits": [
+                [
+                    0
+                ],
+                [
+                    1
+                ]
+            ],
+            "free_params": [
+                "nbar"
+            ],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.98,
+                        0.0,
+                        0.0,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 4
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.97,
+                        0.0,
+                        0.0,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6
+                    }
+                }
+            ]
+        },
+        {
+            "name": "p0",
+            "qubits": [
+                [
+                    1
+                ]
+            ],
+            "free_params": [
+                "nbar"
+            ],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.98,
+                        0.0,
+                        0.0,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 4
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.97,
+                        0.0,
+                        0.0,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6
+                    }
+                }
+            ]
+        },
+        {
+            "name": "mx",
+            "qubits": [
+                [
+                    0
+                ],
+                [
+                    1
+                ]
+            ],
+            "free_params": [
+                "nbar"
+            ],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.92,
+                        0.04,
+                        0.02,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 4
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.93,
+                        0.01,
+                        0.03,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6
+                    }
+                }
+            ],
+            "readout_errors": [
+                0.1,
+                0.2
+            ]
+        },
+        {
+            "name": "mz",
+            "qubits": [
+                [
+                    0
+                ],
+                [
+                    1
+                ]
+            ],
+            "free_params": [],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.92,
+                        0.04,
+                        0.02,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {}
+                }
+            ],
+            "readout_errors": [
+                0.1,
+                0.2
+            ]
+        },
+        {
+            "name": "cx",
+            "qubits": [
+                [
+                    0, 1
+                ]
+            ],
+            "free_params": [],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.7,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02,
+                        0.02
+                    ],
+                    "duration": 1e-3,
+                    "params": {}
+                }
+            ]
+        }
+    ]
+}

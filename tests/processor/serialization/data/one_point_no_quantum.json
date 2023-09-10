@@ -1,0 +1,27 @@
+{
+    "metadata": {
+        "schema_version": "str",
+        "generated_at": "str",
+        "name": "str"
+    },
+    "instructions": [
+        {
+            "name": "x",
+            "qubits": [
+                [
+                    0
+                ]
+            ],
+            "free_params": [],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "duration": 1e-4,
+                    "params": {}
+                }
+            ]
+        }
+    ]
+}
