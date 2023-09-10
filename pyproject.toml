@@ -32,8 +32,10 @@ requires-python = ">=3.7"
 dependencies = [
     "requests",
     "qiskit-terra>=0.22.0",  # first version with backend transpiler plugins
+    "qiskit-aer",
     "qiskit-qir-alice-bob-fork==0.3.2b0",
-    "tenacity"
+    "tenacity",
+    "pydantic>=2.0"
 ]
 
 [project.optional-dependencies]
@@ -73,6 +75,8 @@ line_length = 79
 module = [
     "setuptools",
     "qiskit.*",
-    "qiskit_qir.*"
+    "qiskit_qir.*",
+    "qiskit_aer.*",
+    "scipy.*"
 ]
 ignore_missing_imports = true
