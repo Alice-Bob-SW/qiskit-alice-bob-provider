@@ -14,9 +14,15 @@
 #    limitations under the License.
 ##############################################################################
 
-from qiskit.circuit import Qubit, Reset
+from typing import Callable
+
+from qiskit.circuit import Instruction, Qubit, Reset
 from qiskit.dagcircuit import DAGCircuit, DAGInNode, DAGOpNode
 from qiskit.transpiler import TransformationPass
+
+
+def _reset_prep() -> Instruction:
+    return Reset()
 
 
 class EnsurePreparationPass(TransformationPass):
@@ -47,6 +53,12 @@ class EnsurePreparationPass(TransformationPass):
     from Qiskit to QIR.
     """
 
+    def __init__(
+        self, prep_instruction: Callable[[], Instruction] = _reset_prep
+    ):
+        super().__init__()
+        self._prep = prep_instruction
+
     def run(self, dag: DAGCircuit) -> DAGCircuit:
         preparations = {'reset', 'initialize', 'state_preparation'}
         for node in dag.topological_nodes():
@@ -62,7 +74,7 @@ class EnsurePreparationPass(TransformationPass):
                 new_dag = DAGCircuit()
                 new_dag.add_qubits(successor.qargs)
                 new_dag.add_clbits(successor.cargs)
-                new_dag.apply_operation_back(Reset(), qargs=(node.wire,))
+                new_dag.apply_operation_back(self._prep(), qargs=(node.wire,))
                 new_dag.apply_operation_back(
                     successor.op,
                     qargs=successor.qargs,
