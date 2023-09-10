@@ -1,0 +1,89 @@
+{
+    "metadata": {
+        "schema_version": "str",
+        "generated_at": "str",
+        "name": "str"
+    },
+    "instructions": [
+        {
+            "name": "x",
+            "qubits": [
+                [
+                    0
+                ]
+            ],
+            "free_params": [
+                "nbar"
+            ],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.92,
+                        0.05,
+                        0.01,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 4
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.94,
+                        0.01,
+                        0.02,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6
+                    }
+                }
+            ]
+        },
+        {
+            "name": "x",
+            "qubits": [
+                [
+                    0
+                ]
+            ],
+            "free_params": [
+                "nbar"
+            ],
+            "fixed_params": {
+                "foo": 42
+            },
+            "interpolation_points": [
+                {
+                    "pauli_probabilities": [
+                        0.92,
+                        0.05,
+                        0.01,
+                        0.02
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 4
+                    }
+                },
+                {
+                    "pauli_probabilities": [
+                        0.94,
+                        0.01,
+                        0.02,
+                        0.03
+                    ],
+                    "duration": 1e-4,
+                    "params": {
+                        "nbar": 6
+                    }
+                }
+            ]
+        }
+    ]
+}

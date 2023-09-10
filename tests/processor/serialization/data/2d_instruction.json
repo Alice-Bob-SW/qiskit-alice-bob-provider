@@ -1,0 +1,42 @@
+{
+    "name": "rz",
+    "qubits": [[0]],
+    "free_params": ["nbar", "angle"],
+    "fixed_params": {
+        "foo": 42
+    },
+    "interpolation_points": [
+        {
+            "pauli_probabilities": [0.92, 0.05, 0.01, 0.02],
+            "duration": 2e-4,
+            "params": {
+                "nbar": 4,
+                "angle": 0
+            }
+        },
+        {
+            "pauli_probabilities": [0.94, 0.01, 0.02, 0.03],
+            "duration": 3e-4,
+            "params": {
+                "nbar": 4,
+                "angle": 3.14
+            }
+        },
+        {
+            "pauli_probabilities": [0.94, 0.02, 0.02, 0.02],
+            "duration": 4e-4,
+            "params": {
+                "nbar": 6,
+                "angle": 0
+            }
+        },
+        {
+            "pauli_probabilities": [0.94, 0.03, 0.02, 0.01],
+            "duration": 5e-4,
+            "params": {
+                "nbar": 6,
+                "angle": 3.14
+            }
+        }
+    ]
+}

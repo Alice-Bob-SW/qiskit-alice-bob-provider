@@ -1,0 +1,24 @@
+{
+    "name": "rz",
+    "qubits": [[0]],
+    "free_params": ["nbar"],
+    "fixed_params": {
+        "foo": 42
+    },
+    "interpolation_points": [
+        {
+            "pauli_probabilities": [0.92, 0.05, 0.00, 0.03],
+            "duration": 1e-4,
+            "params": {
+                "nbar": 4
+            }
+        },
+        {
+            "pauli_probabilities": [0.81, 0.1, 0.02, 0.07],
+            "duration": 1e-5,
+            "params": {
+                "nbar": 6
+            }
+        }
+    ]
+}
