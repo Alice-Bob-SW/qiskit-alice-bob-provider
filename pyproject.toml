@@ -59,6 +59,7 @@ dev = [
 
 [project.entry-points."qiskit.transpiler.translation"]
 state_preparation = "qiskit_alice_bob_provider.translation_plugin:StatePreparationPlugin"
+local_state_preparation = "qiskit_alice_bob_provider.local.translation_plugin:LocalStatePreparationPlugin"
 
 [tool.setuptools.packages.find]
 include = ["qiskit_alice_bob_provider*"]
