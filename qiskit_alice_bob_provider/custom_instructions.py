@@ -16,7 +16,7 @@
 
 from typing import Optional
 
-from qiskit.circuit import Instruction, InstructionSet, QuantumCircuit
+from qiskit.circuit import Instruction, InstructionSet, QuantumCircuit, Reset
 from qiskit.circuit.equivalence_library import SessionEquivalenceLibrary
 from qiskit.circuit.quantumcircuit import ClbitSpecifier, QubitSpecifier
 
@@ -47,3 +47,16 @@ _measure_x_inst = MeasureX()
 SessionEquivalenceLibrary.add_equivalence(
     _measure_x_inst, _measure_x_inst.definition
 )
+
+
+# Add an equivalent from Reset to Initialize('0'). This is useful in the case
+# of the local provider.
+# Although we may want to preserve the Reset instruction for a future behavior
+# not yet implemented (e.g., resetting to the void state of the cavity in
+# case of cat qubits, which is not how the logical |0> state is encoded), users
+# are used to use Reset to actually say Initialize('0').
+# That's what this equivalence rule does. If it causes trouble in the future,
+# it may be removed.
+_c = QuantumCircuit(1, 0)
+_c.initialize('0', 0)
+SessionEquivalenceLibrary.add_equivalence(Reset(), _c)
