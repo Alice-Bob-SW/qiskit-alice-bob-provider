@@ -113,13 +113,13 @@ def _substitute_single_qubit_initialize(
     elif len(state) == 2 and isinstance(state[0], complex):
         global_phase = np.angle(state[0])
         state_ph = np.array(state) * np.exp(-1j * global_phase)
-        if np.array_equal(state_ph, np.array([1, 0])):
+        if np.allclose(state_ph, np.array([1, 0])):
             return Reset()
-        elif np.array_equal(state_ph, np.array([0, 1])):
+        elif np.allclose(state_ph, np.array([0, 1])):
             return Initialize([0, 1])
-        elif np.array_equal(state_ph, np.array([1, 1]) / np.sqrt(2)):
+        elif np.allclose(state_ph, np.array([1, 1]) / np.sqrt(2)):
             return None
-        elif np.array_equal(state_ph, np.array([1, -1]) / np.sqrt(2)):
+        elif np.allclose(state_ph, np.array([1, -1]) / np.sqrt(2)):
             return None
     raise AliceBobTranspilationException(
         f'The Initialize state preparation with desired state {state} is '
