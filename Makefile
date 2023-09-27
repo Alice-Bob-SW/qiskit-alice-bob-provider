@@ -1,13 +1,21 @@
 VENV=venv
-PYTHON=python
+
 MODULES=qiskit_alice_bob_provider tests
 BUILD_DIR=dist
 BASE_URL=
 API_KEY=
 ifeq ($(OS),Windows_NT)
     ACTIVATE=$(VENV)/Scripts/activate
+	PYTHON3_PATH=$(shell where python3 2> nul)
 else
     ACTIVATE=$(VENV)/bin/activate
+	PYTHON3_PATH=$(shell command -v python3 2> /dev/null)
+endif
+
+ifeq ($(PYTHON3_PATH),)
+	PYTHON=python
+else
+	PYTHON=python3
 endif
 
 #### Virtual environment
