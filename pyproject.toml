@@ -32,7 +32,7 @@ requires-python = ">=3.7"
 dependencies = [
     "requests",
     "qiskit-terra>=0.22.0",  # first version with backend transpiler plugins
-    "qiskit-qir-alice-bob-fork",
+    "qiskit-qir-alice-bob-fork==0.3.2b0",
     "tenacity"
 ]
 
