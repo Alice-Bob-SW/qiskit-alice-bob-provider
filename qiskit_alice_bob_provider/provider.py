@@ -21,7 +21,7 @@ from qiskit.providers.providerutils import filter_backends
 
 from .api.client import ApiClient
 from .api.targets import list_targets
-from .backend import AliceBobBackend
+from .backend import AliceBobRemoteBackend
 
 
 class AliceBobRemoteProvider(ProviderV1):
@@ -50,7 +50,7 @@ class AliceBobRemoteProvider(ProviderV1):
         )
         self._backends = []
         for ab_target in list_targets(client):
-            self._backends.append(AliceBobBackend(client, ab_target))
+            self._backends.append(AliceBobRemoteBackend(client, ab_target))
 
     def backends(
         self, name: Optional[str] = None, **kwargs

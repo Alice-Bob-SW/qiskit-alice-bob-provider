@@ -29,9 +29,8 @@ from .qir_to_qiskit import ab_target_to_qiskit_target
 from .utils import camel_to_snake_case, snake_to_camel_case
 
 
-class AliceBobBackend(BackendV2):
-    """Class representing the single cat simulator target accessible via the
-    Alice & Bob API"""
+class AliceBobRemoteBackend(BackendV2):
+    """Class representing the targets accessible via the Alice & Bob API."""
 
     def __init__(self, api_client: ApiClient, target_description: Dict):
         """This class should be instantiated by the AliceBobRemoteProvider.
@@ -48,7 +47,7 @@ class AliceBobBackend(BackendV2):
         self._options = _options_from_ab_target(target_description)
 
     def __repr__(self) -> str:
-        return f'<AliceBobBackend(name={self.name})>'
+        return f'<AliceBobRemoteBackend(name={self.name})>'
 
     @property
     def target(self) -> Target:
@@ -74,7 +73,8 @@ class AliceBobBackend(BackendV2):
         Args:
             run_input (QuantumCircuit): a Qiskit circuit
             **kwargs: additional arguments are interpreted as backend options.
-                List all options by calling :func:`AliceBobBackend.options`
+                List all options by calling
+                :func:`AliceBobRemoteBackend.options`
 
         Returns:
             AliceBobJob: A Qiskit job that is a reference to the job created in
