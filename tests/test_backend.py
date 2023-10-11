@@ -34,7 +34,7 @@ from qiskit_alice_bob_provider.provider import AliceBobProvider
 def test_options_validation(mocked_targets) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobProvider(api_key='foo')
-    backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(ValueError):
         execute(c, backend, average_nb_photons=40)
     with pytest.raises(ValueError):
@@ -50,7 +50,7 @@ def test_options_validation(mocked_targets) -> None:
 def test_too_many_qubits_clients_side(mocked_targets) -> None:
     c = QuantumCircuit(3, 1)
     provider = AliceBobProvider(api_key='foo')
-    backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(TranspilerError):
         execute(c, backend)
 
@@ -61,7 +61,7 @@ def test_counts_ordering(successful_job: Mocker) -> None:
     c.measure_x(0, 0)
     c.measure(0, 1)
     provider = AliceBobProvider(api_key='foo')
-    backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     job = execute(c, backend)
     counts = job.result(wait=0).get_counts()
     expected = {'11': 12, '10': 474, '01': 6, '00': 508}
@@ -73,7 +73,7 @@ def test_counts_ordering(successful_job: Mocker) -> None:
 def test_failed_transpilation(failed_transpilation_job: Mocker) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobProvider(api_key='foo')
-    backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     job = execute(c, backend)
     res: Result = job.result(wait=0)
     assert res.results[0].data.input_qir is not None
@@ -88,7 +88,7 @@ def test_failed_transpilation(failed_transpilation_job: Mocker) -> None:
 def test_failed_execution(failed_execution_job: Mocker) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobProvider(api_key='foo')
-    backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     job = execute(c, backend)
     res: Result = job.result(wait=0)
     assert res.results[0].data.input_qir is not None
@@ -100,7 +100,7 @@ def test_failed_execution(failed_execution_job: Mocker) -> None:
 def test_cancel_job(cancellable_job: Mocker) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobProvider(api_key='foo')
-    backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     job = execute(c, backend)
     job.cancel()
     res: Result = job.result(wait=0)
@@ -113,7 +113,7 @@ def test_cancel_job(cancellable_job: Mocker) -> None:
 def test_failed_server_side_validation(failed_validation_job: Mocker) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobProvider(api_key='foo')
-    backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(AliceBobApiException):
         execute(c, backend)
 

@@ -34,7 +34,7 @@ def test_happy_path(base_url: str, api_key: str) -> None:
         api_key=api_key,
         url=base_url,
     )
-    backend = provider.get_backend('SINGLE_CAT_SIMULATOR')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     job = execute(c, backend)
     res = job.result()
     res.get_counts()
