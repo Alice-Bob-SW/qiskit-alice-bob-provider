@@ -41,22 +41,22 @@ class AliceBobLocalProvider(ProviderV1):
         self._backend_builders: Dict[
             str, Callable[..., ProcessorSimulator]
         ] = {}
-        self._backend_builders['PHYSICAL_CATS_6'] = partial(
+        self._backend_builders['EMU:6Q:PHYSICAL_CATS'] = partial(
             self.build_physical_backend,
             n_qubits=6,
             coupling_map=circular_map(6),
-            name='PHYSICAL_CATS_6',
+            name='EMU:6Q:PHYSICAL_CATS',
         )
-        self._backend_builders['PHYSICAL_CATS_40'] = partial(
+        self._backend_builders['EMU:40Q:PHYSICAL_CATS'] = partial(
             self.build_physical_backend,
             n_qubits=40,
             coupling_map=rectangular_map(5, 8),
-            name='PHYSICAL_CATS_40',
+            name='EMU:40Q:PHYSICAL_CATS',
         )
-        self._backend_builders['LESCANNE_2020'] = partial(
+        self._backend_builders['EMU:1Q:LESCANNE_2020'] = partial(
             self.build_from_serialized,
             file_path=str(_PARENT_DIR / 'resources' / 'lescanne_2020.json'),
-            name='LESCANNE_2020',
+            name='EMU:1Q:LESCANNE_2020',
         )
         self._backends = [func() for func in self._backend_builders.values()]
 
