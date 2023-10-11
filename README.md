@@ -29,7 +29,7 @@ Where `MY_API_KEY` is your API key to the Alice & Bob API.
 
 ```python
 print(ab.backends())
-backend = ab.get_backend('SINGLE_CAT')
+backend = ab.get_backend('EMU:1Q:LESCANNE_2020')
 ```
 
 The backend can then be used like a regular Qiskit backend:
@@ -56,16 +56,16 @@ from qiskit import QuantumCircuit, execute, transpile
 
 provider = AliceBobLocalProvider()
 print(provider.backends())
-# PHYSICAL_CATS_6, PHYSICAL_CATS_40, LESCANNE_2020
+# EMU:6Q:PHYSICAL_CATS, EMU:40Q:PHYSICAL_CATS, EMU:1Q:LESCANNE_2020
 ```
 
-The `PHYSICAL_CATS` backends are theoretical models of quantum processors made
+The `EMU:nQ:PHYSICAL_CATS` backends are theoretical models of quantum processors made
 up of physical cat qubits.
 They can be used to study the properties of error correction codes implemented
 with physical cat qubits, for different hardware performance levels
 (see the parameters of class `PhysicalCatProcessor`).
 
-The `LESCANNE_2020` backend is an interpolated model simulating the processor
+The `EMU:1Q:LESCANNE_2020` backend is an interpolated model simulating the processor
 used in the [seminal paper](https://arxiv.org/pdf/1907.11729.pdf) by Raphaël
 Lescanne in 2020.
 This interpolated model is configured to act as a digital twin of the cat qubit
@@ -73,7 +73,7 @@ used in this paper.
 It does not represent the current performance of Alice & Bob's cat qubits.
 
 The example below schedules and simulates a Bell state preparation circuit on
-a `PHYSICAL_CATS_6` processor, for different values of parameters `alpha` and
+a `EMU:6Q:PHYSICAL_CATS` processor, for different values of parameters `alpha` and
 `kappa_2`.
 
 ```python
@@ -90,7 +90,7 @@ circ.measure(1, 1)
 
 # Default 6-qubit QPU with the ratio of memory dissipation rates set to
 # k1/k2=1e-5 and cat amplitude alpha set to 4.
-backend = provider.get_backend('PHYSICAL_CATS_6')
+backend = provider.get_backend('EMU:6Q:PHYSICAL_CATS')
 
 print(transpile(circ, backend).draw())
 # *Displays a timed and scheduled circuit*
@@ -99,7 +99,7 @@ print(execute(circ, backend, shots=100000).result().get_counts())
 # {'11': 49823, '00': 50177}
 
 # Changing the cat amplitude from 4 (default) to 2 and k1/k2 to 1e-2.
-backend = provider.get_backend('PHYSICAL_CATS_6', alpha=2, kappa_2=1e4)
+backend = provider.get_backend('EMU:6Q:PHYSICAL_CATS', alpha=2, kappa_2=1e4)
 print(execute(circ, backend, shots=100000).result().get_counts())
 # {'01': 557, '11': 49422, '10': 596, '00': 49425}
 ```
