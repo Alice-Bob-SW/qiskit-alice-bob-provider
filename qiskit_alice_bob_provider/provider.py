@@ -24,8 +24,10 @@ from .api.targets import list_targets
 from .backend import AliceBobBackend
 
 
-class AliceBobProvider(ProviderV1):
-    """Class listing and providing access to all Alice & Bob backends."""
+class AliceBobRemoteProvider(ProviderV1):
+    """
+    Class listing and providing access to all Alice & Bob remote backends.
+    """
 
     def __init__(
         self,

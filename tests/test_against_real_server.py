@@ -17,7 +17,7 @@
 import pytest
 from qiskit import QuantumCircuit, execute
 
-from qiskit_alice_bob_provider import AliceBobProvider
+from qiskit_alice_bob_provider import AliceBobRemoteProvider
 
 realserver = pytest.mark.skipif(
     "not config.getoption('api_key') and not config.getoption('base_url')"
@@ -30,7 +30,7 @@ def test_happy_path(base_url: str, api_key: str) -> None:
     c.initialize('+', 0)
     c.measure_x(0, 0)
     c.measure(0, 1)
-    provider = AliceBobProvider(
+    provider = AliceBobRemoteProvider(
         api_key=api_key,
         url=base_url,
     )
