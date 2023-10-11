@@ -46,7 +46,7 @@ class _DownloadedFile:
     content: Optional[str]
 
 
-class AliceBobJob(JobV1):
+class AliceBobRemoteJob(JobV1):
     """A Qiskit job referencing a job executed in the Alice & Bob API"""
 
     def __init__(

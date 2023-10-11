@@ -24,7 +24,7 @@ from qiskit_qir import to_qir_module
 from .api import jobs
 from .api.client import ApiClient
 from .ensure_preparation_pass import EnsurePreparationPass
-from .job import AliceBobJob
+from .job import AliceBobRemoteJob
 from .qir_to_qiskit import ab_target_to_qiskit_target
 from .utils import camel_to_snake_case, snake_to_camel_case
 
@@ -66,7 +66,7 @@ class AliceBobRemoteBackend(BackendV2):
         in translation_plugin.StatePreparationPlugin"""
         return 'state_preparation'
 
-    def run(self, run_input: QuantumCircuit, **kwargs) -> AliceBobJob:
+    def run(self, run_input: QuantumCircuit, **kwargs) -> AliceBobRemoteJob:
         """Run the quantum circuit on the Alice & Bob backend by calling the
         Alice & Bob API.
 
@@ -77,9 +77,10 @@ class AliceBobRemoteBackend(BackendV2):
                 :func:`AliceBobRemoteBackend.options`
 
         Returns:
-            AliceBobJob: A Qiskit job that is a reference to the job created in
-                the Alice & Bob API. The job is already started. Wait for the
-                results by calling :func:`AliceBobJob.result`.
+            AliceBobRemoteJob: A Qiskit job that is a reference to the job
+                created in the Alice & Bob API. The job is already started.
+                Wait for the results by calling
+                :func:`AliceBobRemoteJob.result`.
         """
         options: Options = self.options
         for key, value in kwargs.items():
@@ -92,7 +93,7 @@ class AliceBobRemoteBackend(BackendV2):
         jobs.upload_input(
             self._api_client, job['id'], _qiskit_to_qir(run_input)
         )
-        return AliceBobJob(
+        return AliceBobRemoteJob(
             backend=self,
             api_client=self._api_client,
             job_id=job['id'],
