@@ -18,11 +18,12 @@ will always install the  latest (and well-tested) version.
 
 To obtain an API key, please [contact Alice & Bob](https://alice-bob.com/contact/).
 
-You can initialize the Alice & Bob provider using your API key locally with:
+You can initialize the Alice & Bob remote provider using your API key
+locally with:
 
 ```python
-from qiskit_alice_bob_provider import AliceBobProvider
-ab = AliceBobProvider('MY_API_KEY')
+from qiskit_alice_bob_provider import AliceBobRemoteProvider
+ab = AliceBobRemoteProvider('MY_API_KEY')
 ```
 
 Where `MY_API_KEY` is your API key to the Alice & Bob API.

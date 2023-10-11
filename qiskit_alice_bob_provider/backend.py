@@ -34,7 +34,7 @@ class AliceBobBackend(BackendV2):
     Alice & Bob API"""
 
     def __init__(self, api_client: ApiClient, target_description: Dict):
-        """This class should be instantiated by the AliceBobProvider.
+        """This class should be instantiated by the AliceBobRemoteProvider.
 
         Args:
             api_client (ApiClient): a client for the Alice & Bob API.
