@@ -52,7 +52,7 @@ def api_key(request):
 @pytest.fixture
 def single_cat_target() -> dict:
     return {
-        'name': 'SINGLE_CAT_SIMULATOR',
+        'name': 'EMU:1Q:LESCANNE_2020',
         'numQubits': 1,
         'instructions': [
             {'signature': '__quantum__qis__read_result__body:i1 (%Result*)'},
@@ -214,7 +214,7 @@ def _job_response(job_id: str, events: List[Dict], errors: List[Dict]) -> dict:
     return {
         'inputDataFormat': 'HUMAN_QIR',
         'outputDataFormat': 'HISTOGRAM',
-        'target': 'SINGLE_CAT_SIMULATOR',
+        'target': 'EMU:1Q:LESCANNE_2020',
         'inputParams': {'nbShots': 100, 'averageNbPhotons': 4.0},
         'id': job_id,
         'userName': 'john',
