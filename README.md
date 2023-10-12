@@ -74,8 +74,8 @@ used in this paper.
 It does not represent the current performance of Alice & Bob's cat qubits.
 
 The example below schedules and simulates a Bell state preparation circuit on
-a `EMU:6Q:PHYSICAL_CATS` processor, for different values of parameters `alpha` and
-`kappa_2`.
+a `EMU:6Q:PHYSICAL_CATS` processor, for different values of parameters
+`average_nb_photons` and `kappa_2`.
 
 ```python
 from qiskit_alice_bob_provider import AliceBobLocalProvider
@@ -90,7 +90,7 @@ circ.measure(0, 0)
 circ.measure(1, 1)
 
 # Default 6-qubit QPU with the ratio of memory dissipation rates set to
-# k1/k2=1e-5 and cat amplitude alpha set to 4.
+# k1/k2=1e-5 and cat size, average_nb_photons, set to 16.
 backend = provider.get_backend('EMU:6Q:PHYSICAL_CATS')
 
 print(transpile(circ, backend).draw())
@@ -99,8 +99,10 @@ print(transpile(circ, backend).draw())
 print(execute(circ, backend, shots=100000).result().get_counts())
 # {'11': 49823, '00': 50177}
 
-# Changing the cat amplitude from 4 (default) to 2 and k1/k2 to 1e-2.
-backend = provider.get_backend('EMU:6Q:PHYSICAL_CATS', alpha=2, kappa_2=1e4)
+# Changing the cat size from 16 (default) to 4 and k1/k2 to 1e-2.
+backend = provider.get_backend(
+    'EMU:6Q:PHYSICAL_CATS', average_nb_photons=4, kappa_2=1e4
+)
 print(execute(circ, backend, shots=100000).result().get_counts())
 # {'01': 557, '11': 49422, '10': 596, '00': 49425}
 ```
