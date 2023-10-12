@@ -41,7 +41,7 @@ from qiskit.circuit.library import (
 from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.transpiler import Target
 
-from .custom_instructions import MeasureX
+from ..custom_instructions import MeasureX
 
 
 def ab_target_to_qiskit_target(ab_target: Dict) -> Target:

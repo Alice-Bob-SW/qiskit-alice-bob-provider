@@ -16,5 +16,4 @@
 
 # flake8: noqa: F401
 
-from .local import AliceBobLocalProvider
-from .remote import AliceBobRemoteProvider
+from .provider import AliceBobRemoteProvider

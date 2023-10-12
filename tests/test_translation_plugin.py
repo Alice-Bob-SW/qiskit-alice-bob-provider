@@ -22,7 +22,9 @@ from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.transpiler import PassManager
 
 from qiskit_alice_bob_provider.errors import AliceBobTranspilationException
-from qiskit_alice_bob_provider.translation_plugin import StatePreparationPass
+from qiskit_alice_bob_provider.remote.translation_plugin import (
+    StatePreparationPass,
+)
 
 _pm = PassManager([StatePreparationPass()])
 

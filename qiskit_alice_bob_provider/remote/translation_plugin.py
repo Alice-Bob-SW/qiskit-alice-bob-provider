@@ -23,7 +23,7 @@ from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.transpiler import PassManager, TransformationPass
 from qiskit.transpiler.preset_passmanagers.plugin import PassManagerStagePlugin
 
-from .errors import AliceBobTranspilationException
+from ..errors import AliceBobTranspilationException
 
 
 class StatePreparationPass(TransformationPass):
@@ -36,9 +36,9 @@ class StatePreparationPass(TransformationPass):
     qiskit-qir. Here's what happens:
     * '+' -> reset - h
     * '-' -> reset - x - h
-    * '0' -> (results in an exception: state_preparation not supported)
+    * '0' -> (results in an exception: remote_state_preparation not supported)
     * '1' -> reset - x
-    * 0 -> (results in an exception: state_preparation not supported)
+    * 0 -> (results in an exception: remote_state_preparation not supported)
     * 1 -> reset - x
     * [1, 0] -> (results in an exception: disentangler_dg not supported)
     * [0, 1] -> reset - ry(pi)

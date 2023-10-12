@@ -58,5 +58,5 @@ SessionEquivalenceLibrary.add_equivalence(
 # That's what this equivalence rule does. If it causes trouble in the future,
 # it may be removed.
 _c = QuantumCircuit(1, 0)
-_c.initialize('0', 0)
+_c.initialize('0', 0)  # pylint: disable=no-member
 SessionEquivalenceLibrary.add_equivalence(Reset(), _c)

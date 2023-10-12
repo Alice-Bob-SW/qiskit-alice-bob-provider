@@ -2,7 +2,9 @@ from typing import Dict
 
 import pytest
 
-from qiskit_alice_bob_provider.qir_to_qiskit import ab_target_to_qiskit_target
+from qiskit_alice_bob_provider.remote.qir_to_qiskit import (
+    ab_target_to_qiskit_target,
+)
 
 
 def test_single_cat(single_cat_target: Dict) -> None:
