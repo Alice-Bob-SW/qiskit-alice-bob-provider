@@ -18,6 +18,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
+import numpy as np
 from qiskit.providers import BackendV2, ProviderV1
 
 from ..processor.interpolated_cat import InterpolatedCatProcessor
@@ -57,6 +58,7 @@ class AliceBobLocalProvider(ProviderV1):
             self.build_from_serialized,
             file_path=str(_PARENT_DIR / 'resources' / 'lescanne_2020.json'),
             name='EMU:1Q:LESCANNE_2020',
+            average_nb_photons=4,
         )
         self._backends = [func() for func in self._backend_builders.values()]
 
@@ -87,7 +89,7 @@ class AliceBobLocalProvider(ProviderV1):
         n_qubits: int = 5,
         kappa_1: float = 100,
         kappa_2: float = 10_000_000,
-        alpha: float = 4,
+        average_nb_photons: float = 16,
         clock_cycle: float = 1e-9,
         coupling_map: Optional[List[Tuple[int, int]]] = None,
         name: Optional[str] = None,
@@ -103,7 +105,7 @@ class AliceBobLocalProvider(ProviderV1):
                 n_qubits=n_qubits,
                 kappa_1=kappa_1,
                 kappa_2=kappa_2,
-                alpha=alpha,
+                alpha=np.sqrt(average_nb_photons),
                 clock_cycle=clock_cycle,
                 coupling_map=coupling_map,
             ),
@@ -114,7 +116,7 @@ class AliceBobLocalProvider(ProviderV1):
         self,
         file_path: str,
         clock_cycle: float = 1e-9,
-        alpha: float = 2,
+        average_nb_photons: float = 16,
         name: Optional[str] = None,
     ) -> ProcessorSimulator:
         """Build a backend simulating a cat qubit based quantum processor
@@ -127,7 +129,7 @@ class AliceBobLocalProvider(ProviderV1):
             processor=InterpolatedCatProcessor(
                 serialized_processor=serialized,
                 clock_cycle=clock_cycle,
-                alpha=alpha,
+                alpha=np.sqrt(average_nb_photons),
             ),
             name=name,
         )
