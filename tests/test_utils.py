@@ -1,4 +1,4 @@
-from qiskit_alice_bob_provider.utils import (
+from qiskit_alice_bob_provider.remote.utils import (
     camel_to_snake_case,
     snake_to_camel_case,
 )

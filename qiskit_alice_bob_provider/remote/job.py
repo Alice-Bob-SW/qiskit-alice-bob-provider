@@ -30,9 +30,9 @@ from qiskit.result.models import (
     QobjExperimentHeader,
 )
 
+from ..errors import AliceBobException
 from .api import jobs
 from .api.client import ApiClient
-from .errors import AliceBobException
 
 
 @dataclass

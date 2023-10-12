@@ -23,12 +23,12 @@ from qiskit.result import Result
 from qiskit.transpiler.exceptions import TranspilerError
 from requests_mock.mocker import Mocker
 
-from qiskit_alice_bob_provider.api.client import AliceBobApiException
-from qiskit_alice_bob_provider.backend import (
+from qiskit_alice_bob_provider.remote.api.client import AliceBobApiException
+from qiskit_alice_bob_provider.remote.backend import (
     _ab_input_params_from_options,
     _qiskit_to_qir,
 )
-from qiskit_alice_bob_provider.provider import AliceBobRemoteProvider
+from qiskit_alice_bob_provider.remote.provider import AliceBobRemoteProvider
 
 
 def test_options_validation(mocked_targets) -> None:

@@ -19,8 +19,8 @@ import requests
 from requests_mock import ANY
 from requests_mock.mocker import Mocker
 
-from qiskit_alice_bob_provider.api import jobs, targets
-from qiskit_alice_bob_provider.api.client import ApiClient
+from qiskit_alice_bob_provider.remote.api import jobs, targets
+from qiskit_alice_bob_provider.remote.api.client import ApiClient
 
 
 def test_authentication(requests_mock: Mocker) -> None:
