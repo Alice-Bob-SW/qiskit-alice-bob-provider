@@ -64,7 +64,9 @@ def processor_to_target(processor: ProcessorDescription) -> Target:
 
     The last instruction (rzpio2) is a made-up example for the sake of clarity.
     """
-    target = Target(dt=processor.clock_cycle)
+    target = Target(
+        dt=processor.clock_cycle, num_qubits=processor.n_qubits or 0
+    )
 
     # qiskit name -> supported qubit combinations
     qubits: Dict[str, List[Tuple[int, ...]]] = {}
@@ -82,10 +84,16 @@ def processor_to_target(processor: ProcessorDescription) -> Target:
         example_instructions[name] = qiskit_instr
         if name not in qubits:
             qubits[name] = []
-        qubits[name].append(instruction.qubits)
+        if instruction.qubits is not None:
+            qubits[name].append(instruction.qubits)
 
     for name, qiskit_instr in example_instructions.items():
-        properties = {qbts: None for qbts in qubits[name]}
+        properties = (
+            None  # the instruction is all-to-all
+            if len(qubits[name]) == 0
+            # the instruction is attached to some qubits only
+            else {qbts: None for qbts in qubits[name]}
+        )
         target.add_instruction(
             instruction=qiskit_instr,
             properties=properties,

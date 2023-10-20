@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Sequence
 
 from qiskit.circuit import Delay, Instruction, QuantumCircuit
 from qiskit.circuit.equivalence_library import (
@@ -26,7 +26,8 @@ from qiskit.dagcircuit import DAGCircuit
 from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.quantum_info import Chi
 from qiskit.transpiler import TransformationPass
-from qiskit_aer.noise import LocalNoisePass, pauli_error
+from qiskit_aer.noise import pauli_error
+from qiskit_aer.noise.passes import LocalNoisePass
 
 from ..processor.description import InstructionProperties, ProcessorDescription
 from ..processor.utils import chi_to_pauli_errors, is_diagonal
@@ -45,8 +46,22 @@ def build_quantum_error_passes(
     simulation NoiseModel.
     """
 
+    all_to_all = processor.all_to_all_connectivity
+
     passes = [_AddMeasureMarkerPass()]
     for instruction in processor.all_instructions():
+        if all_to_all and instruction.qubits is not None:
+            raise ValueError(
+                'In a processor with all-to-all connectivity, instructions '
+                "can't be attached to qubits. "
+                f'Faulty instruction: {instruction}'
+            )
+        if not all_to_all and instruction.qubits is None:
+            raise ValueError(
+                'In a processor without all-to-all connectivity, instructions '
+                'must be attached to specific qubits. '
+                f'Faulty instruction: {instruction}'
+            )
         pass_ = _transpilation_pass_from_instruction(processor, instruction)
         if pass_ is not None:
             passes.append(pass_)
@@ -128,7 +143,7 @@ class _AddMeasureMarkerPass(TransformationPass):
 
 # The signature of the kind of functions accepted by qiskit_aer's
 # LocalNoisePass.
-_Pass = Callable[[Instruction, List[int]], Optional[Instruction]]
+_Pass = Callable[[Instruction, Sequence[int]], Optional[Instruction]]
 
 
 def _transpilation_pass_from_instruction(
@@ -174,10 +189,15 @@ def _pass_factory(
     param_handler_func = _param_handler_factory(processor, instr_properties)
 
     def _pass(
-        instruction: Instruction, qubits: List[int]
+        instruction: Instruction, qubits: Sequence[int]
     ) -> Optional[Instruction]:
-        if tuple(qubits) != instr_properties.qubits:
-            # if qubits don't match, insert nothing in circuit
+        qubits_ = tuple(qubits)
+        if (
+            instr_properties.qubits is not None
+            and qubits_ != instr_properties.qubits
+        ):
+            # if the instruction is not all-to-all and the qubits don't match,
+            # insert nothing in circuit
             return None
 
         params = param_handler_func(instruction)
@@ -188,7 +208,7 @@ def _pass_factory(
 
         chi_matrix = processor.apply_instruction(
             name=instr_properties.name,
-            qubits=instr_properties.qubits,
+            qubits=qubits_,
             params=params,
         ).quantum_errors
         if chi_matrix is None:
@@ -205,7 +225,7 @@ def _pass_factory(
                 list(pauli_errors.items())
             ).to_instruction()
         else:
-            n_qubits = len(instr_properties.qubits)
+            n_qubits = len(qubits_)
             # It is unclear why the 2**n_qubits is needed in the Qiskit
             # implementation of Chi matrices.
             error_instr = Chi(chi_matrix * (2**n_qubits)).to_instruction()
