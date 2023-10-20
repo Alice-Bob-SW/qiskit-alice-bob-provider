@@ -15,7 +15,7 @@
 ##############################################################################
 
 import warnings
-from typing import Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 from qiskit_aer.noise import NoiseModel, ReadoutError
 
@@ -40,17 +40,27 @@ def build_readout_noise_model(
     basis, so we would need to assign two readout errors per qubit. This is
     impossible in the current state of Qiskit.
     """
+    if proc.all_to_all_connectivity:
+        return _build_all_to_all_readout_noise_model(proc)
+    return _build_physical_readout_noise_model(proc)
 
+
+def _build_physical_readout_noise_model(
+    proc: ProcessorDescription,
+) -> Optional[NoiseModel]:
     qiskit_noise_model = NoiseModel()
     qubits_with_readout_error: Set[Tuple[int, ...]] = set()
 
     for instr in proc.all_instructions():
         if instr.readout_errors is None:
             continue
-        p_1_given_0, p_0_given_1 = instr.readout_errors
-        error = ReadoutError(
-            [[1 - p_1_given_0, p_1_given_0], [p_0_given_1, 1 - p_0_given_1]]
-        )
+        if instr.qubits is None:
+            raise ValueError(
+                'All-to-all instructions (i.e., not attached to specific '
+                'qubits) are not supported in a physical processor. '
+                f'Faulty instruction: {instr}'
+            )
+        error = _to_qiskit_readout_error(instr.readout_errors)
         if instr.qubits in qubits_with_readout_error:
             warnings.warn(
                 UserWarning(
@@ -59,10 +69,46 @@ def build_readout_noise_model(
                     f' {instr.name} will be ignored.'
                 )
             )
-        else:
-            qiskit_noise_model.add_readout_error(
-                error=error, qubits=instr.qubits
-            )
-            qubits_with_readout_error.add(instr.qubits)
+            continue
+        qiskit_noise_model.add_readout_error(error=error, qubits=instr.qubits)
+        qubits_with_readout_error.add(instr.qubits)
 
     return qiskit_noise_model
+
+
+def _build_all_to_all_readout_noise_model(
+    proc: ProcessorDescription,
+) -> Optional[NoiseModel]:
+    qiskit_noise_model = NoiseModel()
+    has_error = False
+
+    for instr in proc.all_instructions():
+        if instr.readout_errors is None:
+            continue
+        if instr.qubits is not None:
+            raise ValueError(
+                'Instructions attached to specific qubits are not supported '
+                'in an all-to-all processor. '
+                f'Faulty instruction: {instr}'
+            )
+        if has_error:
+            warnings.warn(
+                UserWarning(
+                    f'The all-to-all model already contain a readout error,'
+                    ' cannot add another one. The readout error of instruction'
+                    f' {instr.name} will be ignored.'
+                )
+            )
+            continue
+        error = _to_qiskit_readout_error(instr.readout_errors)
+        qiskit_noise_model.add_all_qubit_readout_error(error=error)
+        has_error = True
+
+    return qiskit_noise_model
+
+
+def _to_qiskit_readout_error(readout_errors: List[float]) -> ReadoutError:
+    p_1_given_0, p_0_given_1 = readout_errors
+    return ReadoutError(
+        [[1 - p_1_given_0, p_1_given_0], [p_0_given_1, 1 - p_0_given_1]]
+    )

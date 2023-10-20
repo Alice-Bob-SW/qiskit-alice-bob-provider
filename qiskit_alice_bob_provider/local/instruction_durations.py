@@ -130,9 +130,12 @@ class ProcessorInstructionDurations(InstructionDurations):
         parameters = list(parameters) if parameters else []
 
         try:
-            candidate_instructions = self._qiskit_to_proc_mapping[
-                (name, tuple(qubits))
-            ]
+            candidate_instructions = (
+                # instruction tied to a tuple of qubit
+                self._qiskit_to_proc_mapping.get((name, tuple(qubits)), None)
+                # instruction with all-to-all instruction
+                or self._qiskit_to_proc_mapping[(name, None)]
+            )
         except KeyError as e:
             raise ValueError(
                 _instruction_not_found(name, qubits, parameters)
@@ -171,7 +174,7 @@ def _instruction_not_found(
 
 
 _InstructionDict = Dict[
-    Tuple[str, Tuple[int, ...]], List[Tuple[Instruction, str]]
+    Tuple[str, Optional[Tuple[int, ...]]], List[Tuple[Instruction, str]]
 ]
 
 

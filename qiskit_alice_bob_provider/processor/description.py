@@ -30,7 +30,9 @@ class InstructionProperties:
 
     # The qubits on which this instruction can be applied.
     # The combination (name, qubits) completely identifies the instruction.
-    qubits: Tuple[int, ...]
+    # A value of None means the instructions can be applied on all tuples,
+    # which is the case for all-to-all connectivity.
+    qubits: Optional[Tuple[int, ...]]
 
     # The names of the parameters of the instruction
     params: List[str]
@@ -107,3 +109,13 @@ class ProcessorDescription(ABC):
     # If respecting the clock cycle is important, it is up to the user (e.g.,
     # the Qiskit transpiler) to clip durations to clock cycle multiples.
     clock_cycle: float
+
+    # The number of qubits accepted by the processor. This attribute should
+    # only be set in a processor with all-to-all connectivity.
+    # In a processor with instructions tied to tuples of qubits, the number of
+    # qubits will be computed by Qiskit.
+    n_qubits: Optional[int] = None
+
+    @property
+    def all_to_all_connectivity(self) -> bool:
+        return self.n_qubits is not None

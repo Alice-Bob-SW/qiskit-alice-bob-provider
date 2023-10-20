@@ -61,41 +61,99 @@ class _TestProcessor(ProcessorDescription):
         raise NotImplementedError()
 
 
-@pytest.fixture
-def instr_dur() -> ProcessorInstructionDurations:
-    return ProcessorInstructionDurations(_TestProcessor(1e-3))
+class _AllToAllTestProcessor(ProcessorDescription):
+    def __init__(self, clock_cycle: float):
+        self.clock_cycle = clock_cycle
+        self.n_qubits = 3
+
+    def all_instructions(self) -> Iterator[InstructionProperties]:
+        yield InstructionProperties(
+            name='delay', params=['duration'], qubits=None
+        )
+        yield InstructionProperties(name='ccx', params=[], qubits=None)
+        yield InstructionProperties(name='rx', params=['angle'], qubits=None)
+
+    def apply_instruction(
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
+    ) -> AppliedInstruction:
+        if name == 'delay':
+            return AppliedInstruction(
+                duration=params[0], quantum_errors=None, readout_errors=None
+            )
+        elif name == 'ccx':
+            return AppliedInstruction(
+                duration=0.1, quantum_errors=None, readout_errors=None
+            )
+        elif name == 'rx':
+            return AppliedInstruction(
+                duration=params[0] * 2,
+                quantum_errors=None,
+                readout_errors=None,
+            )
+        raise NotImplementedError()
 
 
-def test_bad_input(instr_dur: ProcessorInstructionDurations) -> None:
+@pytest.mark.parametrize(
+    'proc',
+    [
+        _TestProcessor(clock_cycle=1e-3),
+        _AllToAllTestProcessor(clock_cycle=1e-3),
+    ],
+)
+def test_bad_gate(proc: ProcessorDescription) -> None:
+    instr_dur = ProcessorInstructionDurations(proc)
     with pytest.raises(ValueError):  # bad instruction
         instr_dur.get(inst=XGate(), qubits=0)
+
+
+def test_bad_qubits() -> None:
+    proc = _TestProcessor(clock_cycle=1e-3)
+    instr_dur = ProcessorInstructionDurations(proc)
     with pytest.raises(ValueError):  # bad qubits
         instr_dur.get(inst=CCXGate(), qubits=(0, 1, 3))
 
 
-def test_instruction_as_string(
-    instr_dur: ProcessorInstructionDurations,
-) -> None:
+@pytest.mark.parametrize(
+    'proc',
+    [
+        _TestProcessor(clock_cycle=1e-3),
+        _AllToAllTestProcessor(clock_cycle=1e-3),
+    ],
+)
+def test_instruction_as_string(proc: ProcessorDescription) -> None:
+    instr_dur = ProcessorInstructionDurations(proc)
     assert instr_dur.get(inst='ccx', qubits=(0, 1, 2), unit='s') == 0.1
 
 
-def test_barrier(
-    instr_dur: ProcessorInstructionDurations,
-) -> None:
+@pytest.mark.parametrize(
+    'proc',
+    [
+        _TestProcessor(clock_cycle=1e-3),
+        _AllToAllTestProcessor(clock_cycle=1e-3),
+    ],
+)
+def test_barrier(proc: ProcessorDescription) -> None:
+    instr_dur = ProcessorInstructionDurations(proc)
     assert instr_dur.get(inst='barrier', qubits=(0, 1, 2), unit='s') == 0.0
     assert instr_dur.get(inst=Barrier(3), qubits=(0, 1, 2), unit='s') == 0.0
 
 
-def test_qubits_forwarded_to_processor(
-    instr_dur: ProcessorInstructionDurations,
-) -> None:
+def test_qubits_forwarded_to_processor() -> None:
+    proc = _TestProcessor(clock_cycle=1e-3)
+    instr_dur = ProcessorInstructionDurations(proc)
     assert instr_dur.get(inst=CCXGate(), qubits=(0, 1, 2), unit='s') == 0.1
     assert instr_dur.get(inst=CCXGate(), qubits=(0, 2, 1), unit='s') == 0.2
 
 
-def test_time_unit_conversion(
-    instr_dur: ProcessorInstructionDurations,
-) -> None:
+@pytest.mark.parametrize(
+    'proc',
+    [
+        _TestProcessor(clock_cycle=1e-3),
+        _AllToAllTestProcessor(clock_cycle=1e-3),
+    ],
+)
+def test_time_unit_conversion(proc: ProcessorDescription) -> None:
+    instr_dur = ProcessorInstructionDurations(proc)
     assert instr_dur.get(inst=Delay(2, 's'), qubits=(0,), unit='s') == 2
     assert instr_dur.get(inst=Delay(2, 'dt'), qubits=(0,), unit='s') == 2e-3
     assert instr_dur.get(inst=Delay(2, 'dt'), qubits=(0,), unit='dt') == 2
@@ -104,9 +162,17 @@ def test_time_unit_conversion(
     assert instr_dur.get(inst=Delay(2000, 'us'), qubits=(0,), unit='dt') == 2
 
 
-def test_instruction_with_params_not_delay(
-    instr_dur: ProcessorInstructionDurations,
+@pytest.mark.parametrize(
+    'proc',
+    [
+        _TestProcessor(clock_cycle=1e-3),
+        _AllToAllTestProcessor(clock_cycle=1e-3),
+    ],
+)
+def test_instructions_with_params_not_delay(
+    proc: ProcessorDescription,
 ) -> None:
+    instr_dur = ProcessorInstructionDurations(proc)
     assert (
         instr_dur.get(inst=RXGate(0.2), qubits=2, parameters=[0.3], unit='s')
         == 0.6

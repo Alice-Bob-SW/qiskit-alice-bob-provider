@@ -21,7 +21,11 @@ from qiskit_alice_bob_provider.processor.serialization.model import (
 )
 from qiskit_alice_bob_provider.processor.utils import pauli_errors_to_chi
 
-from .processor_fixture import OneQubitProcessor, SimpleProcessor
+from .processor_fixture import (
+    OneQubitProcessor,
+    SimpleAllToAllProcessor,
+    SimpleProcessor,
+)
 
 
 def gen_circuits() -> Iterator[Tuple[str, QuantumCircuit, Set[str]]]:
@@ -35,10 +39,24 @@ def gen_circuits() -> Iterator[Tuple[str, QuantumCircuit, Set[str]]]:
     yield ('everything_circuit', circ, {'11'})
 
 
-@pytest.mark.parametrize('tup', gen_circuits())
-def test_circuit(tup: Tuple[str, QuantumCircuit, Set[str]]) -> None:
+@pytest.mark.parametrize(
+    ['tup', 'backend'],
+    (
+        (tup, backend)
+        for tup in gen_circuits()
+        for backend in [
+            ProcessorSimulator(SimpleProcessor()),
+            ProcessorSimulator(
+                SimpleAllToAllProcessor(),
+            ),
+        ]
+    ),
+)
+def test_circuit(
+    tup: Tuple[str, QuantumCircuit, Set[str]], backend: ProcessorSimulator
+) -> None:
     _, circ, expected_keys = tup
-    backend = ProcessorSimulator(SimpleProcessor())
+    # backend = ProcessorSimulator(SimpleProcessor())
     job: ProcessorSimulationJob = execute(circ, backend)
     result = job.result()
     try:
