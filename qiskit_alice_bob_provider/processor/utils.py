@@ -37,6 +37,33 @@ def pauli_errors_to_chi(pauli_errors: Dict[str, float]) -> np.ndarray:
         np.ndarray: a quantum process tomography Chi matrix. The Qiskit link
         above is a good description of a Chi matrix.
     """
+    return np.diag(pauli_errors_to_chi_diag(pauli_errors))
+
+
+def pauli_errors_to_chi_diag(pauli_errors: Dict[str, float]) -> np.ndarray:
+    """Convert a collection of Pauli errors into a quantum process tomography
+    Chi matrix.
+
+    https://qiskit.org/documentation/stubs/qiskit.quantum_info.Chi.html
+
+    Args:
+        pauli_errors (Dict[str, float]): a dict of Pauli errors where the key
+        is the type of Pauli error as a string (e.g., 'I', 'X', 'XI', 'XZX')
+        and the value is the probability of this Pauli error.
+        The "no error" case (e.g., 'I', 'II', 'III', etc) should not be
+        provided as it will be computed automatically by difference.
+
+
+    Returns:
+        np.ndarray: the diagonal of a quantum process tomography Chi matrix.
+        The Qiskit link above is a good description of a Chi matrix.
+    """
+    if len(pauli_errors) == 0:
+        raise ValueError(
+            'An empty dict of Pauli errors cannot be converted to chi matrix '
+            '(need at least one error, even with probability 0, to determine '
+            'the number of qubits of the instruction)'
+        )
     some_pauli_label = next(iter(pauli_errors))
     n_qubits = len(some_pauli_label)
     diag = np.zeros(shape=(4**n_qubits,), dtype=float)
@@ -55,7 +82,7 @@ def pauli_errors_to_chi(pauli_errors: Dict[str, float]) -> np.ndarray:
             f' than 1. Probabilities: {pauli_errors}'
         ) from e
 
-    return np.diag(diag)
+    return diag
 
 
 def is_diagonal(m: np.ndarray) -> bool:
