@@ -22,6 +22,7 @@ import numpy as np
 from qiskit.providers import BackendV2, ProviderV1
 
 from ..processor.interpolated_cat import InterpolatedCatProcessor
+from ..processor.logical_cat import LogicalCatProcessor
 from ..processor.physical_cat import PhysicalCatProcessor
 from ..processor.serialization.model import SerializedProcessor
 from .backend import ProcessorSimulator
@@ -53,6 +54,24 @@ class AliceBobLocalProvider(ProviderV1):
             n_qubits=40,
             coupling_map=rectangular_map(5, 8),
             name='EMU:40Q:PHYSICAL_CATS',
+        )
+        self._backend_builders['EMU:40Q:LOGICAL_TARGET'] = partial(
+            self.build_logical_backend,
+            n_qubits=40,
+            distance=15,
+            kappa_1=100,
+            kappa_2=10_000_000,
+            average_nb_photons=19,
+            name='EMU:40Q:LOGICAL_TARGET',
+        )
+        self._backend_builders['EMU:15Q:LOGICAL_EARLY'] = partial(
+            self.build_logical_backend,
+            n_qubits=15,
+            distance=13,
+            kappa_1=100,
+            kappa_2=100_000,
+            average_nb_photons=7,
+            name='EMU:15Q:LOGICAL_EARLY',
         )
         self._backend_builders['EMU:1Q:LESCANNE_2020'] = partial(
             self.build_from_serialized,
@@ -109,6 +128,36 @@ class AliceBobLocalProvider(ProviderV1):
                 clock_cycle=clock_cycle,
                 coupling_map=coupling_map,
             ),
+            name=name,
+        )
+
+    # pylint: disable=too-many-arguments
+    def build_logical_backend(
+        self,
+        n_qubits: int = 40,
+        distance: int = 15,
+        kappa_1: float = 100,
+        kappa_2: float = 10_000_000,
+        average_nb_photons: float = 19,
+        clock_cycle: float = 1e-9,
+        name: Optional[str] = None,
+    ) -> ProcessorSimulator:
+        """Build a backend simulating a logical quantum processor whose logical
+        qubits are made of physical cat qubits.
+
+        Please refer to the docstring of ``LogicalCatProcessor`` to learn more
+        about the arguments.
+        """
+        return ProcessorSimulator(
+            processor=LogicalCatProcessor(
+                n_qubits=n_qubits,
+                distance=distance,
+                kappa_1=kappa_1,
+                kappa_2=kappa_2,
+                alpha=np.sqrt(average_nb_photons),
+                clock_cycle=clock_cycle,
+            ),
+            translation_stage_plugin='local_logical_cat',
             name=name,
         )
 
