@@ -14,6 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
+from itertools import product
 from typing import Dict, List, Union
 
 import numpy as np
@@ -176,3 +177,46 @@ def full_flip_error(
         0,
         1,
     )
+
+
+def compose_1q_errors(
+    a: Dict[str, float], b: Dict[str, float]
+) -> Dict[str, float]:
+    """Compose two sing-qubit Pauli error channels"""
+    a_diag = np.zeros((4,)) if len(a) == 0 else pauli_errors_to_chi_diag(a)
+    b_diag = np.zeros((4,)) if len(b) == 0 else pauli_errors_to_chi_diag(b)
+    a_v = a_diag[1:]
+    b_v = b_diag[1:]
+    output_v = (
+        a_v * b_diag[0]
+        + b_v * a_diag[0]
+        + np.roll(a_v, 1) * np.roll(b_v, 2)
+        + np.roll(a_v, 2) * np.roll(b_v, 1)
+    )
+    return {
+        'X': output_v[0],
+        'Y': output_v[1],
+        'Z': output_v[2],
+    }
+
+
+def tensor_errors(
+    a: Dict[str, float], b: Dict[str, float]
+) -> Dict[str, float]:
+    """Build a Pauli error channel that is the tensor product of two
+    lower-dimension Pauli error channels.
+
+    For example, if the first Pauli channel is (I, X) and the second one is
+    (II, YZ), then the output is (III, YZI, IIX, YZX)."""
+    id_a = 1.0 - sum(a.values())
+    id_b = 1.0 - sum(b.values())
+    id_str_a = len(next(iter(a))) * 'I'
+    id_str_b = len(next(iter(b))) * 'I'
+    output = {}
+    for b_pauli, b_prob in b.items():
+        output[b_pauli + id_str_a] = id_a * b_prob
+    for a_pauli, a_prob in a.items():
+        output[id_str_b + a_pauli] = id_b * a_prob
+    for (a_pauli, a_prob), (b_pauli, b_prob) in product(a.items(), b.items()):
+        output[b_pauli + a_pauli] = a_prob * b_prob
+    return output

@@ -2,10 +2,12 @@ import numpy as np
 import pytest
 
 from qiskit_alice_bob_provider.processor.utils import (
+    compose_1q_errors,
     full_flip_error,
     index_to_pauli_label,
     pauli_errors_to_chi,
     pauli_label_to_index,
+    tensor_errors,
 )
 
 
@@ -100,3 +102,27 @@ def test_flip_error() -> None:
     out = full_flip_error(input)
     for i in range(3):
         assert out[i] == pytest.approx(expected[i])
+
+
+def test_compose_errors() -> None:
+    computed = compose_1q_errors({'X': 0.2}, {'Z': 0.6})
+    expected = {
+        'X': 0.2 * (1.0 - 0.6),
+        'Y': 0.2 * 0.6,
+        'Z': 0.6 * (1.0 - 0.2),
+    }
+    assert len(computed) == len(expected)
+    for k, v in computed.items():
+        assert v == pytest.approx(expected[k])
+
+
+def test_tensor_errors() -> None:
+    computed = tensor_errors({'X': 0.2}, {'YZ': 0.6})
+    expected = {
+        'IIX': 0.2 * (1.0 - 0.6),
+        'YZX': 0.2 * 0.6,
+        'YZI': (1.0 - 0.2) * 0.6,
+    }
+    assert len(computed) == len(expected)
+    for k, v in computed.items():
+        assert v == pytest.approx(expected[k])
