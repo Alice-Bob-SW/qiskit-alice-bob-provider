@@ -58,7 +58,7 @@ class PhysicalCatProcessor(ProcessorDescription):
         self._n_qubits = n_qubits
         if alpha < 2.0:
             raise ValueError(
-                'The amplitude alpha should be a float between 2.0 and 20.0'
+                'The amplitude alpha should be a float larger than 2.0'
             )
         if kappa_1 < 10:
             raise ValueError(
