@@ -61,11 +61,14 @@ class ProcessorSimulator(BackendV2):
     ```
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         processor: ProcessorDescription,
         execution_backend: AerBackend = AerSimulator(),
         name: Optional[str] = None,
+        scheduling_stage_plugin: str = 'asap',
+        translation_stage_plugin: str = 'local_state_preparation',
     ):
         """A Qiskit backend enabling transpilation to and simulation of an
         arbitrary quantum processor, as described by a ProcessorDescription
@@ -85,6 +88,8 @@ class ProcessorSimulator(BackendV2):
             build_quantum_error_passes(processor)
         )
         self._noise_model = build_readout_noise_model(processor)
+        self._scheduling_stage_plugin = scheduling_stage_plugin
+        self._translation_stage_plugin = translation_stage_plugin
 
     @property
     def target(self) -> Target:
@@ -180,11 +185,11 @@ class ProcessorSimulator(BackendV2):
 
     def get_scheduling_stage_plugin(self) -> str:
         """Indicate to the Qiskit transpiler that the transpiled circuit should
-        additionally be scheduled (with the 'asap' method).
-        """
-        return 'asap'
+        additionally be scheduled (e.g., with the 'asap' method)"""
+        return self._scheduling_stage_plugin
 
     def get_translation_stage_plugin(self):
-        """This hook tells Qiskit to run the transpilation passes contained
-        in local.translation_plugin.LocalStatePreparationPlugin"""
-        return 'local_state_preparation'
+        """This hook tells Qiskit to run the transpilation passes using the
+        specified translation plugin
+        (e.g. local.translation_plugin.LocalStatePreparationPlugin)"""
+        return self._translation_stage_plugin

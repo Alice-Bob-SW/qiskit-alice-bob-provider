@@ -1,5 +1,6 @@
 from typing import List
 
+import numpy as np
 from qiskit import QuantumCircuit, execute, transpile
 from qiskit.extensions.quantum_initializer import Initialize
 
@@ -8,7 +9,7 @@ from qiskit_alice_bob_provider.processor.physical_cat import (
     PhysicalCatProcessor,
 )
 
-from .processor_fixture import SimpleProcessor
+from .processor_fixture import SimpleAllToAllProcessor, SimpleProcessor
 
 
 def _check_initialize(circuit: QuantumCircuit, expected: str) -> None:
@@ -66,3 +67,45 @@ def test_translation_plugin() -> None:
     circ.reset(2)
     transpiled = transpile(circ, backend)
     _check_initializes(transpiled, ['0', '1', '0'])
+
+
+def test_synthesize_rz() -> None:
+    backend = ProcessorSimulator(
+        SimpleAllToAllProcessor(), translation_stage_plugin='local_logical_cat'
+    )
+    circ = QuantumCircuit(1)
+    circ.rz(np.pi * 0.25, 0)
+    transpiled = transpile(circ, backend)
+    assert len(transpiled.get_instructions('rz')) == 0
+    assert len(transpiled.get_instructions('t')) == 1
+
+
+def test_synthesize_cz() -> None:
+    backend = ProcessorSimulator(
+        SimpleAllToAllProcessor(), translation_stage_plugin='local_logical_cat'
+    )
+    circ = QuantumCircuit(2)
+    circ.cz(0, 1)
+    transpiled = transpile(circ, backend)
+    assert len(transpiled.get_instructions('cz')) == 0
+    assert len(transpiled.get_instructions('h')) == 2
+
+
+def test_do_nothing_on_mx() -> None:
+    backend = ProcessorSimulator(
+        SimpleAllToAllProcessor(), translation_stage_plugin='local_logical_cat'
+    )
+    circ = QuantumCircuit(1, 1)
+    circ.measure_x(0, 0)
+    transpiled = transpile(circ, backend)
+    assert len(transpiled.get_instructions('measure_x')) == 1
+
+
+def test_do_nothing_on_pp() -> None:
+    backend = ProcessorSimulator(
+        SimpleAllToAllProcessor(), translation_stage_plugin='local_logical_cat'
+    )
+    circ = QuantumCircuit(1)
+    circ.initialize('+', 0)
+    transpiled = transpile(circ, backend)
+    assert len(transpiled.get_instructions('initialize')) == 1
