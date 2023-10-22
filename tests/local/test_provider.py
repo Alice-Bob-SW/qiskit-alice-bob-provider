@@ -25,4 +25,4 @@ def test_get_backend_change_nbar() -> None:
     assert isinstance(backend, ProcessorSimulator)
     proc = backend.target.durations()._proc
     assert isinstance(proc, PhysicalCatProcessor)
-    assert proc._alpha == pytest.approx(3.0)
+    assert proc._average_nb_photons == pytest.approx(9)
