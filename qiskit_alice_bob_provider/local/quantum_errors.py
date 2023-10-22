@@ -27,10 +27,10 @@ from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.quantum_info import Chi
 from qiskit.transpiler import TransformationPass
 from qiskit_aer.noise import pauli_error
-from qiskit_aer.noise.passes import LocalNoisePass
 
 from ..processor.description import InstructionProperties, ProcessorDescription
 from ..processor.utils import chi_to_pauli_errors, is_diagonal
+from .patch.local_noise_pass import LocalNoisePass
 from .proc_to_qiskit import processor_to_qiskit_instruction
 
 

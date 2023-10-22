@@ -197,3 +197,58 @@ def test_no_delay() -> None:
     circ.initialize('+')
     circ.measure_x(0, 0)
     assert execute(circ, backend, shots=1).result().get_counts() == {'1': 1}
+
+
+class _ConditioningProcessor(ProcessorDescription):
+    def __init__(self, clock_cycle: float = 1):
+        self.clock_cycle = clock_cycle
+        self.n_qubits = 2
+
+    def all_instructions(self) -> Iterator[InstructionProperties]:
+        yield InstructionProperties(name='p+', params=[], qubits=None)
+        yield InstructionProperties(name='p-', params=[], qubits=None)
+        yield InstructionProperties(name='mx', params=[], qubits=None)
+        yield InstructionProperties(name='x', params=[], qubits=None)
+
+    def apply_instruction(
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
+    ) -> AppliedInstruction:
+        if name == 'mx':
+            return AppliedInstruction(
+                duration=1e4,
+                quantum_errors=None,
+                readout_errors=None,
+            )
+        elif name in {'p+', 'p-'}:
+            return AppliedInstruction(
+                duration=1e2,
+                quantum_errors=None,
+                readout_errors=None,
+            )
+        elif name == 'x':
+            return AppliedInstruction(
+                duration=1e3,
+                quantum_errors=pauli_errors_to_chi({'Z': 1.0}),
+                readout_errors=None,
+            )
+        raise NotImplementedError()
+
+
+def test_conditional_instruction() -> None:
+    # Noiseless backend, except the X gate that has a 100% Z-flip error
+    backend = ProcessorSimulator(_ConditioningProcessor())
+
+    circ = QuantumCircuit(2, 2)
+    circ.initialize('++')
+    circ.measure_x(0, 0)
+    circ.x(1).c_if(0, 0)
+    circ.measure_x(1, 1)
+    assert execute(circ, backend, shots=1).result().get_counts() == {'10': 1}
+
+    circ = QuantumCircuit(2, 2)
+    circ.initialize('+-')
+    circ.measure_x(0, 0)
+    circ.x(1).c_if(0, 0)
+    circ.measure_x(1, 1)
+    job = execute(circ, backend, shots=1)
+    assert job.result().get_counts() == {'01': 1}
