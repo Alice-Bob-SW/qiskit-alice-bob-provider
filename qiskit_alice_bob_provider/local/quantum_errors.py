@@ -215,11 +215,16 @@ def _pass_factory(
             # if there is no quantum noise for this instruction, insert nothing
             # in circuit
             return None
-        if is_diagonal(chi_matrix):
+        if is_diagonal(chi_matrix) and instruction.condition is None:
             # if the matrix is diagonal, insert the noise as Pauli errors
             # rather than as a Chi/Kraus instruction.
             # This allows the user to use a Clifford simulator like
             # "stabilizer".
+            # About "instruction.condition is None":
+            # Unfortunately, Qiskit aer's pauli errors and Qiskit's
+            # conditional instruction c_if are incompatible: the condition is
+            # not applied on a Pauli error. This is a Qiskit bug to investigate
+            # someday.
             pauli_errors = chi_to_pauli_errors(chi_matrix)
             error_instr = pauli_error(
                 list(pauli_errors.items())
