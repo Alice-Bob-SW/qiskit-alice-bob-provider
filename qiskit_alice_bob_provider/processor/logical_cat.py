@@ -83,7 +83,7 @@ class LogicalCatProcessor(ProcessorDescription):
         distance: int = 11,
         kappa_1: float = 100,
         kappa_2: float = 10_000_000,
-        alpha: float = 4,
+        average_nb_photons: float = 16,
         clock_cycle: float = 1e-9,
     ):
         if distance % 2 != 1 or distance < 3:
@@ -91,14 +91,14 @@ class LogicalCatProcessor(ProcessorDescription):
                 'The distance of the linear repetition code should be an odd '
                 'number >= 3'
             )
-        if alpha < 2.0:
+        if average_nb_photons < 4.0:
             raise ValueError(
-                'The amplitude alpha should be a float larger than 2.0'
+                'The average number of photons should be a float >= 4.0'
             )
         if kappa_1 < 10:
             raise ValueError(
                 'The one-photon dissipation rate kappa_1 (Hz) should be a'
-                ' float greater than 10'
+                ' float >= 10'
             )
         if kappa_1 / kappa_2 < 1e-7 or kappa_1 / kappa_2 > 1e-1:
             raise ValueError(
@@ -107,7 +107,7 @@ class LogicalCatProcessor(ProcessorDescription):
         self._distance = distance
         self._kappa_1 = kappa_1
         self._kappa_2 = kappa_2
-        self._alpha = alpha
+        self._average_nb_photons = average_nb_photons
         self.clock_cycle = clock_cycle
         self.n_qubits = n_qubits
 
@@ -130,14 +130,14 @@ class LogicalCatProcessor(ProcessorDescription):
                 d=self._distance,
                 k1=self._kappa_1,
                 k2=self._kappa_2,
-                alpha=self._alpha,
+                nbar=self._average_nb_photons,
                 t=duration,
             )
         elif name in _1Q_INSTRUCTIONS:
             duration = _discrete_gate_time(d=self._distance, k2=self._kappa_2)
             errors = _1q_logical_error(
                 d=self._distance,
-                alpha=self._alpha,
+                nbar=self._average_nb_photons,
                 k1=self._kappa_1,
                 k2=self._kappa_2,
             )
@@ -147,7 +147,7 @@ class LogicalCatProcessor(ProcessorDescription):
                 d=self._distance,
                 k1=self._kappa_1,
                 k2=self._kappa_2,
-                alpha=self._alpha,
+                nbar=self._average_nb_photons,
             )
         elif name == 'ccx':
             duration = _discrete_gate_time(d=self._distance, k2=self._kappa_2)
@@ -155,7 +155,7 @@ class LogicalCatProcessor(ProcessorDescription):
                 d=self._distance,
                 k1=self._kappa_1,
                 k2=self._kappa_2,
-                alpha=self._alpha,
+                nbar=self._average_nb_photons,
             )
         else:
             raise ValueError(f'Unknown instruction name "{name}"')
@@ -164,9 +164,9 @@ class LogicalCatProcessor(ProcessorDescription):
         except ValueError as e:
             raise ValueError(
                 f'The parameters of the processor (distance={self._distance}, '
-                f'alpha={self._alpha}, kappa_1={self._kappa_1}, '
-                f'kappa_2={self._kappa_2}) led to inconsistent error '
-                f'probabilities for instruction "{name}"'
+                f'average_nb_photons={self._average_nb_photons}, '
+                f'kappa_1={self._kappa_1}, kappa_2={self._kappa_2}) led to '
+                f'inconsistent error probabilities for instruction "{name}"'
             ) from e
         return AppliedInstruction(
             duration=duration,
@@ -184,30 +184,29 @@ def _discrete_gate_time(d: int, k2: float) -> float:
     return 5 * d / k2
 
 
-def _logical_bit_flip_error(d: int, alpha: float) -> float:
+def _logical_bit_flip_error(d: int, nbar: float) -> float:
     # [AB-SHOR] https://arxiv.org/pdf/2302.06639v1.pdf
     # Eq. 3, p. 25.
     # This error is equal to d times the per measurement cycle error (at the
     # first order).
-    return (d - 1) * d * np.exp(-2 * alpha**2)
+    return (d - 1) * d * np.exp(-2 * nbar)
 
 
 def _logical_phase_flip_error(
-    d: int, alpha: float, k1: float, k2: float
+    d: int, nbar: float, k1: float, k2: float
 ) -> float:
     # [AB-SHOR] https://arxiv.org/pdf/2302.06639v1.pdf
     # Eq. 3, p. 25.
     # This error is equal to d times the per measurement cycle error (at the
     # first order).
-    n = np.abs(alpha) ** 2
-    return 5.6e-2 * d * (n**0.86 * k1 / k2 / 1.3e-2) ** (0.5 * (d + 1))
+    return 5.6e-2 * d * (nbar**0.86 * k1 / k2 / 1.3e-2) ** (0.5 * (d + 1))
 
 
 def _1q_logical_error(
-    d: int, alpha: float, k1: float, k2: float
+    d: int, nbar: float, k1: float, k2: float
 ) -> Dict[str, float]:
-    px = _logical_bit_flip_error(d=d, alpha=alpha)
-    pz = _logical_phase_flip_error(d=d, alpha=alpha, k1=k1, k2=k2)
+    px = _logical_bit_flip_error(d=d, nbar=nbar)
+    pz = _logical_phase_flip_error(d=d, nbar=nbar, k1=k1, k2=k2)
     x, y, z = full_flip_error([px, 0, pz])
     return {
         'X': x,
@@ -217,13 +216,13 @@ def _1q_logical_error(
 
 
 def _idle_error(
-    t: float, d: int, alpha: float, k1: float, k2: float
+    t: float, d: int, nbar: float, k1: float, k2: float
 ) -> Dict[str, float]:
     # Count the number of error correction cycles within duration t and compose
     # that many times the error correction cycle error.
     cycle_time = _discrete_gate_time(d=d, k2=k2)
     corr_cycles = int(t // cycle_time)
-    cycle_error = _1q_logical_error(d=d, alpha=alpha, k1=k1, k2=k2)
+    cycle_error = _1q_logical_error(d=d, nbar=nbar, k1=k1, k2=k2)
     # Why not an empty dict for the initial error? If an empty dict, the Pauli
     # errors cannot be converted into a chi matrix (because the number of
     # qubits is undetermined)
@@ -233,15 +232,15 @@ def _idle_error(
     return error
 
 
-def _cx_error(d: int, alpha: float, k1: float, k2: float) -> Dict[str, float]:
+def _cx_error(d: int, nbar: float, k1: float, k2: float) -> Dict[str, float]:
     # The tensor product of two independent single-qubit errors
-    single_error = _1q_logical_error(d=d, alpha=alpha, k1=k1, k2=k2)
+    single_error = _1q_logical_error(d=d, nbar=nbar, k1=k1, k2=k2)
     return tensor_errors(single_error, single_error)
 
 
-def _ccx_error(d: int, alpha: float, k1: float, k2: float) -> Dict[str, float]:
+def _ccx_error(d: int, nbar: float, k1: float, k2: float) -> Dict[str, float]:
     # The tensor product of three independent single-qubit errors
-    single_error = _1q_logical_error(d=d, alpha=alpha, k1=k1, k2=k2)
+    single_error = _1q_logical_error(d=d, nbar=nbar, k1=k1, k2=k2)
     return tensor_errors(
         tensor_errors(single_error, single_error), single_error
     )
