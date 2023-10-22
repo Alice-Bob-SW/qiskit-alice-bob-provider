@@ -51,19 +51,19 @@ class PhysicalCatProcessor(ProcessorDescription):
         n_qubits: int = 5,
         kappa_1: float = 100,
         kappa_2: float = 10_000_000,
-        alpha: float = 4,
+        average_nb_photons: float = 16,
         clock_cycle: float = 1e-9,
         coupling_map: Optional[List[Tuple[int, int]]] = None,
     ):
         self._n_qubits = n_qubits
-        if alpha < 2.0:
+        if average_nb_photons < 4.0:
             raise ValueError(
-                'The amplitude alpha should be a float larger than 2.0'
+                'The average number of photons should be a float >= 4.0'
             )
         if kappa_1 < 10:
             raise ValueError(
                 'The one-photon dissipation rate kappa_1 (Hz) should be a'
-                ' float greater than 10'
+                ' float >= 10'
             )
         if kappa_1 / kappa_2 < 1e-7 or kappa_1 / kappa_2 > 1e-1:
             raise ValueError(
@@ -71,7 +71,7 @@ class PhysicalCatProcessor(ProcessorDescription):
             )
         self._kappa_1 = kappa_1
         self._kappa_2 = kappa_2
-        self._alpha = alpha
+        self._average_nb_photons = average_nb_photons
         self.clock_cycle = clock_cycle
         if coupling_map is None:
             # All-to-all coupling map
@@ -108,46 +108,54 @@ class PhysicalCatProcessor(ProcessorDescription):
     ) -> AppliedInstruction:
         if name == 'mx':
             duration, errors = _mx_error(
-                k1=self._kappa_1, k2=self._kappa_2, alpha=self._alpha
+                k1=self._kappa_1,
+                k2=self._kappa_2,
+                nbar=self._average_nb_photons,
             )
         elif name == 'mz':
-            duration, errors = _mz_error(alpha=self._alpha)
+            duration, errors = _mz_error(nbar=self._average_nb_photons)
         elif name == 'delay':
             assert len(params) == 1
             duration = params[0]
             errors = _idle_error(
-                k1=self._kappa_1, alpha=self._alpha, t=duration
+                k1=self._kappa_1, nbar=self._average_nb_photons, t=duration
             )
         elif name in ['p+', 'p-']:
             duration, errors = _prep_plus_error(
-                k1=self._kappa_1, k2=self._kappa_2, alpha=self._alpha
+                k1=self._kappa_1,
+                k2=self._kappa_2,
+                nbar=self._average_nb_photons,
             )
         elif name in ['p0', 'p1']:
             duration, errors = _prep_0_error(
-                k2=self._kappa_2, alpha=self._alpha
+                k2=self._kappa_2, nbar=self._average_nb_photons
             )
         elif name == 'x':
             duration, errors = _x_error(
-                k1=self._kappa_1, k2=self._kappa_2, alpha=self._alpha
+                k1=self._kappa_1,
+                k2=self._kappa_2,
+                nbar=self._average_nb_photons,
             )
         elif name == 'rz':
             assert len(params) == 1
             duration, errors = _rz_error(
                 k1=self._kappa_1,
                 k2=self._kappa_2,
-                alpha=self._alpha,
+                nbar=self._average_nb_photons,
                 theta=params[0],
             )
         elif name == 'z':
             duration, errors = _rz_error(
                 k1=self._kappa_1,
                 k2=self._kappa_2,
-                alpha=self._alpha,
+                nbar=self._average_nb_photons,
                 theta=np.pi,
             )
         elif name == 'cx':
             duration, errors = _cx_error(
-                k1=self._kappa_1, k2=self._kappa_2, alpha=self._alpha
+                k1=self._kappa_1,
+                k2=self._kappa_2,
+                nbar=self._average_nb_photons,
             )
         else:
             raise ValueError(f'Unknown instruction name "{name}"')
@@ -155,9 +163,10 @@ class PhysicalCatProcessor(ProcessorDescription):
             quantum_errors = pauli_errors_to_chi(errors)
         except ValueError as e:
             raise ValueError(
-                f'The parameters of the processor (alpha={self._alpha}, '
-                f'kappa_1={self._kappa_1}, kappa_2={self._kappa_2}) led to '
-                f'inconsistent error probabilities for instruction "{name}"'
+                'The parameters of the processor (average_nb_photons='
+                f'{self._average_nb_photons}, kappa_1={self._kappa_1}, '
+                f'kappa_2={self._kappa_2}) led to inconsistent error '
+                f'probabilities for instruction "{name}"'
             ) from e
         return AppliedInstruction(
             duration=duration,
@@ -166,15 +175,14 @@ class PhysicalCatProcessor(ProcessorDescription):
         )
 
 
-def _idle_error(k1, alpha, t):
+def _idle_error(k1, nbar, t):
     # [LES-HOUCHES] https://arxiv.org/pdf/2203.03222.pdf
     # The prefactor 1.1e-3 was chosen to match the alpha**2=8 point of the blue
     # curve in Fig. 7, p. 29:
     # The total bitflip probability (px+py) must be 1e-11 for alpha**2=8,
     # k1/k2=1e-2, t=1/k2.
-    alpha_n = np.abs(alpha)
-    bit_flip = 0.5 * 1.1e-3 * alpha_n**2 * k1 * np.exp(-2 * alpha_n**2) * t
-    phase_flip = k1 * alpha_n**2 * t
+    bit_flip = 0.5 * 1.1e-3 * nbar * k1 * np.exp(-2 * nbar) * t
+    phase_flip = k1 * nbar * t
     x, y, z = full_flip_error([bit_flip, bit_flip, phase_flip])
     return {
         'X': x,
@@ -183,60 +191,59 @@ def _idle_error(k1, alpha, t):
     }
 
 
-def _prep_plus_error(k1, k2, alpha):
+def _prep_plus_error(k1, k2, nbar):
     # [AB-SHOR] https://arxiv.org/pdf/2302.06639v1.pdf
     # Page 25
     t = 1.0 / k2
-    errors = {'Z': np.abs(alpha) ** 2 * k1 * t}
+    errors = {'Z': nbar * k1 * t}
     return t, errors
 
 
-def _prep_0_error(k2, alpha):
+def _prep_0_error(k2, nbar):
     # [AWS-2022] https://arxiv.org/pdf/2012.04108.pdf
     # Table II, p. 17
-    alpha_n = np.abs(alpha)
-    t = 0.1 / k2 / alpha_n**2
-    errors = {'X': 0.39 * np.exp(-4 * alpha_n**2)}
+    t = 0.1 / k2 / nbar
+    errors = {'X': 0.39 * np.exp(-4 * nbar)}
     return t, errors
 
 
-def _x_error(k1, k2, alpha):
+def _x_error(k1, k2, nbar):
     t = 1.0 / k2
-    return t, _idle_error(k1, np.abs(alpha), t)
+    return t, _idle_error(k1, nbar, t)
 
 
-def _mx_error(k1, k2, alpha):
+def _mx_error(k1, k2, nbar):
     # [AB-SHOR] https://arxiv.org/pdf/2302.06639v1.pdf
     # Page 25
     t = 1.0 / k2
     errors = {
-        'Z': np.abs(alpha) ** 2 * k1 * t,
+        'Z': nbar * k1 * t,
     }
     return t, errors
 
 
-def _mz_error(alpha):
+def _mz_error(nbar):
     # [AWS-2022] https://arxiv.org/pdf/2012.04108.pdf
     # Eq. 38, p. 18
     t = 850e-9
     errors = {
-        'X': np.exp(-1.5 - 0.9 * np.abs(alpha) ** 2),
+        'X': np.exp(-1.5 - 0.9 * nbar),
     }
     return t, errors
 
 
-def _rz_error(k1, k2, alpha, theta):
+def _rz_error(k1, k2, nbar, theta):
     # [JEREMIE] https://hal.science/tel-03509305/document
     # p. 65
     # (Careful, there is an error in the formula: it should be |theta| instead
     # of sqrt(theta).)
-    alpha_n = np.abs(alpha)
-    t = 0.25 * np.abs(theta) / (alpha_n**3 * np.sqrt(k1 * k2))
+    alpha = np.sqrt(nbar)
+    t = 0.25 * np.abs(theta) / (alpha**3 * np.sqrt(k1 * k2))
     x, y, z = full_flip_error(
         [
             0,
             0,
-            np.abs(theta) / (2 * alpha_n) * np.sqrt(k1 / k2),
+            np.abs(theta) / (2 * alpha) * np.sqrt(k1 / k2),
         ]
     )
     errors = {
@@ -247,20 +254,17 @@ def _rz_error(k1, k2, alpha, theta):
     return t, errors
 
 
-def _cx_error(k1, k2, alpha):
+def _cx_error(k1, k2, nbar):
     # [AB-SHOR] https://arxiv.org/pdf/2302.06639v1.pdf
     # Page 25
-    alpha_n = np.abs(alpha)
     t = 1 / k2
-    zi_error = alpha_n**2 * k1 * t + np.pi**2 / 64 / alpha_n**2 / k2 / t
-    zz_error = 0.5 * alpha_n**2 * k1 * t
+    zi_error = nbar * k1 * t + np.pi**2 / 64 / nbar / k2 / t
+    zz_error = 0.5 * nbar * k1 * t
 
     # The prefactor 2631 was chosen so that the total probability of bit flip
     # is equal to 0.5exp(-2alpha**2) with alpha**2=19 and k1/k2=1e-5.
     # This is to match Eq. D8, p. 26.
-    xi_error = (
-        2631 * alpha_n**2 * k1 * np.exp(-2 * np.abs(alpha_n) ** 2) * t / 6
-    )
+    xi_error = 2631 * nbar * k1 * np.exp(-2 * nbar) * t / 6
 
     # This is acceptable because this error is 100x smaller than XI.
     iy_error = 0

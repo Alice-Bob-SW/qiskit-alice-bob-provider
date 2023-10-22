@@ -22,7 +22,7 @@ def test_bad_coupling_map() -> None:
 
 def test_cx_prefactor() -> None:
     proc = PhysicalCatProcessor(
-        kappa_1=100, kappa_2=10_000_000, alpha=np.sqrt(19)
+        kappa_1=100, kappa_2=10_000_000, average_nb_photons=19
     )
     ret = proc.apply_instruction('cx', (0, 1), [])
     terms = ['IX', 'XX', 'XI', 'IY', 'XY', 'XZ']
@@ -35,7 +35,9 @@ def test_cx_prefactor() -> None:
 
 
 def test_idle_prefactor() -> None:
-    proc = PhysicalCatProcessor(kappa_1=100, kappa_2=10_000, alpha=np.sqrt(8))
+    proc = PhysicalCatProcessor(
+        kappa_1=100, kappa_2=10_000, average_nb_photons=8
+    )
     ret = proc.apply_instruction('delay', (0,), [1e-4])
     terms = ['X', 'Y']
     s = -np.infty
@@ -48,18 +50,18 @@ def test_idle_prefactor() -> None:
 
 def test_parameter_validation() -> None:
     with pytest.raises(ValueError):
-        PhysicalCatProcessor(alpha=-3)
+        PhysicalCatProcessor(average_nb_photons=-3)
     with pytest.raises(ValueError):
         PhysicalCatProcessor(kappa_1=2)
     with pytest.raises(ValueError):
         PhysicalCatProcessor(kappa_1=100, kappa_2=100_000_000_000)
     PhysicalCatProcessor(kappa_1=10)
     PhysicalCatProcessor(kappa_1=10, kappa_2=10_000)
-    PhysicalCatProcessor(alpha=2)
+    PhysicalCatProcessor(average_nb_photons=4)
 
 
 def test_unrealistic_probabilities() -> None:
-    proc = PhysicalCatProcessor(kappa_1=10_000, alpha=400)
+    proc = PhysicalCatProcessor(kappa_1=10_000, average_nb_photons=1_000)
     with pytest.raises(ValueError):
         proc.apply_instruction('cx', (0, 1), [])
 
