@@ -154,7 +154,7 @@ class AliceBobLocalProvider(ProviderV1):
                 distance=distance,
                 kappa_1=kappa_1,
                 kappa_2=kappa_2,
-                alpha=np.sqrt(average_nb_photons),
+                average_nb_photons=average_nb_photons,
                 clock_cycle=clock_cycle,
             ),
             translation_stage_plugin='local_logical_cat',
