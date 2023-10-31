@@ -15,6 +15,7 @@
 ##############################################################################
 
 import csv
+import logging
 from dataclasses import dataclass
 from io import StringIO
 from typing import Callable, Dict, Optional
@@ -30,7 +31,6 @@ from qiskit.result.models import (
     QobjExperimentHeader,
 )
 
-from ..errors import AliceBobException
 from .api import jobs
 from .api.client import ApiClient
 
@@ -214,12 +214,17 @@ def _ab_event_to_qiskit_status(event: str) -> JobStatus:
         'COMPILATION_FAILED',
         'TRANSPILATION_FAILED',
         'EXECUTION_FAILED',
+        'TIMED_OUT',
     }:
         return JobStatus.ERROR
     elif event == 'SUCCEEDED':
         return JobStatus.DONE
     elif event == 'CANCELLED':
         return JobStatus.CANCELLED
-    raise AliceBobException(
-        f'Received unexpected job event "{event}" from Alice & Bob\'s API'
+    logging.warning(
+        f'Received unexpected job event {event}. \n'
+        'Please ensure you are running the latest version of the Alice & Bob '
+        'Provider .'
     )
+    # An unknown job status will be considered to be an Error by default.
+    return JobStatus.ERROR
