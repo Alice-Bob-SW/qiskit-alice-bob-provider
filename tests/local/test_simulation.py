@@ -22,6 +22,7 @@ from qiskit_alice_bob_provider.processor.serialization.model import (
 from qiskit_alice_bob_provider.processor.utils import pauli_errors_to_chi
 
 from .processor_fixture import (
+    LargeSimpleProcessor,
     OneQubitProcessor,
     SimpleAllToAllProcessor,
     SimpleProcessor,
@@ -253,3 +254,15 @@ def test_conditional_instruction() -> None:
     circ.measure_x(1, 1)
     job = execute(circ, backend, shots=1)
     assert job.result().get_counts() == {'01': 1}
+
+
+def test_large_processor() -> None:
+    """A processor with more qubits (40 here) than accepted by AerSimulator
+    (29 on my machine, this is based on system memory) would fail. A fix was
+    implemented in local/backend.py"""
+    backend = ProcessorSimulator(LargeSimpleProcessor())
+    circ = QuantumCircuit(1, 1)
+    circ.initialize('0')
+    circ.delay(1, 0, unit='s')
+    circ.measure(0, 0)
+    execute(circ, backend)
