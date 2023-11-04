@@ -150,6 +150,36 @@ class SimpleAllToAllProcessor(ProcessorDescription):
         return _simple_apply_instruction(name=name, params=params)
 
 
+class LargeSimpleProcessor(ProcessorDescription):
+    def __init__(self, clock_cycle: float = 1):
+        self.clock_cycle = clock_cycle
+
+    def all_instructions(self) -> Iterator[InstructionProperties]:
+        for i, j in product(range(40), range(40)):
+            if i != j:
+                yield InstructionProperties(
+                    name='cx', params=[], qubits=(i, j)
+                )
+        for i in range(40):
+            yield InstructionProperties(name='h', params=[], qubits=(i,))
+            yield InstructionProperties(name='x', params=[], qubits=(i,))
+            if i != 2:
+                yield InstructionProperties(name='y', params=[], qubits=(i,))
+            yield InstructionProperties(name='p+', params=[], qubits=(i,))
+            yield InstructionProperties(name='p0', params=[], qubits=(i,))
+            yield InstructionProperties(name='p1', params=[], qubits=(i,))
+            yield InstructionProperties(name='mx', params=[], qubits=(i,))
+            yield InstructionProperties(name='mz', params=[], qubits=(i,))
+            yield InstructionProperties(
+                name='delay', params=['duration'], qubits=(i,)
+            )
+
+    def apply_instruction(
+        self, name: str, qubits: Tuple[int, ...], params: List[float]
+    ) -> AppliedInstruction:
+        return _simple_apply_instruction(name=name, params=params)
+
+
 class ReadoutErrorProcessor(ProcessorDescription):
     def __init__(self, clock_cycle: float = 1):
         self.clock_cycle = clock_cycle

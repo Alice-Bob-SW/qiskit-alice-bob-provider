@@ -82,8 +82,9 @@ class ProcessorSimulator(BackendV2):
             name (Optional[str], optional): an optional name for the backend.
         """
         super().__init__(name=name, backend_version=1)
-        self._execution_backend = execution_backend
         self._target = processor_to_target(processor)
+        self._execution_backend = execution_backend
+        self._execution_backend.set_option('n_qubits', self._target.num_qubits)
         self._noise_pass_manager = PassManager(
             build_quantum_error_passes(processor)
         )
