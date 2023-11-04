@@ -16,8 +16,11 @@
 
 # pylint: disable=unused-argument
 
+from pathlib import Path
+from textwrap import dedent
+
 import pytest
-from qiskit import QiskitError, QuantumCircuit, execute
+from qiskit import QiskitError, QuantumCircuit, execute, transpile
 from qiskit.providers import Options
 from qiskit.result import Result
 from qiskit.transpiler.exceptions import TranspilerError
@@ -136,3 +139,27 @@ def test_ab_input_params_from_options() -> None:
     options = Options(shots=43, average_nb_photons=3.2, foo_hey='bar')
     params = _ab_input_params_from_options(options)
     assert params == {'nbShots': 43, 'averageNbPhotons': 3.2, 'fooHey': 'bar'}
+
+
+def test_translation_plugin_and_qir(mocked_targets) -> None:
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('ALL_INSTRUCTIONS')
+
+    c = QuantumCircuit(4, 4)
+    c.initialize('-01+')
+    c.measure([0, 1], [2, 3])
+    c.x(2).c_if(2, 1)
+    c.measure_x(2, 0)
+    c.measure_x(3, 1)
+
+    transpiled = transpile(c, backend)
+    qir = _qiskit_to_qir(transpiled)
+
+    assert (
+        dedent(
+            Path(
+                'tests/resources/test_translation_plugin_and_qir.ll'
+            ).read_text(encoding='utf-8')
+        )
+        in qir
+    )

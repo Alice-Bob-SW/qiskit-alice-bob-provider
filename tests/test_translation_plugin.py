@@ -1,170 +1,90 @@
-##############################################################################
-# Copyright 2023 Alice & Bob
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#        http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
-##############################################################################
+from typing import List
 
-import numpy as np
 import pytest
 from qiskit import QuantumCircuit
-from qiskit.circuit import Reset
 from qiskit.extensions.quantum_initializer import Initialize
-from qiskit.transpiler import PassManager
+from qiskit.transpiler import PassManager, TranspilerError
 
-from qiskit_alice_bob_provider.errors import AliceBobTranspilationException
-from qiskit_alice_bob_provider.remote.translation_plugin import (
-    StatePreparationPass,
+from qiskit_alice_bob_provider.translation_plugin import (
+    BreakDownInitializePass,
+    EnsurePreparationPass,
+    IntToLabelInitializePass,
 )
 
-_pm = PassManager([StatePreparationPass()])
+
+def _check_initialize(circuit: QuantumCircuit, expected: str) -> None:
+    initializes = circuit.get_instructions('initialize')
+    assert len(initializes) == 1
+    assert isinstance(initializes[0].operation, Initialize)
+    params = initializes[0].operation.params
+    assert params == list(expected)
 
 
-def test_str_plus() -> None:
-    c = QuantumCircuit(2, 1)
-    c.initialize('+', 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('initialize')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Initialize)
-    assert np.array_equal(op.params, np.array([1, 1]) / np.sqrt(2))
+def test_int_to_label() -> None:
+    pm = PassManager([IntToLabelInitializePass()])
+
+    # int(2) should map to '10'
+    circ = QuantumCircuit(2)
+    circ.initialize(2)
+    transpiled = pm.run(circ)
+    _check_initialize(transpiled, '10')
+
+    # a string label should pass unchanged
+    circ = QuantumCircuit(2)
+    circ.initialize('+0')
+    transpiled = pm.run(circ)
+    _check_initialize(transpiled, '+0')
+
+    # a state vector should fail
+    circ = QuantumCircuit(2)
+    circ.initialize([1, 0, 0, 0])
+    with pytest.raises(TranspilerError):
+        pm.run(circ)
 
 
-def test_str_minus() -> None:
-    c = QuantumCircuit(2, 1)
-    c.initialize('-', 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('initialize')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Initialize)
-    assert np.array_equal(op.params, np.array([1, -1]) / np.sqrt(2))
+def _check_initializes(circuit: QuantumCircuit, expected: List[str]) -> None:
+    initializes = circuit.get_instructions('initialize')
+    assert len(initializes) == len(expected)
+    for initialize in initializes:
+        assert len(initialize.qubits) == 1
+        qubit = circuit.find_bit(initialize.qubits[0]).index
+        assert isinstance(initialize.operation, Initialize)
+        assert initialize.operation.params[0] == expected[qubit]
 
 
-def test_str_0() -> None:
-    c = QuantumCircuit(2, 1)
-    c.initialize('0', 1)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('reset')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 1
-    op = instructions[0].operation
-    assert isinstance(op, Reset)
+def test_break_down() -> None:
+    pm = PassManager([BreakDownInitializePass()])
+
+    # Initialize('10') is broken down into '0' on qubit 0, '1' on qubit 1
+    circ = QuantumCircuit(2)
+    circ.initialize('10')
+    transpiled = pm.run(circ)
+    _check_initializes(transpiled, ['0', '1'])
+
+    # Initialize('+') is broken down into '1' on qubit 0
+    circ = QuantumCircuit(2)
+    circ.initialize('+', 0)
+    transpiled = pm.run(circ)
+    _check_initializes(transpiled, ['+'])
+
+    # fails on int
+    circ = QuantumCircuit(2)
+    circ.initialize(2)
+    with pytest.raises(TranspilerError):
+        pm.run(circ)
 
 
-def test_str_1() -> None:
-    c = QuantumCircuit(2, 1)
-    c.initialize('1', 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('initialize')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Initialize)
-    assert np.array_equal(op.params, [0, 1])
+def test_missing_prep() -> None:
+    pm = PassManager([EnsurePreparationPass()])
 
-
-def test_int_0() -> None:
-    c = QuantumCircuit(2, 1)
-    c.initialize(0, 1)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('reset')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 1
-    op = instructions[0].operation
-    assert isinstance(op, Reset)
-
-
-def test_int_1() -> None:
-    c = QuantumCircuit(2, 1)
-    c.initialize(1, 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('initialize')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Initialize)
-    assert np.array_equal(op.params, [0, 1])
-
-
-def test_complex_plus() -> None:
-    c = QuantumCircuit(2, 1)
-    state = np.array([1, 1]) / np.sqrt(2)
-    c.initialize(state, 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('initialize')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Initialize)
-    assert np.array_equal(op.params, state)
-
-
-def test_complex_plus_with_global_phase() -> None:
-    c = QuantumCircuit(2, 1)
-    state = np.array([1, 1]) / np.sqrt(2) * np.exp(3j)
-    c.initialize(state, 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('initialize')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Initialize)
-    assert np.array_equal(op.params, state)
-
-
-def test_complex_minus() -> None:
-    c = QuantumCircuit(2, 1)
-    state = np.array([1, -1]) / np.sqrt(2)
-    c.initialize(state, 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('initialize')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Initialize)
-    assert np.array_equal(op.params, state)
-
-
-def test_complex_0() -> None:
-    c = QuantumCircuit(2, 1)
-    c.initialize([1, 0], 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('reset')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Reset)
-
-
-def test_complex_1() -> None:
-    c = QuantumCircuit(2, 1)
-    c.initialize([0, 1], 0)
-    new_c = _pm.run(c)
-    instructions = new_c.get_instructions('initialize')
-    assert len(instructions) == 1
-    assert c.find_bit(instructions[0].qubits[0]).index == 0
-    op = instructions[0].operation
-    assert isinstance(op, Initialize)
-    assert np.array_equal(op.params, [0, 1])
-
-
-def test_complex_unsupported() -> None:
-    c = QuantumCircuit(2, 1)
-    state = np.array([1, -3j])
-    state /= np.sqrt(np.sum(state * np.conj(state)))
-    c.initialize(state, 0)
-    with pytest.raises(AliceBobTranspilationException):
-        _pm.run(c)
+    c = QuantumCircuit(3, 1)
+    c.x(0)
+    c.reset(1)
+    c.y(1)
+    c.initialize('+', 2)
+    c.cnot(1, 2)
+    c.measure(2, 0)
+    new_c = pm.run(c)
+    expected = c.count_ops()
+    expected['reset'] += 1
+    assert dict(new_c.count_ops()) == dict(expected)
