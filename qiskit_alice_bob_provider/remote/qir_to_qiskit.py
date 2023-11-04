@@ -100,18 +100,18 @@ def _qir_signature_to_qiskit_instructions(
     elif instr_short_name == 'h':
         return [('h', HGate())]
     elif instr_short_name in {'mz', 'm', 'measure'}:
-        return [('m', Measure())]
+        return [('measure', Measure())]
     elif instr_short_name == 'reset':
-        return [('prepare_0', Reset())]
+        return [('reset', Reset())]
     elif instr_short_name == 'delay':
         duration = Parameter('t')
         return [('delay', Delay(duration, unit='us'))]
     elif instr_short_name == 'prepare_z':
-        return [('prepare_0', Reset()), ('prepare_1', Initialize([0, 1]))]
+        return [('initialize', Reset()), ('initialize', Initialize([0, 1]))]
     elif instr_short_name == 'prepare_x':
         return [
-            ('prepare_plus', Initialize([1 / np.sqrt(2), 1 / np.sqrt(2)])),
-            ('prepare_minus', Initialize([1 / np.sqrt(2), -1 / np.sqrt(2)])),
+            ('initialize', Initialize([1 / np.sqrt(2), 1 / np.sqrt(2)])),
+            ('initialize', Initialize([1 / np.sqrt(2), -1 / np.sqrt(2)])),
         ]
     elif instr_short_name == 'rx':
         phi = Parameter('ϕ')
@@ -135,7 +135,7 @@ def _qir_signature_to_qiskit_instructions(
     elif instr_short_name == 'z':
         return [('z', ZGate())]
     elif instr_short_name == 'mx':
-        return [('mx', MeasureX())]
+        return [('measure_x', MeasureX())]
     elif instr_short_name == 'rzz':
         phi = Parameter('ϕ')
         return [('rzz', RZZGate(phi))]
