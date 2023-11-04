@@ -18,167 +18,20 @@
 from functools import lru_cache
 from typing import FrozenSet, List, Set
 
-import numpy as np
 from qiskit.circuit.library.standard_gates import (
     get_standard_gate_name_mapping,
 )
-from qiskit.dagcircuit import DAGCircuit
-from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.synthesis.discrete_basis.gate_sequence import GateSequence
 from qiskit.synthesis.discrete_basis.solovay_kitaev import (
     generate_basic_approximations,
 )
-from qiskit.transpiler import (
-    PassManager,
-    PassManagerConfig,
-    TransformationPass,
-    TranspilerError,
-)
+from qiskit.transpiler import PassManager, PassManagerConfig
 from qiskit.transpiler.passes.synthesis import UnitarySynthesis
-from qiskit.transpiler.preset_passmanagers.common import (
-    generate_translation_passmanager,
-)
 from qiskit.transpiler.preset_passmanagers.plugin import PassManagerStagePlugin
 
-from ..ensure_preparation_pass import EnsurePreparationPass
 from ..processor.logical_cat import LogicalCatProcessor
+from ..translation_plugin import StatePreparationPlugin
 from .proc_to_qiskit import processor_to_qiskit_instruction
-
-
-class IntToLabelInitializePass(TransformationPass):
-    """
-    A transpilation pass that transforms intializations using integers into
-    intializations using labels.
-
-    Example:
-    ```
-    circ = QuantumCircuit(2)
-    circ.initialize(2)
-    transpiled = pm.run(circ)
-    print(circ)
-    #      ┌────────────────┐
-    # q_0: ┤0               ├
-    #     │  Initialize(2) │
-    # q_1: ┤1               ├
-    #     └────────────────┘
-    print(transpiled)
-    #     ┌──────────────────┐
-    # q_0: ┤0                 ├
-    #     │  Initialize(1,0) │
-    # q_1: ┤1                 ├
-    #     └──────────────────┘
-    ```
-    """
-
-    def run(self, dag: DAGCircuit) -> DAGCircuit:
-        for node in dag.topological_op_nodes():
-            if node.name != 'initialize':
-                continue
-            assert isinstance(node.op, Initialize)
-            params = node.op.params
-            if len(params) > 1:
-                if isinstance(params[0], str):
-                    continue
-                raise TranspilerError(
-                    'State vectors are not supported as input of initialize'
-                    f' (params are {params}). Please use string labels like'
-                    ' Initialize("+")'
-                )
-            assert len(params) == 1
-            if not isinstance(params[0], (int, float, complex)):
-                continue
-            integer_state = int(np.real(params[0]))
-            label_state = f'{integer_state:0{int(node.op.num_qubits)}b}'
-            dag.substitute_node(
-                node,
-                Initialize(label_state),
-            )
-        return dag
-
-
-class BreakDownInitializePass(TransformationPass):
-    """
-    A transpilation pass that transforms label, multi-qubit initializations
-    into label, single-qubit initializations.
-
-    Example:
-    ```
-    circ = QuantumCircuit(2)
-    circ.initialize('10')
-    transpiled = pm.run(circ)
-    print(circ)
-    #     ┌──────────────────┐
-    # q_0: ┤0                 ├
-    #     │  Initialize(1,0) │
-    # q_1: ┤1                 ├
-    #     └──────────────────┘
-    print(transpiled)
-    #     ┌───────────────┐
-    # q_0: ┤ Initialize(0) ├
-    #     ├───────────────┤
-    # q_1: ┤ Initialize(1) ├
-    #     └───────────────┘
-    ```
-    """
-
-    def run(self, dag: DAGCircuit) -> DAGCircuit:
-        for node in dag.topological_op_nodes():
-            if node.name != 'initialize':
-                continue
-            assert isinstance(node.op, Initialize)
-            params = node.op.params
-            assert len(params) > 0
-            if not isinstance(params[0], str):
-                raise TranspilerError(
-                    'At this stage in the transpilation process, only label'
-                    f' initializations should exist (params are {params})'
-                )
-            new_dag = DAGCircuit()
-            new_dag.add_qubits(node.qargs)
-            new_dag.add_clbits(node.cargs)
-            for index, state in enumerate(params[::-1]):
-                new_dag.apply_operation_back(
-                    Initialize(state), qargs=(node.qargs[index],)
-                )
-            dag.substitute_node_with_dag(node, new_dag)
-        return dag
-
-
-class LocalStatePreparationPlugin(PassManagerStagePlugin):
-    """A pass manager meant to be used as a translation plugin that ensures
-    all qubits are initialized with a known state among 0, 1, +, -.
-    """
-
-    def pass_manager(
-        self,
-        pass_manager_config: PassManagerConfig,
-        optimization_level=None,
-    ) -> PassManager:
-        custom_pm = PassManager()
-        custom_pm.append(EnsurePreparationPass(lambda: Initialize('0')))
-        custom_pm.append(IntToLabelInitializePass())
-        custom_pm.append(BreakDownInitializePass())
-
-        default_pm = generate_translation_passmanager(
-            target=pass_manager_config.target,
-            basis_gates=pass_manager_config.basis_gates,
-            method='translator',
-            approximation_degree=pass_manager_config.approximation_degree,
-            coupling_map=pass_manager_config.coupling_map,
-            backend_props=pass_manager_config.backend_properties,
-            unitary_synthesis_method=(
-                pass_manager_config.unitary_synthesis_method
-            ),
-            unitary_synthesis_plugin_config=(
-                pass_manager_config.unitary_synthesis_plugin_config
-            ),
-            hls_config=pass_manager_config.hls_config,
-        )
-        for passes in default_pm.passes():
-            for p in passes.values():
-                custom_pm.append(p)
-
-        return custom_pm
 
 
 @lru_cache(maxsize=1)
@@ -199,7 +52,7 @@ class LocalLogicalCatPlugin(PassManagerStagePlugin):
       actually different from the basis gates supported by the backend: not
       all backend basis gates can be used as basis gates for the SK synthesis.
       Unfortunately, Qiskit does not allow setting a different basis gate
-      set for te synthesis step, so we hack our way around it.
+      set for the synthesis step, so we hack our way around it.
     * Compute approximations for the SK synthesis using only the 1-qubit gates
       of the SK basis gate set
     * Mix the SK synthesis with the transpilation passes from
@@ -262,7 +115,7 @@ class LocalLogicalCatPlugin(PassManagerStagePlugin):
         }
 
         # Use as basis the same pass manager as the LocalStatePreparationPlugin
-        pm = LocalStatePreparationPlugin().pass_manager(
+        pm = StatePreparationPlugin().pass_manager(
             pass_manager_config=pass_manager_config,
             optimization_level=optimization_level,
         )

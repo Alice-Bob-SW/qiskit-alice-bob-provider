@@ -21,7 +21,7 @@ from qiskit.providers import BackendV2, Options
 from qiskit.transpiler import PassManager, Target
 from qiskit_qir import to_qir_module
 
-from ..ensure_preparation_pass import EnsurePreparationPass
+from ..translation_plugin import EnsurePreparationPass
 from .api import jobs
 from .api.client import ApiClient
 from .job import AliceBobRemoteJob
@@ -64,7 +64,7 @@ class AliceBobRemoteBackend(BackendV2):
     def get_translation_stage_plugin(self):
         """This hook tells Qiskit to run the transpilation passes contained
         in translation_plugin.StatePreparationPlugin"""
-        return 'remote_state_preparation'
+        return 'state_preparation'
 
     def run(self, run_input: QuantumCircuit, **kwargs) -> AliceBobRemoteJob:
         """Run the quantum circuit on the Alice & Bob backend by calling the

@@ -68,7 +68,7 @@ class ProcessorSimulator(BackendV2):
         execution_backend: AerBackend = AerSimulator(),
         name: Optional[str] = None,
         scheduling_stage_plugin: str = 'asap',
-        translation_stage_plugin: str = 'local_state_preparation',
+        translation_stage_plugin: str = 'state_preparation',
     ):
         """A Qiskit backend enabling transpilation to and simulation of an
         arbitrary quantum processor, as described by a ProcessorDescription
@@ -189,8 +189,8 @@ class ProcessorSimulator(BackendV2):
         additionally be scheduled (e.g., with the 'asap' method)"""
         return self._scheduling_stage_plugin
 
-    def get_translation_stage_plugin(self):
+    def get_translation_stage_plugin(self) -> str:
         """This hook tells Qiskit to run the transpilation passes using the
         specified translation plugin
-        (e.g. local.translation_plugin.LocalStatePreparationPlugin)"""
+        (e.g. translation_plugin.LocalStatePreparationPlugin)"""
         return self._translation_stage_plugin

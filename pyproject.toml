@@ -37,7 +37,7 @@ dependencies = [
     # <0.13.0: qiskit-aer has become irritatingly slow in this release.
     # It especially shows in https://github.com/Alice-Bob-SW/emulation-examples/blob/main/3_error_detection_on_physical_qubits.ipynb
     "qiskit-aer<0.13.0",
-    "qiskit-qir-alice-bob-fork==0.3.2b0",
+    "qiskit-qir-alice-bob-fork==0.3.2rc0",
     "tenacity",
     "pydantic>=2.0"
 ]
@@ -62,8 +62,7 @@ dev = [
 ]
 
 [project.entry-points."qiskit.transpiler.translation"]
-remote_state_preparation = "qiskit_alice_bob_provider.remote.translation_plugin:StatePreparationPlugin"
-local_state_preparation = "qiskit_alice_bob_provider.local.translation_plugin:LocalStatePreparationPlugin"
+state_preparation = "qiskit_alice_bob_provider.translation_plugin:StatePreparationPlugin"
 local_logical_cat = "qiskit_alice_bob_provider.local.translation_plugin:LocalLogicalCatPlugin"
 
 [tool.setuptools.packages.find]
