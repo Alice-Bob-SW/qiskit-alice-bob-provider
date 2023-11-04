@@ -60,7 +60,7 @@ class EnsurePreparationPass(TransformationPass):
         self._prep = prep_instruction
 
     def run(self, dag: DAGCircuit) -> DAGCircuit:
-        preparations = {'reset', 'initialize', 'remote_state_preparation'}
+        preparations = {'reset', 'initialize', 'state_preparation'}
         for node in dag.topological_nodes():
             if not isinstance(node, DAGInNode):
                 continue
