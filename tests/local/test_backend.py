@@ -71,7 +71,7 @@ def test_translation_plugin() -> None:
 
 def test_synthesize_rz() -> None:
     backend = ProcessorSimulator(
-        SimpleAllToAllProcessor(), translation_stage_plugin='local_logical_cat'
+        SimpleAllToAllProcessor(), translation_stage_plugin='sk_synthesis'
     )
     circ = QuantumCircuit(1)
     circ.rz(np.pi * 0.25, 0)
@@ -82,7 +82,7 @@ def test_synthesize_rz() -> None:
 
 def test_synthesize_cz() -> None:
     backend = ProcessorSimulator(
-        SimpleAllToAllProcessor(), translation_stage_plugin='local_logical_cat'
+        SimpleAllToAllProcessor(), translation_stage_plugin='sk_synthesis'
     )
     circ = QuantumCircuit(2)
     circ.cz(0, 1)
@@ -93,7 +93,7 @@ def test_synthesize_cz() -> None:
 
 def test_do_nothing_on_mx() -> None:
     backend = ProcessorSimulator(
-        SimpleAllToAllProcessor(), translation_stage_plugin='local_logical_cat'
+        SimpleAllToAllProcessor(), translation_stage_plugin='sk_synthesis'
     )
     circ = QuantumCircuit(1, 1)
     circ.measure_x(0, 0)
@@ -103,7 +103,7 @@ def test_do_nothing_on_mx() -> None:
 
 def test_do_nothing_on_pp() -> None:
     backend = ProcessorSimulator(
-        SimpleAllToAllProcessor(), translation_stage_plugin='local_logical_cat'
+        SimpleAllToAllProcessor(), translation_stage_plugin='sk_synthesis'
     )
     circ = QuantumCircuit(1)
     circ.initialize('+', 0)

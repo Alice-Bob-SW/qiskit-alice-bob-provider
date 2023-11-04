@@ -30,7 +30,7 @@ from qiskit.transpiler import PassManager, PassManagerConfig, Target
 from qiskit.transpiler.passes.synthesis import UnitarySynthesis
 from qiskit.transpiler.preset_passmanagers.plugin import PassManagerStagePlugin
 
-from ..translation_plugin import StatePreparationPlugin
+from .state_preparation import StatePreparationPlugin
 
 
 @lru_cache(maxsize=1)
@@ -42,7 +42,7 @@ def _memoized_basic_approximations(
     return generate_basic_approximations(basis_gates=basis_gates, depth=depth)
 
 
-class LocalLogicalCatPlugin(PassManagerStagePlugin):
+class SKSynthesisPlugin(PassManagerStagePlugin):
     """This plugin configures the Solavay-Kitaev synthesis for the special
     case of logical qubits made out of physical cat qubits.
 
@@ -55,7 +55,7 @@ class LocalLogicalCatPlugin(PassManagerStagePlugin):
     * Compute approximations for the SK synthesis using only the 1-qubit gates
       of the SK basis gate set
     * Mix the SK synthesis with the transpilation passes from
-      LocalStatePreparationPlugin
+      StatePreparationPlugin
 
     This plugin wouldn't exist if Qiskit's transpile exposed more options to
     configure the synthesis method (and didn't override the available options

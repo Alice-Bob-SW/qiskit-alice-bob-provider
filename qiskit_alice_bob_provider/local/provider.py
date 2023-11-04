@@ -157,7 +157,7 @@ class AliceBobLocalProvider(ProviderV1):
                 average_nb_photons=average_nb_photons,
                 clock_cycle=clock_cycle,
             ),
-            translation_stage_plugin='local_logical_cat',
+            translation_stage_plugin='sk_synthesis',
             name=name,
         )
 
