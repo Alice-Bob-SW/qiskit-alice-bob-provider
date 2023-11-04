@@ -163,3 +163,30 @@ def test_translation_plugin_and_qir(mocked_targets) -> None:
         )
         in qir
     )
+
+
+def test_determine_translation_plugin(mocked_targets) -> None:
+    p = AliceBobRemoteProvider(api_key='foo')
+
+    # Rotations available
+    assert (
+        p.get_backend('ALL_INSTRUCTIONS').get_translation_stage_plugin()
+        == 'state_preparation'
+    )
+
+    # H and T missing
+    assert (
+        p.get_backend('EMU:1Q:LESCANNE_2020').get_translation_stage_plugin()
+        == 'state_preparation'
+    )
+
+    # T missing
+    assert (
+        p.get_backend('H').get_translation_stage_plugin()
+        == 'state_preparation'
+    )
+
+    # ok
+    assert (
+        p.get_backend('H_T').get_translation_stage_plugin() == 'sk_synthesis'
+    )
