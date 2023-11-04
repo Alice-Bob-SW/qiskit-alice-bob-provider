@@ -45,6 +45,7 @@ class AliceBobRemoteBackend(BackendV2):
         self._api_client = api_client
         self._target = ab_target_to_qiskit_target(target_description)
         self._options = _options_from_ab_target(target_description)
+        self._translation_plugin = _determine_translation_plugin(self._target)
 
     def __repr__(self) -> str:
         return f'<AliceBobRemoteBackend(name={self.name})>'
@@ -64,7 +65,7 @@ class AliceBobRemoteBackend(BackendV2):
     def get_translation_stage_plugin(self):
         """This hook tells Qiskit to run the transpilation passes contained
         in translation_plugin.StatePreparationPlugin"""
-        return 'state_preparation'
+        return self._translation_plugin
 
     def run(self, run_input: QuantumCircuit, **kwargs) -> AliceBobRemoteJob:
         """Run the quantum circuit on the Alice & Bob backend by calling the
@@ -131,3 +132,14 @@ def _ab_input_params_from_options(options: Options) -> Dict:
             name = 'nbShots'
         input_params[name] = value
     return input_params
+
+
+def _determine_translation_plugin(target: Target) -> str:
+    """Choose which translation plugin to apply, depending on the gate set of
+    the backend."""
+    instructions = {instr.name for instr, _ in target.instructions}
+    if any(
+        rotation in instructions for rotation in ['u', 'rx', 'ry', 'rz']
+    ) or any(gate not in instructions for gate in ['h', 't']):
+        return 'state_preparation'
+    return 'sk_synthesis'

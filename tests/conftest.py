@@ -194,10 +194,60 @@ def all_instructions_target() -> dict:
 
 
 @pytest.fixture
+def h_target() -> dict:
+    return {
+        'name': 'H',
+        'numQubits': 1,
+        'instructions': [
+            {'signature': '__quantum__qis__h__body:void (%Qubit*)'}
+        ],
+        'inputParams': {
+            'nbShots': {
+                'required': True,
+                'default': 1000,
+                'constraints': [{'min': 1, 'max': 10000000}],
+            },
+            'averageNbPhotons': {
+                'required': False,
+                'default': None,
+                'constraints': [],
+            },
+        },
+    }
+
+
+@pytest.fixture
+def h_t_target() -> dict:
+    return {
+        'name': 'H_T',
+        'numQubits': 1,
+        'instructions': [
+            {'signature': '__quantum__qis__h__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__t__body:void (%Qubit*)'},
+        ],
+        'inputParams': {
+            'nbShots': {
+                'required': True,
+                'default': 1000,
+                'constraints': [{'min': 1, 'max': 10000000}],
+            },
+            'averageNbPhotons': {
+                'required': False,
+                'default': None,
+                'constraints': [],
+            },
+        },
+    }
+
+
+@pytest.fixture
 def targets(
-    single_cat_target: Dict, all_instructions_target: Dict
+    single_cat_target: Dict,
+    all_instructions_target: Dict,
+    h_target: Dict,
+    h_t_target: Dict,
 ) -> List[Dict]:
-    return [single_cat_target, all_instructions_target]
+    return [single_cat_target, all_instructions_target, h_target, h_t_target]
 
 
 @pytest.fixture
