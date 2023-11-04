@@ -34,7 +34,9 @@ dependencies = [
     # >=0.24.0: required for correct handling of durations
     # <0.45.0: this version introduces many API changes that we need to integrate
     "qiskit-terra>=0.24.0,<0.45.0",
-    "qiskit-aer",
+    # <0.13.0: qiskit-aer has become irritatingly slow in this release.
+    # It especially shows in https://github.com/Alice-Bob-SW/emulation-examples/blob/main/3_error_detection_on_physical_qubits.ipynb
+    "qiskit-aer<0.13.0",
     "qiskit-qir-alice-bob-fork==0.3.2b0",
     "tenacity",
     "pydantic>=2.0"
