@@ -21,7 +21,7 @@ from qiskit.providers import BackendV2, Options
 from qiskit.transpiler import PassManager, Target
 from qiskit_qir import to_qir_module
 
-from ..translation_plugin import EnsurePreparationPass
+from ..plugins.state_preparation import EnsurePreparationPass
 from .api import jobs
 from .api.client import ApiClient
 from .job import AliceBobRemoteJob

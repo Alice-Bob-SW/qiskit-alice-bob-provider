@@ -5,7 +5,7 @@ from qiskit import QuantumCircuit
 from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.transpiler import PassManager, TranspilerError
 
-from qiskit_alice_bob_provider.translation_plugin import (
+from qiskit_alice_bob_provider.plugins.state_preparation import (
     BreakDownInitializePass,
     EnsurePreparationPass,
     IntToLabelInitializePass,
