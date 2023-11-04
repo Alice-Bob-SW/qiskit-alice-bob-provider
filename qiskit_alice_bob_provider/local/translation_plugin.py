@@ -18,6 +18,7 @@
 from functools import lru_cache
 from typing import FrozenSet, List, Set
 
+from qiskit.circuit import Instruction
 from qiskit.circuit.library.standard_gates import (
     get_standard_gate_name_mapping,
 )
@@ -25,13 +26,11 @@ from qiskit.synthesis.discrete_basis.gate_sequence import GateSequence
 from qiskit.synthesis.discrete_basis.solovay_kitaev import (
     generate_basic_approximations,
 )
-from qiskit.transpiler import PassManager, PassManagerConfig
+from qiskit.transpiler import PassManager, PassManagerConfig, Target
 from qiskit.transpiler.passes.synthesis import UnitarySynthesis
 from qiskit.transpiler.preset_passmanagers.plugin import PassManagerStagePlugin
 
-from ..processor.logical_cat import LogicalCatProcessor
 from ..translation_plugin import StatePreparationPlugin
-from .proc_to_qiskit import processor_to_qiskit_instruction
 
 
 @lru_cache(maxsize=1)
@@ -68,20 +67,20 @@ class LocalLogicalCatPlugin(PassManagerStagePlugin):
         optimization_level=None,
     ) -> PassManager:
         # Compute the discrete basis gates for the Solovay-Kitaev synthesis
-        proc = LogicalCatProcessor()
+        target: Target = pass_manager_config.target
         discrete_basis_gates: Set[str] = set()
         discrete_1q_basis_gates: Set[str] = set()
-        for instr in proc.all_instructions():
-            qiskit_instr = processor_to_qiskit_instruction(instr)
-            if len(qiskit_instr.params) != 0 or qiskit_instr.name in {
+        for instr, _ in target.instructions:
+            assert isinstance(instr, Instruction)
+            if len(instr.params) != 0 or instr.name in {
                 'measure',
                 'measure_x',
                 'delay',
             }:
                 continue
-            if qiskit_instr.num_qubits == 1:
-                discrete_1q_basis_gates.add(qiskit_instr.name)
-            discrete_basis_gates.add(qiskit_instr.name)
+            if instr.num_qubits == 1:
+                discrete_1q_basis_gates.add(instr.name)
+            discrete_basis_gates.add(instr.name)
 
         # Compute approximations for the Solovay-Kitaev synthesis
         approximations = _memoized_basic_approximations(
