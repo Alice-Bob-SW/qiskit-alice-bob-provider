@@ -12,7 +12,7 @@ from qiskit_alice_bob_provider.processor.physical_cat import (
 from .processor_fixture import SimpleAllToAllProcessor, SimpleProcessor
 
 
-def _check_initialize(circuit: QuantumCircuit, expected: str) -> None:
+def _assert_one_initialize(circuit: QuantumCircuit, expected: str) -> None:
     initializes = circuit.get_instructions('initialize')
     assert len(initializes) == 1
     assert isinstance(initializes[0].operation, Initialize)
@@ -20,7 +20,9 @@ def _check_initialize(circuit: QuantumCircuit, expected: str) -> None:
     assert params == list(expected)
 
 
-def _check_initializes(circuit: QuantumCircuit, expected: List[str]) -> None:
+def _assert_many_initializes(
+    circuit: QuantumCircuit, expected: List[str]
+) -> None:
     initializes = circuit.get_instructions('initialize')
     assert len(initializes) == len(expected)
     for initialize in initializes:
@@ -47,26 +49,26 @@ def test_translation_plugin() -> None:
     circ = QuantumCircuit(1)
     circ.initialize('+')
     transpiled = transpile(circ, backend)
-    _check_initialize(transpiled, '+')
+    _assert_one_initialize(transpiled, '+')
 
     # if no reset / initialize, add Initialize('0')
     circ = QuantumCircuit(1)
     circ.x(0)
     transpiled = transpile(circ, backend)
-    _check_initialize(transpiled, '0')
+    _assert_one_initialize(transpiled, '0')
 
     # if reset, convert to Intialize('0')
     circ = QuantumCircuit(1)
     circ.reset(0)
     transpiled = transpile(circ, backend)
-    _check_initialize(transpiled, '0')
+    _assert_one_initialize(transpiled, '0')
 
     # if reset, convert to Intialize('0')
     circ = QuantumCircuit(3)
     circ.initialize(2, [0, 1])
     circ.reset(2)
     transpiled = transpile(circ, backend)
-    _check_initializes(transpiled, ['0', '1', '0'])
+    _assert_many_initializes(transpiled, ['0', '1', '0'])
 
 
 def test_synthesize_rz() -> None:

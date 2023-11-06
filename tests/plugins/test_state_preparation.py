@@ -12,7 +12,7 @@ from qiskit_alice_bob_provider.plugins.state_preparation import (
 )
 
 
-def _check_initialize(circuit: QuantumCircuit, expected: str) -> None:
+def _assert_one_initialize(circuit: QuantumCircuit, expected: str) -> None:
     initializes = circuit.get_instructions('initialize')
     assert len(initializes) == 1
     assert isinstance(initializes[0].operation, Initialize)
@@ -20,29 +20,9 @@ def _check_initialize(circuit: QuantumCircuit, expected: str) -> None:
     assert params == list(expected)
 
 
-def test_int_to_label() -> None:
-    pm = PassManager([IntToLabelInitializePass()])
-
-    # int(2) should map to '10'
-    circ = QuantumCircuit(2)
-    circ.initialize(2)
-    transpiled = pm.run(circ)
-    _check_initialize(transpiled, '10')
-
-    # a string label should pass unchanged
-    circ = QuantumCircuit(2)
-    circ.initialize('+0')
-    transpiled = pm.run(circ)
-    _check_initialize(transpiled, '+0')
-
-    # a state vector should fail
-    circ = QuantumCircuit(2)
-    circ.initialize([1, 0, 0, 0])
-    with pytest.raises(TranspilerError):
-        pm.run(circ)
-
-
-def _check_initializes(circuit: QuantumCircuit, expected: List[str]) -> None:
+def _assert_many_initializes(
+    circuit: QuantumCircuit, expected: List[str]
+) -> None:
     initializes = circuit.get_instructions('initialize')
     assert len(initializes) == len(expected)
     for initialize in initializes:
@@ -52,6 +32,28 @@ def _check_initializes(circuit: QuantumCircuit, expected: List[str]) -> None:
         assert initialize.operation.params[0] == expected[qubit]
 
 
+def test_int_to_label() -> None:
+    pm = PassManager([IntToLabelInitializePass()])
+
+    # int(2) should map to '10'
+    circ = QuantumCircuit(2)
+    circ.initialize(2)
+    transpiled = pm.run(circ)
+    _assert_one_initialize(transpiled, '10')
+
+    # a string label should pass unchanged
+    circ = QuantumCircuit(2)
+    circ.initialize('+0')
+    transpiled = pm.run(circ)
+    _assert_one_initialize(transpiled, '+0')
+
+    # a state vector should fail
+    circ = QuantumCircuit(2)
+    circ.initialize([1, 0, 0, 0])
+    with pytest.raises(TranspilerError):
+        pm.run(circ)
+
+
 def test_break_down() -> None:
     pm = PassManager([BreakDownInitializePass()])
 
@@ -59,13 +61,13 @@ def test_break_down() -> None:
     circ = QuantumCircuit(2)
     circ.initialize('10')
     transpiled = pm.run(circ)
-    _check_initializes(transpiled, ['0', '1'])
+    _assert_many_initializes(transpiled, ['0', '1'])
 
     # Initialize('+') is broken down into '1' on qubit 0
     circ = QuantumCircuit(2)
     circ.initialize('+', 0)
     transpiled = pm.run(circ)
-    _check_initializes(transpiled, ['+'])
+    _assert_many_initializes(transpiled, ['+'])
 
     # fails on int
     circ = QuantumCircuit(2)
