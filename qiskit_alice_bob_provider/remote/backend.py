@@ -67,6 +67,14 @@ class AliceBobRemoteBackend(BackendV2):
         in translation_plugin.StatePreparationPlugin"""
         return self._translation_plugin
 
+    def update_options(self, option_updates: Dict[str, Any]) -> Options:
+        options: Options = self.options
+        for key, value in option_updates.items():
+            if not hasattr(options, key):
+                raise ValueError(f'Backend does not support option "{key}"')
+            options.update_options(**{key: value})
+        return options
+
     def run(self, run_input: QuantumCircuit, **kwargs) -> AliceBobRemoteJob:
         """Run the quantum circuit on the Alice & Bob backend by calling the
         Alice & Bob API.
@@ -83,11 +91,7 @@ class AliceBobRemoteBackend(BackendV2):
                 Wait for the results by calling
                 :func:`AliceBobRemoteJob.result`.
         """
-        options: Options = self.options
-        for key, value in kwargs.items():
-            if not hasattr(options, key):
-                raise ValueError(f'Backend does not support option "{key}"')
-            options.update_options(**{key: value})
+        options = self.update_options(kwargs)
         input_params = _ab_input_params_from_options(options)
         job = jobs.create_job(self._api_client, self.name, input_params)
         run_input = PassManager([EnsurePreparationPass()]).run(run_input)

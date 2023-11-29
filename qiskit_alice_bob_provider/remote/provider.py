@@ -52,6 +52,14 @@ class AliceBobRemoteProvider(ProviderV1):
         for ab_target in list_targets(client):
             self._backends.append(AliceBobRemoteBackend(client, ab_target))
 
+    def get_backend(self, name=None, **kwargs) -> AliceBobRemoteBackend:
+        backend = super().get_backend(name)
+        # We allow to set the options when getting the backend,
+        # to align with what we do in the local provider.
+        if kwargs:
+            backend.update_options(kwargs)
+        return backend
+
     def backends(
         self, name: Optional[str] = None, **kwargs
     ) -> List[BackendV2]:

@@ -34,7 +34,9 @@ def test_happy_path(base_url: str, api_key: str) -> None:
         api_key=api_key,
         url=base_url,
     )
-    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
-    job = execute(c, backend)
+    backend = provider.get_backend(
+        'EMU:1Q:LESCANNE_2020', average_nb_photons=6.0
+    )
+    job = execute(c, backend, shots=100)
     res = job.result()
     res.get_counts()
