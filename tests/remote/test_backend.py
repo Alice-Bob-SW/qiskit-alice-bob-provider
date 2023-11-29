@@ -28,13 +28,47 @@ from requests_mock.mocker import Mocker
 
 from qiskit_alice_bob_provider.remote.api.client import AliceBobApiException
 from qiskit_alice_bob_provider.remote.backend import (
+    AliceBobRemoteBackend,
     _ab_input_params_from_options,
     _qiskit_to_qir,
 )
 from qiskit_alice_bob_provider.remote.provider import AliceBobRemoteProvider
 
 
-def test_options_validation(mocked_targets) -> None:
+def test_get_backend(mocked_targets) -> None:
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    assert isinstance(backend, AliceBobRemoteBackend)
+    assert backend.options['average_nb_photons'] == 4.0  # Default value.
+
+
+def test_get_backend_with_options(mocked_targets) -> None:
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend(
+        'EMU:1Q:LESCANNE_2020', average_nb_photons=6.0
+    )
+    assert isinstance(backend, AliceBobRemoteBackend)
+    assert backend.options['average_nb_photons'] == 6.0
+
+
+def test_get_backend_options_validation(mocked_targets) -> None:
+    provider = AliceBobRemoteProvider(api_key='foo')
+    with pytest.raises(ValueError):
+        provider.get_backend('EMU:1Q:LESCANNE_2020', average_nb_photons=40)
+    with pytest.raises(ValueError):
+        provider.get_backend('EMU:1Q:LESCANNE_2020', average_nb_photons=-1)
+    with pytest.raises(ValueError):
+        provider.get_backend('EMU:1Q:LESCANNE_2020', shots=0)
+    with pytest.raises(ValueError):
+        provider.get_backend('EMU:1Q:LESCANNE_2020', shots=1e10)
+    with pytest.raises(ValueError):
+        provider.get_backend('EMU:1Q:LESCANNE_2020', bad_option=1)
+
+
+def test_execute_options_validation(mocked_targets) -> None:
+    # We are permissive in our options sytem, allowing the user to both
+    # define options when creating the backend and executing.
+    # We therefore need to test both behaviors.
     c = QuantumCircuit(1, 1)
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
