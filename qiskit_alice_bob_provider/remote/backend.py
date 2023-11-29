@@ -16,6 +16,7 @@
 
 from typing import Any, Dict
 
+from pydantic.alias_generators import to_camel, to_snake
 from qiskit import QuantumCircuit
 from qiskit.providers import BackendV2, Options
 from qiskit.transpiler import PassManager, Target
@@ -26,7 +27,6 @@ from .api import jobs
 from .api.client import ApiClient
 from .job import AliceBobRemoteJob
 from .qir_to_qiskit import ab_target_to_qiskit_target
-from .utils import camel_to_snake_case, snake_to_camel_case
 
 
 class AliceBobRemoteBackend(BackendV2):
@@ -115,7 +115,7 @@ def _options_from_ab_target(ab_target: Dict) -> Options:
     """Extract Qiskit options from an Alice & Bob target description"""
     options = Options()
     for camel_name, desc in ab_target['inputParams'].items():
-        name = camel_to_snake_case(camel_name)
+        name = to_snake(camel_name)
         if name == 'nb_shots':  # special case
             name = 'shots'
         options.update_options(**{name: desc['default']})
@@ -131,7 +131,7 @@ def _ab_input_params_from_options(options: Options) -> Dict:
     """Extract Qiskit options from an Alice & Bob target description"""
     input_params: Dict[str, Any] = {}
     for snake_name, value in options.__dict__.items():
-        name = snake_to_camel_case(snake_name)
+        name = to_camel(snake_name)
         if name == 'shots':  # special case
             name = 'nbShots'
         input_params[name] = value
