@@ -1,7 +1,10 @@
 # Alice & Bob Qiskit provider
 
 This project contains a provider that allows access to
-[Alice & Bob](https://alice-bob.com/) QPUs from the Qiskit framework.
+[Alice & Bob](https://alice-bob.com/) QPUs and emulators using
+the Qiskit framework.
+
+Full documentation [is available here](https://alice-bob.notion.site/Alice-Bob-Felis-documentation-52e554ccbea54e34831761f083883e49).
 
 ## Installation
 
@@ -47,9 +50,9 @@ res = job.result()
 print(res.get_counts())
 ```
 
-## Local simulation of cat quit processors
+## Local emulation of cat quit processors
 
-This project contains multiple simulators of multi cat qubit processors.
+This project contains multiple emulators of multi cat qubit processors.
 
 ```python
 from qiskit_alice_bob_provider import AliceBobLocalProvider
