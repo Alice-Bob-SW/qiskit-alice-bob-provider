@@ -4,7 +4,10 @@ This project contains a provider that allows access to
 [Alice & Bob](https://alice-bob.com/) QPUs and emulators using
 the Qiskit framework.
 
-Full documentation [is available here](https://alice-bob.notion.site/Alice-Bob-Felis-documentation-52e554ccbea54e34831761f083883e49).
+Full documentation
+[is available here](https://alice-bob.notion.site/Alice-Bob-Felis-documentation-52e554ccbea54e34831761f083883e49)
+and sample notebooks using the provider
+[are available here](https://github.com/Alice-Bob-SW/emulation-examples).
 
 ## Installation
 
