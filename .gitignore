@@ -33,3 +33,6 @@ poetry.lock
 
 # virtual environments
 venv/
+
+# Debug notebook to interract with the provider easily.
+debug.ipynb
