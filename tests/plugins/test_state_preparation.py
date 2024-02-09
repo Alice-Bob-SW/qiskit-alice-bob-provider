@@ -2,14 +2,28 @@ from typing import List
 
 import pytest
 from qiskit import QuantumCircuit
+from qiskit.circuit import ClassicalRegister, QuantumRegister
 from qiskit.extensions.quantum_initializer import Initialize
-from qiskit.transpiler import PassManager, TranspilerError
+from qiskit.transpiler import PassManager, PassManagerConfig, TranspilerError
 
+from qiskit_alice_bob_provider.local import AliceBobLocalProvider
 from qiskit_alice_bob_provider.plugins.state_preparation import (
     BreakDownInitializePass,
     EnsurePreparationPass,
     IntToLabelInitializePass,
+    StatePreparationPlugin,
 )
+
+
+def _assert_mapping_physical_qreg(circuit: QuantumCircuit) -> None:
+    """
+    Assert if the PassManager correctly mapped the virtual qubits to
+    one registry of physical qubits.
+    With regards to Qiskit's implementation, a circuit is considered physical
+    if it contains one registry named 'q'.
+    """
+    assert len(circuit.qregs) == 1
+    assert circuit.qregs[0].name == 'q'
 
 
 def _assert_one_initialize(circuit: QuantumCircuit, expected: str) -> None:
@@ -90,3 +104,38 @@ def test_missing_prep() -> None:
     expected = c.count_ops()
     expected['reset'] += 1
     assert dict(new_c.count_ops()) == dict(expected)
+
+
+def test_enforce_physical_quantum_registry() -> None:
+    pm = StatePreparationPlugin().pass_manager(
+        PassManagerConfig.from_backend(
+            AliceBobLocalProvider().build_logical_backend(n_qubits=4)
+        )
+    )
+
+    # Circuit with one quantum register of default name 'q'.
+    circ = QuantumCircuit(1, 1)
+    circ.initialize(1)
+    transpiled = pm.run(circ)
+    _assert_mapping_physical_qreg(transpiled)
+
+    # Circuit with one quantum register of another name should
+    # be renamed to 'q'.
+    circ = QuantumCircuit(
+        QuantumRegister(size=2, name='foo'),
+        ClassicalRegister(size=1, name='bar'),
+    )
+    circ.initialize(1)
+    transpiled = pm.run(circ)
+    _assert_mapping_physical_qreg(transpiled)
+
+    # Circuit with more than one quantum register should be merged into
+    # a single one named 'q'.
+    circ = QuantumCircuit(
+        QuantumRegister(size=2, name='foo'),
+        QuantumRegister(size=2, name='bar'),
+        ClassicalRegister(size=1, name='foobar'),
+    )
+    circ.initialize(1)
+    transpiled = pm.run(circ)
+    _assert_mapping_physical_qreg(transpiled)
