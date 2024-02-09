@@ -27,7 +27,9 @@ from qiskit.transpiler import (
     TransformationPass,
     TranspilerError,
 )
+from qiskit.transpiler.passes import TrivialLayout
 from qiskit.transpiler.preset_passmanagers.common import (
+    generate_embed_passmanager,
     generate_translation_passmanager,
 )
 from qiskit.transpiler.preset_passmanagers.plugin import PassManagerStagePlugin
@@ -206,6 +208,7 @@ class StatePreparationPlugin(PassManagerStagePlugin):
         optimization_level=None,
     ) -> PassManager:
         custom_pm = PassManager()
+        custom_pm.append(TrivialLayout(pass_manager_config.target))
         custom_pm.append(EnsurePreparationPass(lambda: Initialize('0')))
         custom_pm.append(IntToLabelInitializePass())
         custom_pm.append(BreakDownInitializePass())
@@ -229,4 +232,7 @@ class StatePreparationPlugin(PassManagerStagePlugin):
             for p in passes.values():
                 custom_pm.append(p)
 
+        custom_pm += generate_embed_passmanager(
+            pass_manager_config.coupling_map
+        )
         return custom_pm
