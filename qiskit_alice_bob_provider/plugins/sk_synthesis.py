@@ -76,6 +76,8 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
                 'measure',
                 'measure_x',
                 'delay',
+                'cz',
+                'ccz',
             }:
                 continue
             if instr.num_qubits == 1:
@@ -95,7 +97,7 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
         # List gates to synthesize (all gates except basis gates)
         synth_gates: Set[str] = set()
         for name, instr in get_standard_gate_name_mapping().items():
-            if name in {'measure', 'measure_x', 'reset', 'delay'}:
+            if name in {'measure', 'measure_x', 'reset', 'delay', 'cz', 'ccz'}:
                 continue
             synth_gates.add(name)
         synth_gates -= set(discrete_basis_gates)
