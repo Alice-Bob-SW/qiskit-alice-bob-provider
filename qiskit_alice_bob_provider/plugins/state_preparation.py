@@ -19,6 +19,7 @@ from typing import Callable
 
 import numpy as np
 from qiskit.circuit import Instruction, Qubit, Reset
+from qiskit.circuit.equivalence_library import SessionEquivalenceLibrary
 from qiskit.dagcircuit import DAGCircuit, DAGInNode, DAGOpNode
 from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.transpiler import (
@@ -27,7 +28,7 @@ from qiskit.transpiler import (
     TransformationPass,
     TranspilerError,
 )
-from qiskit.transpiler.passes import TrivialLayout
+from qiskit.transpiler.passes import TrivialLayout, UnrollCustomDefinitions
 from qiskit.transpiler.preset_passmanagers.common import (
     generate_embed_passmanager,
     generate_translation_passmanager,
@@ -212,6 +213,14 @@ class StatePreparationPlugin(PassManagerStagePlugin):
         custom_pm.append(EnsurePreparationPass(lambda: Initialize('0')))
         custom_pm.append(IntToLabelInitializePass())
         custom_pm.append(BreakDownInitializePass())
+
+        custom_pm.append(
+            UnrollCustomDefinitions(
+                equivalence_library=SessionEquivalenceLibrary,
+                basis_gates=pass_manager_config.basis_gates,
+                target=pass_manager_config.target,
+            )
+        )
 
         default_pm = generate_translation_passmanager(
             target=pass_manager_config.target,
