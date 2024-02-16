@@ -46,6 +46,13 @@ def _assert_many_initializes(
         assert initialize.operation.params[0] == expected[qubit]
 
 
+def _assert_gate_in_circuit(
+    circuit: QuantumCircuit, expected_gate: str
+) -> None:
+    gates = circuit.get_instructions(expected_gate)
+    assert len(gates) > 0
+
+
 def test_int_to_label() -> None:
     pm = PassManager([IntToLabelInitializePass()])
 
@@ -139,3 +146,27 @@ def test_enforce_physical_quantum_registry() -> None:
     circ.initialize(1)
     transpiled = pm.run(circ)
     _assert_mapping_physical_qreg(transpiled)
+
+
+def test_unroll_custom_definitions() -> None:
+    pm = StatePreparationPlugin().pass_manager(
+        PassManagerConfig.from_backend(
+            AliceBobLocalProvider().build_logical_backend(n_qubits=4)
+        )
+    )
+
+    qasm_str = """
+    OPENQASM 2.0;
+    include "qelib1.inc";
+    gate custom q0,q1 { h q0; cx q0,q1; h q1;}
+    qreg qf_0[1];
+    qreg qf_1[1];
+    custom qf_0[0], qf_1[0];
+    """
+    circ = QuantumCircuit.from_qasm_str(qasm_str)
+    assert len(circ) == 1
+    _assert_gate_in_circuit(circ, 'custom')
+
+    transpiled = pm.run(circ)
+    _assert_gate_in_circuit(transpiled, 'h')
+    _assert_gate_in_circuit(transpiled, 'cx')
