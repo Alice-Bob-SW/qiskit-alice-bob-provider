@@ -31,6 +31,7 @@ urls = {Homepage = "https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider", 
 requires-python = ">=3.7"
 dependencies = [
     "requests",
+    "qiskit<0.45",
     # >=0.24.0: required for correct handling of durations
     # <0.45.0: this version introduces many API changes that we need to integrate
     "qiskit-terra>=0.24.0,<0.45.0",
