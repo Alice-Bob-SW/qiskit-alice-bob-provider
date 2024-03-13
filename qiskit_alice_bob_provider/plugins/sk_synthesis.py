@@ -75,6 +75,7 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
             if len(instr.params) != 0 or instr.name in {
                 'measure',
                 'measure_x',
+                'reset',
                 'delay',
                 'cz',
                 'ccz',
