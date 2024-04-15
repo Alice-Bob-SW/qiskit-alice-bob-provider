@@ -33,6 +33,7 @@ from qiskit.circuit.library import (
     RZZGate,
     SGate,
     SwapGate,
+    TdgGate,
     TGate,
     XGate,
     YGate,
@@ -128,6 +129,8 @@ def _qir_signature_to_qiskit_instructions(
         return [('swap', SwapGate())]
     elif instr_short_name == 't':
         return [('t', TGate())]
+    elif instr_short_name == 'tdg':
+        return [('tdg', TdgGate())]
     elif instr_short_name == 'x':
         return [('x', XGate())]
     elif instr_short_name == 'y':
@@ -166,11 +169,17 @@ def _parse_signature(signature: str) -> _QirFunction:
     )
 
 
-_QIS_FUNCTION_PATTERN = r'__quantum__qis__([a-z0-9_]+)__body'
+_QIS_FUNCTION_PATTERN = r'__quantum__qis__([a-z0-9_]+)__(body|adj)'
 
 
 def _parse_function_name(name: str) -> Optional[str]:
     m = re.search(_QIS_FUNCTION_PATTERN, name)
     if m is None:
         return None
-    return m.group(1)
+    call_name = m.group(1)
+
+    # QIR uses the pattern "adj" instead of "body" for the adjoint gates
+    # (such as sdg, tdg).
+    if m.group(2) == 'adj':
+        call_name += 'dg'
+    return call_name
