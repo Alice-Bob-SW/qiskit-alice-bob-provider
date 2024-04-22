@@ -15,7 +15,7 @@
 ##############################################################################
 
 import csv
-import logging
+import time
 from dataclasses import dataclass
 from io import StringIO
 from typing import Callable, Dict, Optional
@@ -23,6 +23,7 @@ from typing import Callable, Dict, Optional
 from qiskit import QuantumCircuit
 from qiskit.providers import JobStatus, JobV1
 from qiskit.providers.backend import BackendV2
+from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.jobstatus import JOB_FINAL_STATES
 from qiskit.result import Result
 from qiskit.result.models import (
@@ -33,6 +34,8 @@ from qiskit.result.models import (
 
 from .api import jobs
 from .api.client import ApiClient
+from .api.models import AliceBobEventType
+from .utils import write_current_line
 
 
 @dataclass
@@ -46,6 +49,7 @@ class _DownloadedFile:
     content: Optional[str]
 
 
+# pylint: disable=too-many-instance-attributes
 class AliceBobRemoteJob(JobV1):
     """A Qiskit job referencing a job executed in the Alice & Bob API"""
 
@@ -72,6 +76,7 @@ class AliceBobRemoteJob(JobV1):
         self._api_client = api_client
         self._circuit = circuit
         self._last_response: Optional[Dict] = None
+        self._ab_status: Optional[AliceBobEventType] = None
         self._status: Optional[JobStatus] = None
         self._counts: Optional[Dict[str, int]] = None
         self._files: Dict[str, _DownloadedFile] = {}
@@ -83,9 +88,10 @@ class AliceBobRemoteJob(JobV1):
         if self._status is not None and self._status in JOB_FINAL_STATES:
             return
         self._last_response = jobs.get_job(self._api_client, self.job_id())
-        self._status = _ab_event_to_qiskit_status(
+        self._ab_status = AliceBobEventType(
             self._last_response['events'][-1]['type']
         )
+        self._status = self._ab_status.to_qiskit_status()
 
     def submit(self):
         """Jobs can only be submitted by calling the ``run()`` method of the
@@ -145,14 +151,55 @@ class AliceBobRemoteJob(JobV1):
             self._counts[hex(int(row['memory'], 2))] = int(row['count'])
         return self._counts
 
+    def _monitor_state(
+        self, timeout: Optional[float] = None, wait: float = 2
+    ) -> None:
+        start_time = time.time()
+        status = self.status()
+
+        # TODO: add timestamp
+        while status not in JOB_FINAL_STATES:
+            if self._ab_status == AliceBobEventType.INPUT_READY:
+                write_current_line(
+                    f'\rJob {self.job_id()} is waiting to be compiled.'
+                )
+            if self._ab_status in {
+                AliceBobEventType.COMPILING,
+                AliceBobEventType.TRANSPILING,
+            }:
+                # We take the shortcut of assuming compilation + transpilation
+                # are the same things at the moment.
+                write_current_line(f'\rJob {self.job_id()} is being compiled.')
+            if self._ab_status == AliceBobEventType.TRANSPILED:
+                write_current_line(
+                    f'\rJob {self.job_id()} is waiting to be executed.'
+                )
+            if self._ab_status == AliceBobEventType.EXECUTING:
+                write_current_line(f'\rJob {self.job_id()} is being executed.')
+
+            elapsed_time = time.time() - start_time
+            if timeout is not None and elapsed_time >= timeout:
+                raise JobTimeoutError(
+                    f'Timeout while waiting for job {self.job_id()}.'
+                )
+
+            time.sleep(wait)
+            status = self.status()
+
+        if self._ab_status == AliceBobEventType.SUCCEEDED:
+            write_current_line(f'\rJob {self.job_id()} finished successfully.')
+        # For the other final states, Qiskit is already displaying the error
+        # with the relevant details.
+
     def result(
-        self, timeout: Optional[float] = None, wait: float = 5
+        self, timeout: Optional[float] = None, wait: float = 2
     ) -> Result:
         """Wait until the job is complete, then return a result."""
-        self.wait_for_final_state(timeout=timeout, wait=wait)
+        self._monitor_state(timeout, wait)
         status = self.status()
         assert self._last_response is not None
         success = status == JobStatus.DONE
+        print()  # Print a new line to display the next status.
         return Result(
             job_id=self.job_id(),
             backend_name=self._backend_v2.name,
@@ -189,42 +236,3 @@ class AliceBobRemoteJob(JobV1):
         """Return the status of the job, among the values of ``JobStatus``."""
         self._refresh()
         return self._status
-
-
-# pylint: disable=too-many-return-statements
-def _ab_event_to_qiskit_status(event: str) -> JobStatus:
-    """_summary_
-
-    Args:
-        event (str): an event from the Alice & Bob API, usually the latest
-            event about a given job
-
-    Returns:
-        JobStatus: a Qiskit job status
-    """
-    if event == 'CREATED':
-        return JobStatus.INITIALIZING
-    elif event in {'INPUT_READY', 'COMPILED', 'TRANSPILED'}:
-        return JobStatus.QUEUED
-    elif event in {'COMPILING', 'TRANSPILING'}:
-        return JobStatus.VALIDATING
-    elif event == 'EXECUTING':
-        return JobStatus.RUNNING
-    elif event in {
-        'COMPILATION_FAILED',
-        'TRANSPILATION_FAILED',
-        'EXECUTION_FAILED',
-        'TIMED_OUT',
-    }:
-        return JobStatus.ERROR
-    elif event == 'SUCCEEDED':
-        return JobStatus.DONE
-    elif event == 'CANCELLED':
-        return JobStatus.CANCELLED
-    logging.warning(
-        f'Received unexpected job event {event}. \n'
-        'Please ensure you are running the latest version of the Alice & Bob '
-        'Provider .'
-    )
-    # An unknown job status will be considered to be an Error by default.
-    return JobStatus.ERROR
