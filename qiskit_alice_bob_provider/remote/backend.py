@@ -27,6 +27,7 @@ from .api import jobs
 from .api.client import ApiClient
 from .job import AliceBobRemoteJob
 from .qir_to_qiskit import ab_target_to_qiskit_target
+from .utils import write_current_line
 
 
 class AliceBobRemoteBackend(BackendV2):
@@ -64,7 +65,11 @@ class AliceBobRemoteBackend(BackendV2):
 
     def get_translation_stage_plugin(self):
         """This hook tells Qiskit to run the transpilation passes contained
-        in translation_plugin.StatePreparationPlugin"""
+        in translation_plugin.StatePreparationPlugin.
+        This function is called before we start the circuit translation,
+        and we therefore also use it to inform that we are starting this step.
+        """
+        write_current_line('Translating circuit to supported operations...')
         return self._translation_plugin
 
     def update_options(self, option_updates: Dict[str, Any]) -> Options:
@@ -91,6 +96,7 @@ class AliceBobRemoteBackend(BackendV2):
                 Wait for the results by calling
                 :func:`AliceBobRemoteJob.result`.
         """
+        write_current_line('Sending circuit to the API...')
         options = self.update_options(kwargs)
         input_params = _ab_input_params_from_options(options)
         job = jobs.create_job(self._api_client, self.name, input_params)
