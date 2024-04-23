@@ -100,6 +100,14 @@ class AliceBobRemoteBackend(BackendV2):
                 Wait for the results by calling
                 :func:`AliceBobRemoteJob.result`.
         """
+        if not isinstance(run_input, QuantumCircuit):
+            # Qiskit's execute() allows also for list[QuantumCircuit],
+            # Schedule and list[Schedule] as inputs. These types of experiments
+            # are not yet handled by the provider.
+            raise NotImplementedError(
+                'Experiments input not supported by the Alice & Bob provider. '
+                'Please provide an instance of QuantumCircuit.'
+            )
         if self._verbose:
             write_current_line('Sending circuit to the API...')
         options = self.update_options(kwargs)
