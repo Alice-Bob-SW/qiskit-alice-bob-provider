@@ -52,12 +52,30 @@ class AliceBobRemoteProvider(ProviderV1):
         for ab_target in list_targets(client):
             self._backends.append(AliceBobRemoteBackend(client, ab_target))
 
-    def get_backend(self, name=None, **kwargs) -> AliceBobRemoteBackend:
+    def get_backend(
+        self, name=None, verbose=True, **kwargs
+    ) -> AliceBobRemoteBackend:
+        """Return a single backend matching by its name.
+
+        Args:
+            name (str): name of the backend
+            verbose (bool): if True, will display information about the jobs
+                execution.
+                Defaults to True.
+            **kwargs: additional backend parameters
+                (see targets documentation).
+
+        Returns:
+            AliceBobRemoteBackend: backend matching the given name.
+        """
         backend = super().get_backend(name)
         # We allow to set the options when getting the backend,
         # to align with what we do in the local provider.
         if kwargs:
             backend.update_options(kwargs)
+
+        # pylint: disable=protected-access
+        backend._verbose = verbose
         return backend
 
     def backends(

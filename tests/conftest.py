@@ -376,6 +376,11 @@ def successful_job(mocked_targets: Mocker) -> Mocker:
         f'/v1/jobs/{job_id}/output',
         text='11,12\n10,474\n01,6\n00,508\n',
     )
+    mocked_targets.register_uri(
+        'GET',
+        f'/v1/jobs/{job_id}/metrics',
+        json={},
+    )
     return mocked_targets
 
 
@@ -500,6 +505,11 @@ def failed_transpilation_job(mocked_targets: Mocker) -> Mocker:
             }
         },
     )
+    mocked_targets.register_uri(
+        'GET',
+        f'/v1/jobs/{job_id}/metrics',
+        json={},
+    )
     return mocked_targets
 
 
@@ -619,6 +629,11 @@ def failed_execution_job(mocked_targets: Mocker) -> Mocker:
                 ),
             }
         },
+    )
+    mocked_targets.register_uri(
+        'GET',
+        f'/v1/jobs/{job_id}/metrics',
+        json={},
     )
     return mocked_targets
 
@@ -767,6 +782,11 @@ def cancellable_job(mocked_targets: Mocker) -> Mocker:
             }
         },
     )
+    mocked_targets.register_uri(
+        'GET',
+        f'/v1/jobs/{job_id}/metrics',
+        json={},
+    )
     return mocked_targets
 
 
@@ -856,5 +876,10 @@ def failed_validation_job(mocked_targets: Mocker) -> Mocker:
                 ),
             }
         },
+    )
+    mocked_targets.register_uri(
+        'GET',
+        f'/v1/jobs/{job_id}/metrics',
+        json={},
     )
     return mocked_targets

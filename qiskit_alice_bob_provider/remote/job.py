@@ -18,7 +18,7 @@ import csv
 import time
 from dataclasses import dataclass
 from io import StringIO
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from qiskit import QuantumCircuit
 from qiskit.providers import JobStatus, JobV1
@@ -53,12 +53,14 @@ class _DownloadedFile:
 class AliceBobRemoteJob(JobV1):
     """A Qiskit job referencing a job executed in the Alice & Bob API"""
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         backend: BackendV2,
         api_client: ApiClient,
         job_id: str,
         circuit: QuantumCircuit,
+        verbose: bool,
     ):
         """A job should not be instantiated manually but created by calling
         :func:`AliceBobRemoteBackend.run` or :func:`qiskit.execute`.
@@ -75,11 +77,13 @@ class AliceBobRemoteJob(JobV1):
         self._backend_v2 = backend
         self._api_client = api_client
         self._circuit = circuit
+        self._verbose = verbose
         self._last_response: Optional[Dict] = None
         self._ab_status: Optional[AliceBobEventType] = None
         self._status: Optional[JobStatus] = None
         self._counts: Optional[Dict[str, int]] = None
         self._files: Dict[str, _DownloadedFile] = {}
+        self._metrics: Dict[str, Any] = {}
 
     def _refresh(self) -> None:
         """If the job status is not final, refresh the description of the API
@@ -151,31 +155,43 @@ class AliceBobRemoteJob(JobV1):
             self._counts[hex(int(row['memory'], 2))] = int(row['count'])
         return self._counts
 
+    def _get_metrics(self) -> Dict[str, Any]:
+        self._metrics = jobs.get_job_metrics(self._api_client, self.job_id())
+        return self._metrics
+
     def _monitor_state(
         self, timeout: Optional[float] = None, wait: float = 2
     ) -> None:
         start_time = time.time()
         status = self.status()
 
-        # TODO: add timestamp
         while status not in JOB_FINAL_STATES:
-            if self._ab_status == AliceBobEventType.INPUT_READY:
+            if (
+                self._verbose
+                and self._ab_status == AliceBobEventType.INPUT_READY
+            ):
                 write_current_line(
-                    f'\rJob {self.job_id()} is waiting to be compiled.'
+                    f'Job {self.job_id()} is waiting to be compiled.'
                 )
-            if self._ab_status in {
+            if self._verbose and self._ab_status in {
                 AliceBobEventType.COMPILING,
                 AliceBobEventType.TRANSPILING,
             }:
                 # We take the shortcut of assuming compilation + transpilation
                 # are the same things at the moment.
-                write_current_line(f'\rJob {self.job_id()} is being compiled.')
-            if self._ab_status == AliceBobEventType.TRANSPILED:
+                write_current_line(f'Job {self.job_id()} is being compiled.')
+            if (
+                self._verbose
+                and self._ab_status == AliceBobEventType.TRANSPILED
+            ):
                 write_current_line(
-                    f'\rJob {self.job_id()} is waiting to be executed.'
+                    f'Job {self.job_id()} is waiting to be executed.'
                 )
-            if self._ab_status == AliceBobEventType.EXECUTING:
-                write_current_line(f'\rJob {self.job_id()} is being executed.')
+            if (
+                self._verbose
+                and self._ab_status == AliceBobEventType.EXECUTING
+            ):
+                write_current_line(f'Job {self.job_id()} is being executed.')
 
             elapsed_time = time.time() - start_time
             if timeout is not None and elapsed_time >= timeout:
@@ -186,8 +202,25 @@ class AliceBobRemoteJob(JobV1):
             time.sleep(wait)
             status = self.status()
 
-        if self._ab_status == AliceBobEventType.SUCCEEDED:
-            write_current_line(f'\rJob {self.job_id()} finished successfully.')
+        if self._verbose and self._ab_status == AliceBobEventType.SUCCEEDED:
+            metrics = self._get_metrics()
+            success_msg = f'Job {self.job_id()} finished successfully.'
+            if 'qpu_duration_ns' in metrics and isinstance(
+                metrics['qpu_duration_ns'], int
+            ):
+                success_msg += (
+                    ' Time spent executing on QPU: '
+                    f'{_format_nanoseconds(metrics["qpu_duration_ns"])}.'
+                )
+            elif 'simulation_duration_ns' in metrics and isinstance(
+                metrics['simulation_duration_ns'], int
+            ):
+                success_msg += (
+                    ' Time spent simulating: '
+                    f'{_format_nanoseconds(metrics["simulation_duration_ns"])}'
+                    '.'
+                )
+            write_current_line(success_msg)
         # For the other final states, Qiskit is already displaying the error
         # with the relevant details.
 
@@ -236,3 +269,21 @@ class AliceBobRemoteJob(JobV1):
         """Return the status of the job, among the values of ``JobStatus``."""
         self._refresh()
         return self._status
+
+
+def _format_nanoseconds(time_ns: int) -> str:
+    """Format a given number of nanoseconds to a string containing a unit
+    and the time value converted to this unit in the most readable way.
+    This will convert the nanoseconds either to microseconds, milliseconds,
+    seconds or minutes."""
+    if time_ns < 1e3:  # < 1us
+        return f'{time_ns}ns'
+    elif time_ns < 1e6:  # < 1ms
+        return f'{(time_ns / 1e3):.2f}us'
+    elif time_ns < 1e9:  # < 1s
+        return f'{(time_ns / 1e6):.2f}ms'
+    elif time_ns < 60e9:  # < 1min
+        return f'{(time_ns / 1e9):.2f}s'
+    else:  # min & seconds format
+        minutes, seconds = divmod(time_ns / 1e9, 60)
+        return f'{minutes}min {seconds:.0f}s'

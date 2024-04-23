@@ -47,6 +47,7 @@ class AliceBobRemoteBackend(BackendV2):
         self._target = ab_target_to_qiskit_target(target_description)
         self._options = _options_from_ab_target(target_description)
         self._translation_plugin = _determine_translation_plugin(self._target)
+        self._verbose = True
 
     def __repr__(self) -> str:
         return f'<AliceBobRemoteBackend(name={self.name})>'
@@ -69,7 +70,10 @@ class AliceBobRemoteBackend(BackendV2):
         This function is called before we start the circuit translation,
         and we therefore also use it to inform that we are starting this step.
         """
-        write_current_line('Translating circuit to supported operations...')
+        if self._verbose:
+            write_current_line(
+                'Translating circuit to supported operations...'
+            )
         return self._translation_plugin
 
     def update_options(self, option_updates: Dict[str, Any]) -> Options:
@@ -96,7 +100,8 @@ class AliceBobRemoteBackend(BackendV2):
                 Wait for the results by calling
                 :func:`AliceBobRemoteJob.result`.
         """
-        write_current_line('Sending circuit to the API...')
+        if self._verbose:
+            write_current_line('Sending circuit to the API...')
         options = self.update_options(kwargs)
         input_params = _ab_input_params_from_options(options)
         job = jobs.create_job(self._api_client, self.name, input_params)
@@ -109,6 +114,7 @@ class AliceBobRemoteBackend(BackendV2):
             api_client=self._api_client,
             job_id=job['id'],
             circuit=run_input,
+            verbose=self._verbose,
         )
 
 
