@@ -22,6 +22,7 @@ from textwrap import dedent
 import pytest
 from qiskit import QiskitError, QuantumCircuit, execute, transpile
 from qiskit.providers import Options
+from qiskit.pulse.schedule import Schedule
 from qiskit.result import Result
 from qiskit.transpiler.exceptions import TranspilerError
 from requests_mock.mocker import Mocker
@@ -90,6 +91,21 @@ def test_too_many_qubits_clients_side(mocked_targets) -> None:
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(TranspilerError):
         execute(c, backend)
+
+
+def test_input_not_quantum_circuit(mocked_targets) -> None:
+    c1 = QuantumCircuit(1, 1)
+    c2 = QuantumCircuit(1, 1)
+    s1 = Schedule()
+    s2 = Schedule()
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    with pytest.raises(NotImplementedError):
+        execute([c1, c2], backend)
+    with pytest.raises(NotImplementedError):
+        execute(s1, backend)
+    with pytest.raises(NotImplementedError):
+        execute([s1, s2], backend)
 
 
 def test_counts_ordering(successful_job: Mocker) -> None:
