@@ -54,6 +54,19 @@ def get_job(client: ApiClient, job_id: str) -> dict:
     return client.get(f'v1/jobs/{job_id}').json()
 
 
+def get_job_metrics(client: ApiClient, job_id: str) -> dict:
+    """Get exposed metrics about a job in the Alice & Bob API
+
+    Args:
+        client (ApiClient): a client for the Alice & Bob API
+        job_id (str): the ID of the job in the Alice & Bob API
+
+    Returns:
+        dict: the API response object, containing the recorded metrics.
+    """
+    return client.get(f'v1/jobs/{job_id}/metrics').json()
+
+
 def cancel_job(client: ApiClient, job_id: str) -> None:
     """Cancel a job in the Alice & Bob API
 
