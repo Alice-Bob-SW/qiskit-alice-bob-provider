@@ -5,9 +5,9 @@ This project contains a provider that allows access to
 the Qiskit framework.
 
 Full documentation
-[is available here](https://alice-bob.notion.site/Alice-Bob-Felis-documentation-52e554ccbea54e34831761f083883e49)
+[is available here](https://felis.alice-bob.com/docs/)
 and sample notebooks using the provider
-[are available here](https://github.com/Alice-Bob-SW/emulation-examples).
+[are available here](https://github.com/Alice-Bob-SW/felis/tree/main/samples).
 
 ## Installation
 
@@ -53,7 +53,7 @@ res = job.result()
 print(res.get_counts())
 ```
 
-## Local emulation of cat quit processors
+## Local emulation of cat qubit processors
 
 This project contains multiple emulators of multi cat qubit processors.
 
