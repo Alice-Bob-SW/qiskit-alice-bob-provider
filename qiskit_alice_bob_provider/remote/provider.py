@@ -32,7 +32,7 @@ class AliceBobRemoteProvider(ProviderV1):
     def __init__(
         self,
         api_key: str,
-        url: str = 'https://api.alice-bob.com/',
+        url: str = 'https://api-gcp.alice-bob.com/',
         retries: int = 5,
         wait_between_retries_seconds: int = 1,
     ):
@@ -40,7 +40,7 @@ class AliceBobRemoteProvider(ProviderV1):
         Args:
             api_key (str): an API key for the Alice & Bob API
             url (str): Base URL of the Alice & Bob API.
-                Defaults to 'https://api.alice-bob.com/'.
+                Defaults to 'https://api-gcp.alice-bob.com/'.
         """
         client = ApiClient(
             api_key=api_key,
