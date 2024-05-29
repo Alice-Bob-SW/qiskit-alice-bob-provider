@@ -7,7 +7,7 @@ name = "qiskit_alice_bob_provider"
 authors = [
     {name = "Alice & Bob Software Team"},
 ]
-version = "0.6.0"
+version = "0.7.0"
 description = "Provider for running Qiskit circuits on Alice & Bob QPUs and simulators"
 readme = "README.md"
 license = {text = "Apache 2.0"}
@@ -51,14 +51,18 @@ dev = [
     "flake8>=5.0.4",
     "flake8-quotes==3.3.2",
     "isort>=5.11.5",
+    "mock==5.1.0",
     "mypy==1.0.0",
     "mypy-extensions==1.0.0",
     "pre-commit>=2.21.0",
     "pylint==2.16.1",
     "pytest==7.2.1",
     "requests-mock==1.10.0",
-    "types-requests==2.30.0.0",
+    "traitlets==5.14.3",
     "twine==4.0.2",
+    "types-mock==5.1.0",
+    "types-setuptools==70.0.0.20240524",
+    "types-requests==2.30.0.0",
     "build==0.10.0"
 ]
 
