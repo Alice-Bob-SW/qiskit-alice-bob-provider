@@ -14,10 +14,16 @@
 #    limitations under the License.
 ##############################################################################
 
+import logging
 from typing import List, Optional
 
 from qiskit.providers import BackendV2, ProviderV1
 from qiskit.providers.providerutils import filter_backends
+
+from qiskit_alice_bob_provider.remote.api.version import (
+    ProviderStatus,
+    get_provider_status,
+)
 
 from .api.client import ApiClient
 from .api.targets import list_targets
@@ -51,6 +57,18 @@ class AliceBobRemoteProvider(ProviderV1):
         self._backends = []
         for ab_target in list_targets(client):
             self._backends.append(AliceBobRemoteBackend(client, ab_target))
+
+        provider_status = get_provider_status()
+        if provider_status == ProviderStatus.UNKNOWN:
+            logging.warning(
+                'Could not determine the latest version of the provider. '
+                'Your installation may be outdated.'
+            )
+        elif provider_status == ProviderStatus.OUTDATED:
+            logging.warning(
+                'A new version of the provider is available. Install it with '
+                '"pip install -U qiskit-alice-bob-provider".'
+            )
 
     def get_backend(
         self, name=None, verbose=True, **kwargs
