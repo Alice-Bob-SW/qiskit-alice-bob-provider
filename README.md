@@ -17,29 +17,35 @@ You can install the provider using `pip`:
 pip install qiskit-alice-bob-provider
 ```
 
-`pip` will handle installing all the python dependencies automatically and you
-will always install the  latest (and well-tested) version.
+`pip` will handle installing all the python dependencies automatically and 
+will always install the latest (and well-tested) version.
 
-## Remote execution on Alice & Bob QPUs: use your API key
+The provider is currently **NOT** compatible with Qiskit 1.0. We recommend
+creating a new environment before installing it.
 
-To obtain an API key, please [contact Alice & Bob](https://alice-bob.com/contact/).
+## Remote execution on Alice & Bob QPUs with a Felis Cloud subscription
 
-You can initialize the Alice & Bob remote provider using your API key
-locally with:
+When subscribing to Felis Cloud on the
+[Google Cloud Marketplace](https://console.cloud.google.com/marketplace/product/cloud-prod-0/felis-cloud),
+you get an API key letting you access Alice & Bob QPUs with this provider.
+
+You can initialize the Alice & Bob remote provider using your API key:
 
 ```python
 from qiskit_alice_bob_provider import AliceBobRemoteProvider
 ab = AliceBobRemoteProvider('MY_API_KEY')
 ```
 
-Where `MY_API_KEY` is your API key to the Alice & Bob API.
+Where `MY_API_KEY` is the API key of your Felis Cloud subscription.
+
+You may then instantiate the Boson 4 QPU backend:
 
 ```python
 print(ab.backends())
-backend = ab.get_backend('EMU:1Q:LESCANNE_2020')
+backend = ab.get_backend('QPU:1Q:BOSON_4A')
 ```
 
-The backend can then be used like a regular Qiskit backend:
+And use it like a regular Qiskit backend:
 
 ```python
 from qiskit import QuantumCircuit, execute
