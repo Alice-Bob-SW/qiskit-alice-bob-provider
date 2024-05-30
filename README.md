@@ -17,11 +17,11 @@ You can install the provider using `pip`:
 pip install qiskit-alice-bob-provider
 ```
 
-`pip` will handle installing all the python dependencies automatically and 
-will always install the latest (and well-tested) version.
+`pip` will install the latest release with all its dependencies automatically,
+including Qiskit.
 
-The provider is currently **NOT** compatible with Qiskit 1.0. We recommend
-creating a new environment before installing it.
+We recommend creating a new environment before installing the provider, as it
+currently **NOT** compatible with Qiskit 1.0.
 
 ## Remote execution on Alice & Bob QPUs with a Felis Cloud subscription
 
