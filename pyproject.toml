@@ -25,10 +25,11 @@ classifiers=[
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Physics",
 ]
 urls = {Homepage = "https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider", "Alice & Bob" = "https://alice-bob.com/"}
-requires-python = ">=3.8, <3.12"
+requires-python = ">=3.8, <3.13"
 dependencies = [
     "requests",
     # >=0.24.0: required for correct handling of durations
