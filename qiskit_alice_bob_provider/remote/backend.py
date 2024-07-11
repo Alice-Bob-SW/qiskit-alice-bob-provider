@@ -25,9 +25,9 @@ from qiskit_qir import to_qir_module
 from ..plugins.state_preparation import EnsurePreparationPass
 from .api import jobs
 from .api.client import ApiClient
+from .display import display_current_line, display_new_line
 from .job import AliceBobRemoteJob
 from .qir_to_qiskit import ab_target_to_qiskit_target
-from .utils import write_current_line
 
 
 class AliceBobRemoteBackend(BackendV2):
@@ -70,9 +70,15 @@ class AliceBobRemoteBackend(BackendV2):
         This function is called before we start the circuit translation,
         and we therefore also use it to inform that we are starting this step.
         """
+        # The first stage to display is Qiskit's inner transpilation step.
+        # It is done before calling backend.run() or creating an instance
+        # of AliceBobRemoteJob().
+        # Therefore, we must initialize the new line display here.
+        display_new_line()
+
         if self._verbose:
-            write_current_line(
-                'Translating circuit to supported operations...'
+            display_current_line(
+                'Translating circuit to supported operations.'
             )
         return self._translation_plugin
 
@@ -109,7 +115,7 @@ class AliceBobRemoteBackend(BackendV2):
                 'Please provide an instance of QuantumCircuit.'
             )
         if self._verbose:
-            write_current_line('Sending circuit to the API...')
+            display_current_line('Sending circuit to the API...')
         options = self.update_options(kwargs)
         input_params = _ab_input_params_from_options(options)
         job = jobs.create_job(self._api_client, self.name, input_params)

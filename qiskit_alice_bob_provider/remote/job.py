@@ -35,7 +35,7 @@ from qiskit.result.models import (
 from .api import jobs
 from .api.client import ApiClient
 from .api.models import AliceBobEventType
-from .utils import write_current_line
+from .display import display_current_line
 
 
 @dataclass
@@ -170,7 +170,7 @@ class AliceBobRemoteJob(JobV1):
                 self._verbose
                 and self._ab_status == AliceBobEventType.INPUT_READY
             ):
-                write_current_line(
+                display_current_line(
                     f'Job {self.job_id()} is waiting to be compiled.'
                 )
             if self._verbose and self._ab_status in {
@@ -179,19 +179,19 @@ class AliceBobRemoteJob(JobV1):
             }:
                 # We take the shortcut of assuming compilation + transpilation
                 # are the same things at the moment.
-                write_current_line(f'Job {self.job_id()} is being compiled.')
+                display_current_line(f'Job {self.job_id()} is being compiled.')
             if (
                 self._verbose
                 and self._ab_status == AliceBobEventType.TRANSPILED
             ):
-                write_current_line(
+                display_current_line(
                     f'Job {self.job_id()} is waiting to be executed.'
                 )
             if (
                 self._verbose
                 and self._ab_status == AliceBobEventType.EXECUTING
             ):
-                write_current_line(f'Job {self.job_id()} is being executed.')
+                display_current_line(f'Job {self.job_id()} is being executed.')
 
             elapsed_time = time.time() - start_time
             if timeout is not None and elapsed_time >= timeout:
@@ -220,7 +220,7 @@ class AliceBobRemoteJob(JobV1):
                     f'{_format_nanoseconds(metrics["simulation_duration_ns"])}'
                     '.'
                 )
-            write_current_line(success_msg)
+            display_current_line(success_msg)
         # For the other final states, Qiskit is already displaying the error
         # with the relevant details.
 
@@ -232,7 +232,6 @@ class AliceBobRemoteJob(JobV1):
         status = self.status()
         assert self._last_response is not None
         success = status == JobStatus.DONE
-        print()  # Print a new line to display the next status.
         return Result(
             job_id=self.job_id(),
             backend_name=self._backend_v2.name,
