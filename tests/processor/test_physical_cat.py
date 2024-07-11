@@ -26,7 +26,7 @@ def test_cx_prefactor() -> None:
     )
     ret = proc.apply_instruction('cx', (0, 1), [])
     terms = ['IX', 'XX', 'XI', 'IY', 'XY', 'XZ']
-    s = -np.infty
+    s = -np.inf
     assert ret.quantum_errors is not None
     for term in terms:
         idx = pauli_label_to_index(term)
@@ -40,7 +40,7 @@ def test_idle_prefactor() -> None:
     )
     ret = proc.apply_instruction('delay', (0,), [1e-4])
     terms = ['X', 'Y']
-    s = -np.infty
+    s = -np.inf
     assert ret.quantum_errors is not None
     for term in terms:
         idx = pauli_label_to_index(term)
