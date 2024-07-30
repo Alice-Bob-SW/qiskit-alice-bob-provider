@@ -20,7 +20,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import pytest
-from qiskit import QiskitError, QuantumCircuit, execute, transpile
+from qiskit import QiskitError, QuantumCircuit, transpile
 from qiskit.providers import Options
 from qiskit.pulse.schedule import Schedule
 from qiskit.result import Result
@@ -74,15 +74,15 @@ def test_execute_options_validation(mocked_targets) -> None:
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(ValueError):
-        execute(c, backend, average_nb_photons=40)
+        backend.run(c, average_nb_photons=40)
     with pytest.raises(ValueError):
-        execute(c, backend, average_nb_photons=-1)
+        backend.run(c, average_nb_photons=-1)
     with pytest.raises(ValueError):
-        execute(c, backend, bad_option=1)
+        backend.run(c, bad_option=1)
     with pytest.raises(ValueError):
-        execute(c, backend, shots=0)
+        backend.run(c, shots=0)
     with pytest.raises(ValueError):
-        execute(c, backend, shots=1e10)
+        backend.run(c, shots=1e10)
 
 
 def test_too_many_qubits_clients_side(mocked_targets) -> None:
@@ -90,7 +90,7 @@ def test_too_many_qubits_clients_side(mocked_targets) -> None:
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(TranspilerError):
-        execute(c, backend)
+        transpile(c, backend)
 
 
 def test_input_not_quantum_circuit(mocked_targets) -> None:
@@ -101,11 +101,11 @@ def test_input_not_quantum_circuit(mocked_targets) -> None:
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(NotImplementedError):
-        execute([c1, c2], backend)
+        backend.run([c1, c2])
     with pytest.raises(NotImplementedError):
-        execute(s1, backend)
+        backend.run(s1)
     with pytest.raises(NotImplementedError):
-        execute([s1, s2], backend)
+        backend.run([s1, s2])
 
 
 def test_counts_ordering(successful_job: Mocker) -> None:
@@ -115,7 +115,7 @@ def test_counts_ordering(successful_job: Mocker) -> None:
     c.measure(0, 1)
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
-    job = execute(c, backend)
+    job = backend.run(c)
     counts = job.result(wait=0).get_counts()
     expected = {'11': 12, '10': 474, '01': 6, '00': 508}
     assert counts == expected
@@ -127,7 +127,7 @@ def test_failed_transpilation(failed_transpilation_job: Mocker) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
-    job = execute(c, backend)
+    job = backend.run(c)
     res: Result = job.result(wait=0)
     assert res.results[0].data.input_qir is not None
     assert res.results[0].data.transpiled_qir is None
@@ -142,7 +142,7 @@ def test_failed_execution(failed_execution_job: Mocker) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
-    job = execute(c, backend)
+    job = backend.run(c)
     res: Result = job.result(wait=0)
     assert res.results[0].data.input_qir is not None
     assert res.results[0].data.transpiled_qir is not None
@@ -154,7 +154,7 @@ def test_cancel_job(cancellable_job: Mocker) -> None:
     c = QuantumCircuit(1, 1)
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
-    job = execute(c, backend)
+    job = backend.run(c)
     job.cancel()
     res: Result = job.result(wait=0)
     assert res.results[0].data.input_qir is not None
@@ -168,7 +168,7 @@ def test_failed_server_side_validation(failed_validation_job: Mocker) -> None:
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(AliceBobApiException):
-        execute(c, backend)
+        backend.run(c)
 
 
 def test_delay_instruction_recognized() -> None:

@@ -17,10 +17,10 @@
 from typing import Dict, List
 
 from qiskit.circuit import Delay, Instruction, Measure, Parameter
+from qiskit.circuit.library import Initialize
 from qiskit.circuit.library.standard_gates import (
     get_standard_gate_name_mapping,
 )
-from qiskit.extensions.quantum_initializer import Initialize
 
 from ..custom_instructions import MeasureX
 from ..processor.description import InstructionProperties

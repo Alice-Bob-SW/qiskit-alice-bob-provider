@@ -12,7 +12,6 @@
 """
 Local noise addition pass.
 """
-from copy import deepcopy
 from typing import Callable, Iterable, Optional, Sequence, Union
 
 from qiskit.circuit import Instruction, QuantumCircuit
@@ -131,7 +130,7 @@ class LocalNoisePass(TransformationPass):
 
             # Note from Alice & Bob: the only change is to use a copy of
             # node.op with the classical conditioning removed.
-            node_op_without_cond = deepcopy(node.op)
+            node_op_without_cond = node.op.to_mutable()
             node_op_without_cond.condition = None
 
             # If appending re-apply original op node first

@@ -15,7 +15,7 @@
 ##############################################################################
 
 import pytest
-from qiskit import QuantumCircuit, execute
+from qiskit import QuantumCircuit, transpile
 
 from qiskit_alice_bob_provider import AliceBobRemoteProvider
 
@@ -37,6 +37,7 @@ def test_happy_path(base_url: str, api_key: str) -> None:
     backend = provider.get_backend(
         'EMU:1Q:LESCANNE_2020', average_nb_photons=6.0
     )
-    job = execute(c, backend, shots=100)
+    transpiled = transpile(c, backend)
+    job = backend.run(transpiled, shots=100)
     res = job.result()
     res.get_counts()

@@ -34,12 +34,9 @@ dependencies = [
     "ipywidgets",
     "pydantic>=2.0",
     "requests",
-    # <0.45.0: this version introduces many API changes that we need to integrate
-    "qiskit>=0.43,<0.45",
-    # <0.13.0: qiskit-aer has become irritatingly slow in this release.
-    # It especially shows in https://github.com/Alice-Bob-SW/emulation-examples/blob/main/3_error_detection_on_physical_qubits.ipynb
-    "qiskit-aer<0.13.0",
-    "qiskit-qir-alice-bob-fork==0.3.2rc0",
+    "qiskit>=1.0, <1.2",
+    "qiskit-aer<0.16.0",
+    "qiskit-qir-alice-bob-fork==0.5.0rc0",
     "tenacity"
 ]
 
@@ -65,6 +62,9 @@ dev = [
     "types-setuptools==70.0.0.20240524",
     "types-requests==2.30.0.0"
 ]
+
+[project.entry-points."qiskit.transpiler.scheduling"]
+ab_asap = "qiskit_alice_bob_provider.plugins.ab_asap:AliceBobASAPSchedulingPlugin"
 
 [project.entry-points."qiskit.transpiler.translation"]
 state_preparation = "qiskit_alice_bob_provider.plugins.state_preparation:StatePreparationPlugin"

@@ -1,7 +1,6 @@
 import pytest
 from qiskit.circuit import Delay, Instruction, Parameter
-from qiskit.circuit.library import CXGate, RYGate, XGate
-from qiskit.extensions.quantum_initializer import Initialize
+from qiskit.circuit.library import CXGate, Initialize, RYGate, XGate
 
 from qiskit_alice_bob_provider.custom_instructions import MeasureX
 from qiskit_alice_bob_provider.local.proc_to_qiskit import (

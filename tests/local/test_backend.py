@@ -1,8 +1,8 @@
 from typing import List
 
 import numpy as np
-from qiskit import QuantumCircuit, execute, transpile
-from qiskit.extensions.quantum_initializer import Initialize
+from qiskit import QuantumCircuit, transpile
+from qiskit.circuit.library import Initialize
 
 from qiskit_alice_bob_provider.local.backend import ProcessorSimulator
 from qiskit_alice_bob_provider.processor.physical_cat import (
@@ -39,7 +39,8 @@ def test_set_execution_backend_options() -> None:
     backend = ProcessorSimulator(PhysicalCatProcessor())
     backend.set_options(shots=7)
     assert backend.options['shots'] == 7
-    assert sum(execute(circ, backend).result().get_counts().values()) == 7
+    transpiled = transpile(circ, backend)
+    assert sum(backend.run(transpiled).result().get_counts().values()) == 7
 
 
 def test_translation_plugin() -> None:
