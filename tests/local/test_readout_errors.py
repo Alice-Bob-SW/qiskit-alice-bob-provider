@@ -1,5 +1,5 @@
 import pytest
-from qiskit import QuantumCircuit, execute
+from qiskit import QuantumCircuit
 
 from qiskit_alice_bob_provider.local.backend import ProcessorSimulator
 from qiskit_alice_bob_provider.local.readout_errors import (
@@ -25,14 +25,14 @@ def test_one_readout_error() -> None:
     circ.initialize('++')
     circ.measure_x(0, 0)
     circ.measure_x(1, 1)
-    counts = execute(circ, backend, shots=1).result().get_counts()
+    counts = backend.run(circ, shots=1).result().get_counts()
     assert counts.keys() == {'01'}
 
     circ = QuantumCircuit(2, 2)
     circ.initialize('--')
     circ.measure_x(0, 0)
     circ.measure_x(1, 1)
-    counts = execute(circ, backend, shots=1).result().get_counts()
+    counts = backend.run(circ, shots=1).result().get_counts()
     assert counts.keys() == {'01'}
 
 
@@ -44,14 +44,14 @@ def test_all_to_all_one_readout_error() -> None:
     circ.initialize('++')
     circ.measure_x(0, 0)
     circ.measure_x(1, 1)
-    counts = execute(circ, backend, shots=1).result().get_counts()
+    counts = backend.run(circ, shots=1).result().get_counts()
     assert counts.keys() == {'11'}
 
     circ = QuantumCircuit(2, 2)
     circ.initialize('--')
     circ.measure_x(0, 0)
     circ.measure_x(1, 1)
-    counts = execute(circ, backend, shots=1).result().get_counts()
+    counts = backend.run(circ, shots=1).result().get_counts()
     assert counts.keys() == {'11'}
 
 
@@ -63,13 +63,13 @@ def test_conflicting_readout_errors() -> None:
     circ = QuantumCircuit(1, 1)
     circ.initialize('+')
     circ.measure_x(0, 0)
-    counts = execute(circ, backend, shots=1).result().get_counts()
+    counts = backend.run(circ, shots=1).result().get_counts()
     assert counts.keys() == {'1'}
 
     circ = QuantumCircuit(1, 1)
     circ.initialize('-')
     circ.measure_x(0, 0)
-    counts = execute(circ, backend, shots=1).result().get_counts()
+    counts = backend.run(circ, shots=1).result().get_counts()
     assert counts.keys() == {'1'}
 
 

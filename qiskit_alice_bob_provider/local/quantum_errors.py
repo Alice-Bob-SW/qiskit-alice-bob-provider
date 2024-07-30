@@ -21,9 +21,8 @@ from qiskit.circuit.equivalence_library import (
     EquivalenceLibrary,
     SessionEquivalenceLibrary,
 )
-from qiskit.circuit.library import IGate
+from qiskit.circuit.library import IGate, Initialize
 from qiskit.dagcircuit import DAGCircuit
-from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.quantum_info import Chi
 from qiskit.transpiler import TransformationPass
 from qiskit_aer.noise import pauli_error
@@ -77,9 +76,8 @@ class _MeasureMarkerGate(IGate):
     instruction's quantum error after the marker gate. This is a trick that we
     may not need in the future, depending on the evolution of Qiskit."""
 
-    def __init__(self, name: str, label: Optional[str] = None):
+    def __init__(self, label: Optional[str] = None):
         super().__init__(label=label)
-        self.name = name
 
     def add_equivalence(self, library: EquivalenceLibrary) -> None:
         """Add an implementation of this marker gate to an equivalence library
@@ -89,18 +87,20 @@ class _MeasureMarkerGate(IGate):
         library.add_equivalence(self, circuit)
 
 
+# pylint: disable=too-many-ancestors
 class _MxMarkerGate(_MeasureMarkerGate):
     """A virtual gate that is inserted before every MeasureX"""
 
     def __init__(self, label: Optional[str] = None):
-        super().__init__(name='measure_x_marker', label=label)
+        super().__init__(label=label)
 
 
+# pylint: disable=too-many-ancestors
 class _MzMarkerGate(_MeasureMarkerGate):
     """A virtual gate that is inserted before every MeasureZ"""
 
     def __init__(self, label: Optional[str] = None):
-        super().__init__(name='measure_z_marker', label=label)
+        super().__init__(label=label)
 
 
 _marker_gate_types: Dict[str, type] = {
@@ -172,7 +172,7 @@ def _transpilation_pass_from_instruction(
                 processor=processor,
                 instr_properties=instruction,
             ),
-            op_types=[qiskit_instruction.__class__],
+            op_types=[qiskit_instruction.base_class],
             method='append',
         )
 

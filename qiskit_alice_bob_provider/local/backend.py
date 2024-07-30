@@ -16,7 +16,7 @@
 
 from typing import List, Optional, Union
 
-from qiskit import QuantumCircuit, execute
+from qiskit import QuantumCircuit
 from qiskit.providers import BackendV2, Options
 from qiskit.transpiler import PassManager, Target
 from qiskit_aer import AerSimulator
@@ -55,9 +55,6 @@ class ProcessorSimulator(BackendV2):
 
     # Simulate the circuit
     backend.run(transpiled)
-
-    # Do both steps in one:
-    execute(circ, backend)
     ```
     """
 
@@ -67,7 +64,7 @@ class ProcessorSimulator(BackendV2):
         processor: ProcessorDescription,
         execution_backend: AerBackend = AerSimulator(),
         name: Optional[str] = None,
-        scheduling_stage_plugin: str = 'asap',
+        scheduling_stage_plugin: str = 'ab_asap',
         translation_stage_plugin: str = 'state_preparation',
     ):
         """A Qiskit backend enabling transpilation to and simulation of an
@@ -139,9 +136,8 @@ class ProcessorSimulator(BackendV2):
 
         Note that these circuits should be already transpiled and scheduled,
         otherwise the simulation results will be meaningless.
-        To do so, either apply function :func:`transpile` to the circuits or
-        use :func:`execute` instead of calling `ProcessorSimulator.run`
-        directly.
+        To do so, apply function :func:`transpile` before calling
+        `ProcessorSimulator.run`.
 
         Args:
             run_input (Union[QuantumCircuit, List[QuantumCircuit]]): one or
@@ -163,18 +159,21 @@ class ProcessorSimulator(BackendV2):
         # the previous step. For example: Initialize(+), MeasureX().
         # Decomposing the circuits ensures those instructions are decomposed
         # into smaller instructions that the simulator can work with.
+        # We then need to decompose once again the 'state_preparation' gate
+        # introduced when decomposing the 'initialize' gate. The second call to
+        # decompose() will decompose them into their clifford representation.
         # Note: this will cause instructions that may not be in the processor
         # instruction set to appear. This is not an issue though, because at
         # this stage the noise has already been inserted and all
         # transformations done by the Qiskit transpiler don't change the
         # simulation results.
-        decomposed = [c.decompose() for c in noisy_circuits]
+        decomposed = [
+            c.decompose().decompose(gates_to_decompose=['state_preparation'])
+            for c in noisy_circuits
+        ]
 
-        job = execute(
-            experiments=decomposed,
-            backend=self._execution_backend,
-            noise_model=self._noise_model,
-            **options,
+        job = self._execution_backend.run(
+            decomposed, noise_model=self._noise_model, **options
         )
 
         return ProcessorSimulationJob(
@@ -185,8 +184,8 @@ class ProcessorSimulator(BackendV2):
         )
 
     def get_scheduling_stage_plugin(self) -> str:
-        """Indicate to the Qiskit transpiler that the transpiled circuit should
-        additionally be scheduled (e.g., with the 'asap' method)"""
+        """This hook tells Qiskit to schedule the circuit with the specified
+        scheduling plugin (e.g., with the 'ab_asap' method)"""
         return self._scheduling_stage_plugin
 
     def get_translation_stage_plugin(self) -> str:

@@ -15,20 +15,29 @@
 ##############################################################################
 
 
-from typing import Callable
+from typing import Any, Callable, Dict
 
 import numpy as np
-from qiskit.circuit import Instruction, Qubit, Reset
+from qiskit.circuit import ControlFlowOp, Instruction, Qubit, Reset
 from qiskit.circuit.equivalence_library import SessionEquivalenceLibrary
+from qiskit.circuit.library import Initialize
+from qiskit.converters import circuit_to_dag, dag_to_circuit
 from qiskit.dagcircuit import DAGCircuit, DAGInNode, DAGOpNode
-from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.transpiler import (
     PassManager,
     PassManagerConfig,
     TransformationPass,
     TranspilerError,
 )
-from qiskit.transpiler.passes import TrivialLayout, UnrollCustomDefinitions
+from qiskit.transpiler.passes import (
+    TrivialLayout,
+    UnitarySynthesis,
+    UnrollCustomDefinitions,
+)
+from qiskit.transpiler.passes.synthesis.plugin import UnitarySynthesisPlugin
+from qiskit.transpiler.passes.synthesis.unitary_synthesis import (
+    DefaultUnitarySynthesis,
+)
 from qiskit.transpiler.preset_passmanagers.common import (
     generate_embed_passmanager,
     generate_translation_passmanager,
@@ -198,9 +207,91 @@ class BreakDownInitializePass(TransformationPass):
         return dag
 
 
+class CustomUnitarySynthesis(UnitarySynthesis):
+    """
+    Synthesize gates according to their basis gates.
+
+    This is a replacement of the base UnitarySynthesis pass to handle the
+    SK synthesis on Alice & Bob targets.
+
+    The pass overrides the _run_main_loop method to remove an "optimization"
+    update that skips non control operational nodes, such as the gates we
+    synthesize with Solovay-Kitaev (rx, rz...)
+    https://github.com/Qiskit/qiskit/commit/d2ab4dfb480dbe77c42d01dc9a9c6d11cb9aa12c
+    """
+
+    # pylint: disable=too-many-arguments
+    def _run_main_loop(
+        self,
+        dag: DAGCircuit,
+        qubit_indices: Dict[Qubit, int],
+        plugin_method: UnitarySynthesisPlugin,
+        plugin_kwargs: Dict[str, Any],
+        default_method: DefaultUnitarySynthesis,
+        default_kwargs: Dict[str, Any],
+    ):
+        """Inner loop for the optimizer, after all DAG-independent set-up has
+        been completed."""
+        for node in dag.op_nodes(ControlFlowOp):
+            node.op = node.op.replace_blocks(
+                [
+                    dag_to_circuit(
+                        self._run_main_loop(
+                            circuit_to_dag(block),
+                            {
+                                inner: qubit_indices[outer]
+                                for inner, outer in zip(
+                                    block.qubits, node.qargs
+                                )
+                            },
+                            plugin_method,
+                            plugin_kwargs,
+                            default_method,
+                            default_kwargs,
+                        ),
+                        copy_operations=False,
+                    )
+                    for block in node.op.blocks
+                ]
+            )
+
+        for node in dag.named_nodes(*self._synth_gates):
+            if (
+                self._min_qubits is not None
+                and len(node.qargs) < self._min_qubits
+            ):
+                continue
+            synth_dag = None
+            unitary = node.op.to_matrix()
+            n_qubits = len(node.qargs)
+            if (
+                plugin_method.max_qubits is not None
+                and n_qubits > plugin_method.max_qubits
+            ) or (
+                plugin_method.min_qubits is not None
+                and n_qubits < plugin_method.min_qubits
+            ):
+                method, kwargs = default_method, default_kwargs
+            else:
+                method, kwargs = plugin_method, plugin_kwargs
+            if method.supports_coupling_map:
+                kwargs['coupling_map'] = (
+                    self._coupling_map,
+                    [qubit_indices[x] for x in node.qargs],
+                )
+            synth_dag = method.run(unitary, **kwargs)
+            if synth_dag is not None:
+                dag.substitute_node_with_dag(node, synth_dag)
+        return dag
+
+
 class StatePreparationPlugin(PassManagerStagePlugin):
-    """A pass manager meant to be used as a translation plugin that ensures
-    all qubits are initialized with a known state among 0, 1, +, -.
+    """A translation plugin built on top of the base translator plugin with
+    the extra operations:
+    - Apply a Layout embedding from the target's coupling map.
+    - Ensure all qubits are initialized with a known state among 0, 1, +, -.
+    - Format and break down the initialize gates.
+    - Ensure we unroll custom gate definitions before applying synthesis.
     """
 
     def pass_manager(
@@ -237,9 +328,26 @@ class StatePreparationPlugin(PassManagerStagePlugin):
             ),
             hls_config=pass_manager_config.hls_config,
         )
-        for passes in default_pm.passes():
-            for p in passes.values():
-                custom_pm.append(p)
+        # pylint: disable=protected-access
+        for task in default_pm._tasks:
+            for subtask in task:
+                # Substitue the default UnitarySynthesis with our
+                # custom implementation.
+                if isinstance(subtask, UnitarySynthesis):
+                    custom_pm.append(
+                        # pylint: disable=line-too-long
+                        CustomUnitarySynthesis(
+                            basis_gates=pass_manager_config.basis_gates,
+                            approximation_degree=pass_manager_config.approximation_degree,  # noqa: E501
+                            coupling_map=pass_manager_config.coupling_map,
+                            backend_props=pass_manager_config.backend_properties,  # noqa: E501
+                            method=pass_manager_config.unitary_synthesis_method,  # noqa: E501
+                            plugin_config=pass_manager_config.unitary_synthesis_plugin_config,  # noqa: E501
+                            target=pass_manager_config.target,
+                        )
+                    )
+                    continue
+                custom_pm.append(subtask)
 
         custom_pm += generate_embed_passmanager(
             pass_manager_config.coupling_map

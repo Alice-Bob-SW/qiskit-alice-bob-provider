@@ -3,7 +3,7 @@ from typing import List
 import pytest
 from qiskit import QuantumCircuit
 from qiskit.circuit import ClassicalRegister, QuantumRegister
-from qiskit.extensions.quantum_initializer import Initialize
+from qiskit.circuit.library import Initialize
 from qiskit.transpiler import PassManager, PassManagerConfig, TranspilerError
 
 from qiskit_alice_bob_provider.local import AliceBobLocalProvider
@@ -105,7 +105,7 @@ def test_missing_prep() -> None:
     c.reset(1)
     c.y(1)
     c.initialize('+', 2)
-    c.cnot(1, 2)
+    c.cx(1, 2)
     c.measure(2, 0)
     new_c = pm.run(c)
     expected = c.count_ops()

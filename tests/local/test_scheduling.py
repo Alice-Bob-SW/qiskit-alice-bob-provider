@@ -2,7 +2,7 @@ from typing import Iterator, Tuple
 
 import pytest
 from qiskit import QuantumCircuit, transpile
-from qiskit.extensions.quantum_initializer import Initialize
+from qiskit.circuit.library import Initialize
 
 from qiskit_alice_bob_provider.local.backend import ProcessorSimulator
 from qiskit_alice_bob_provider.processor.description import (

@@ -27,6 +27,7 @@ from qiskit.circuit.library import (
     CXGate,
     CZGate,
     HGate,
+    Initialize,
     RXGate,
     RYGate,
     RZGate,
@@ -39,7 +40,6 @@ from qiskit.circuit.library import (
     YGate,
     ZGate,
 )
-from qiskit.extensions.quantum_initializer import Initialize
 from qiskit.transpiler import Target
 
 from ..custom_instructions import MeasureX

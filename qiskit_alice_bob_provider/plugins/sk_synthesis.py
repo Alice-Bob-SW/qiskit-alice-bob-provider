@@ -122,6 +122,7 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
         # Use above SK approximations by default
         pass_manager_config.unitary_synthesis_plugin_config = {
             'basic_approximations': approximations,
+            'basis_gates': discrete_basis_gates,
             **(pass_manager_config.unitary_synthesis_plugin_config or {}),
         }
 
@@ -135,25 +136,25 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
         # SolovayKitaevSynthesis plugin) with the gates to synthesize and basis
         # gates computed above.
         if pass_manager_config.unitary_synthesis_method == 'sk':
-            for passess in pm.passes():
-                for passes in passess.values():
-                    for p in passes:
-                        if (
-                            isinstance(p, UnitarySynthesis)
-                            and p.method == 'sk'
-                        ):
-                            # There is no option to manually set the gates to
-                            # synthesize in UnitarySynthesis, and the default
-                            # _synth_gates is just 'unitary'!
-                            # pylint: disable=protected-access
-                            p._synth_gates = synth_gates
-                            # Can't pass basis gates in
-                            # unitary_synthesis_plugin_config because overriden
-                            # by global basis_gates.
-                            # This seems to be a Qiskit bug (why give the
-                            # possibility to specify basis gates in the plugin
-                            # config if that was not the intent?)
-                            # pylint: disable=protected-access
-                            p._basis_gates = discrete_basis_gates
+            # pylint: disable=protected-access
+            for task in pm._tasks:
+                for subtask in task:
+                    if (
+                        isinstance(subtask, UnitarySynthesis)
+                        and subtask.method == 'sk'
+                    ):
+                        # There is no option to manually set the gates to
+                        # synthesize in UnitarySynthesis, and the default
+                        # _synth_gates is just 'unitary'!
+                        # pylint: disable=protected-access
+                        subtask._synth_gates = synth_gates
+                        # Can't pass basis gates in
+                        # unitary_synthesis_plugin_config because overriden
+                        # by global basis_gates.
+                        # This seems to be a Qiskit bug (why give the
+                        # possibility to specify basis gates in the plugin
+                        # config if that was not the intent?)
+                        # pylint: disable=protected-access
+                        subtask._basis_gates = discrete_basis_gates
 
         return pm
