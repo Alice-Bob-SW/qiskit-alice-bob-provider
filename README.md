@@ -42,13 +42,13 @@ backend = ab.get_backend('EMU:1Q:LESCANNE_2020')
 The backend can then be used like a regular Qiskit backend:
 
 ```python
-from qiskit import QuantumCircuit, execute
+from qiskit import QuantumCircuit
 
 c = QuantumCircuit(1, 2)
 c.initialize('+', 0)
 c.measure_x(0, 0)
 c.measure(0, 1)
-job = execute(c, backend)
+job = backend.run(c)
 res = job.result()
 print(res.get_counts())
 ```
@@ -59,7 +59,7 @@ This project contains multiple emulators of multi cat qubit processors.
 
 ```python
 from qiskit_alice_bob_provider import AliceBobLocalProvider
-from qiskit import QuantumCircuit, execute, transpile
+from qiskit import QuantumCircuit, transpile
 
 provider = AliceBobLocalProvider()
 print(provider.backends())
@@ -85,7 +85,7 @@ a `EMU:6Q:PHYSICAL_CATS` processor, for different values of parameters
 
 ```python
 from qiskit_alice_bob_provider import AliceBobLocalProvider
-from qiskit import QuantumCircuit, execute, transpile
+from qiskit import QuantumCircuit, transpile
 
 provider = AliceBobLocalProvider()
 
@@ -102,13 +102,13 @@ backend = provider.get_backend('EMU:6Q:PHYSICAL_CATS')
 print(transpile(circ, backend).draw())
 # *Displays a timed and scheduled circuit*
 
-print(execute(circ, backend, shots=100000).result().get_counts())
+print(backend.run(circ, shots=100000).result().get_counts())
 # {'11': 49823, '00': 50177}
 
 # Changing the cat size from 16 (default) to 4 and k1/k2 to 1e-2.
 backend = provider.get_backend(
     'EMU:6Q:PHYSICAL_CATS', average_nb_photons=4, kappa_2=1e4
 )
-print(execute(circ, backend, shots=100000).result().get_counts())
+print(backend.run(circ, shots=100000).result().get_counts())
 # {'01': 557, '11': 49422, '10': 596, '00': 49425}
 ```
