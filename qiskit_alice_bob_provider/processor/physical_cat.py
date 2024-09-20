@@ -46,7 +46,8 @@ class PhysicalCatProcessor(ProcessorDescription):
     taken from different sources referenced in the code below.
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def __init__(
         self,
         n_qubits: int = 5,
         kappa_1: float = 100,
