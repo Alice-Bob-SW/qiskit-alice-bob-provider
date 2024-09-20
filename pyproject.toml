@@ -25,15 +25,16 @@ classifiers=[
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Physics",
 ]
 urls = {Homepage = "https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider", "Alice & Bob" = "https://alice-bob.com/"}
-requires-python = ">=3.8, <3.12"
+requires-python = ">=3.8, <3.13"
 dependencies = [
     "ipython",
     "ipywidgets",
     "pydantic>=2.0",
-    "requests",
+    "requests>=1.26",
     # Qiskit version is pinned because substitute_node_with_dag function is patched to make custom instructions work.
     "qiskit==1.2.4",
     "qiskit-aer<0.16.0",
@@ -48,14 +49,15 @@ dev = [
     "codespell==2.2.2",
     "coverage==7.2.2",
     "flake8>=5.0.4",
-    "flake8-quotes==3.3.2",
+    "flake8-quotes==3.4.0",
     "isort>=5.11.5",
     "mock==5.1.0",
     "mypy==1.0.0",
     "mypy-extensions==1.0.0",
     "pre-commit>=2.21.0",
-    "pylint==2.16.1",
+    "pylint==3.2.7",
     "pytest==7.2.1",
+    "requests==2.32.3",
     "requests-mock==1.10.0",
     "traitlets==5.14.3",
     "twine==5.1.1",
