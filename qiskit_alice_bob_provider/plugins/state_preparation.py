@@ -220,7 +220,7 @@ class CustomUnitarySynthesis(UnitarySynthesis):
     https://github.com/Qiskit/qiskit/commit/d2ab4dfb480dbe77c42d01dc9a9c6d11cb9aa12c
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def _run_main_loop(
         self,
         dag: DAGCircuit,
