@@ -1,5 +1,4 @@
 from mock import MagicMock, patch
-from pkg_resources import Distribution
 from requests_mock.mocker import Mocker
 
 from qiskit_alice_bob_provider.remote.api.version import (
@@ -10,11 +9,11 @@ from qiskit_alice_bob_provider.remote.api.version import (
 
 
 @patch(
-    'qiskit_alice_bob_provider.remote.api.version.get_distribution',
-    wraps=lambda _: Distribution(version='1.2.0'),
+    'qiskit_alice_bob_provider.remote.api.version.version',
+    wraps=lambda _: '1.2.0',
 )
 def test_get_provider_status_latest(
-    get_distribution_mock: MagicMock,
+    version_mock: MagicMock,
     requests_mock: Mocker,
 ) -> None:
     requests_mock.register_uri(
@@ -36,16 +35,16 @@ def test_get_provider_status_latest(
     )
 
     status = get_provider_status()
-    get_distribution_mock.assert_called_once()
+    version_mock.assert_called_once()
     assert status == ProviderStatus.LATEST
 
 
 @patch(
-    'qiskit_alice_bob_provider.remote.api.version.get_distribution',
-    wraps=lambda _: Distribution(version='1.2.0'),
+    'qiskit_alice_bob_provider.remote.api.version.version',
+    wraps=lambda _: '1.2.0',
 )
 def test_get_provider_status_outdated(
-    get_distribution_mock: MagicMock,
+    version_mock: MagicMock,
     requests_mock: Mocker,
 ) -> None:
     requests_mock.register_uri(
@@ -67,7 +66,7 @@ def test_get_provider_status_outdated(
     )
 
     status = get_provider_status()
-    get_distribution_mock.assert_called_once()
+    version_mock.assert_called_once()
     assert status == ProviderStatus.OUTDATED
 
 

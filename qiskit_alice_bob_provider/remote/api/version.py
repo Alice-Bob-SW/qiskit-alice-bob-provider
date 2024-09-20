@@ -1,8 +1,8 @@
 import logging
 from enum import Enum
+from importlib.metadata import version
 
 import requests
-from pkg_resources import get_distribution
 
 PROVIDER_PYPI_URL = 'https://pypi.org/pypi/qiskit-alice-bob-provider/json'
 
@@ -26,7 +26,7 @@ def get_provider_status() -> ProviderStatus:
         logging.exception(e)
         return ProviderStatus.UNKNOWN
 
-    installed_version = get_distribution('qiskit_alice_bob_provider').version
+    installed_version = version('qiskit_alice_bob_provider')
 
     if pypi_version == installed_version:
         return ProviderStatus.LATEST
