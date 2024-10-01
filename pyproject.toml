@@ -34,7 +34,8 @@ dependencies = [
     "ipywidgets",
     "pydantic>=2.0",
     "requests",
-    "qiskit>=1.0, <1.2",
+    # Qiskit version is pinned because substitute_node_with_dag function is patched to make custom instructions work.
+    "qiskit==1.2.4",
     "qiskit-aer<0.16.0",
     "qiskit-qir-alice-bob-fork==0.5.0rc0",
     "tenacity"
