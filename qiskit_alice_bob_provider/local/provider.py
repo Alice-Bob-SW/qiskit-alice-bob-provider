@@ -102,7 +102,7 @@ class AliceBobLocalProvider(ProviderV1):
     def get_backend(self, name: str, **processor_kwargs) -> ProcessorSimulator:
         return self._backend_builders[name](**processor_kwargs)
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def build_physical_backend(
         self,
         n_qubits: int = 5,
@@ -131,7 +131,7 @@ class AliceBobLocalProvider(ProviderV1):
             name=name,
         )
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def build_logical_backend(
         self,
         n_qubits: int = 40,
