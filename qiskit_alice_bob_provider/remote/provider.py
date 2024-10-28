@@ -48,15 +48,13 @@ class AliceBobRemoteProvider(ProviderV1):
             url (str): Base URL of the Alice & Bob API.
                 Defaults to 'https://api-gcp.alice-bob.com/'.
         """
-        client = ApiClient(
+        self.client = ApiClient(
             api_key=api_key,
             url=url,
             retries=retries,
             wait_between_retries_seconds=wait_between_retries_seconds,
         )
-        self._backends = []
-        for ab_target in list_targets(client):
-            self._backends.append(AliceBobRemoteBackend(client, ab_target))
+        self._targets = list_targets(self.client)
 
         provider_status = get_provider_status()
         if provider_status == ProviderStatus.UNKNOWN:
@@ -107,12 +105,20 @@ class AliceBobRemoteProvider(ProviderV1):
             **kwargs: additional parameters for filtering
 
         Returns:
-            List[Backend]: the list of maching backends.
+            List[Backend]: the list of matching backends.
         """
+        # backends are loaded from targets dynamically each time to create
+        # instances and avoid shared references
+        backends_from_targets = [
+            AliceBobRemoteBackend(self.client, ab_target)
+            for ab_target in self._targets
+        ]
         if name:
             backends = [
-                backend for backend in self._backends if backend.name == name
+                backend
+                for backend in backends_from_targets
+                if backend.name == name
             ]
         else:
-            backends = self._backends
+            backends = backends_from_targets
         return filter_backends(backends, **kwargs)
