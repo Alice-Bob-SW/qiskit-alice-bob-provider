@@ -39,7 +39,6 @@ class AliceBobLocalProvider(ProviderV1):
     """
 
     def __init__(self) -> None:
-        self._backends: List[ProcessorSimulator] = []
         self._backend_builders: Dict[
             str, Callable[..., ProcessorSimulator]
         ] = {}
@@ -79,7 +78,6 @@ class AliceBobLocalProvider(ProviderV1):
             name='EMU:1Q:LESCANNE_2020',
             average_nb_photons=4,
         )
-        self._backends = [func() for func in self._backend_builders.values()]
 
     # pylint: disable=arguments-differ
     def backends(self, name: Optional[str] = None) -> List[BackendV2]:
@@ -90,13 +88,12 @@ class AliceBobLocalProvider(ProviderV1):
                 returned (there should be only one such backend).
 
         Returns:
-            List[BackendV2]: the list of maching backends.
+            List[BackendV2]: the list of matching backends.
         """
+        backends = [func() for func in self._backend_builders.values()]
         if name:
-            return [
-                backend for backend in self._backends if backend.name == name
-            ]
-        return self._backends
+            return [backend for backend in backends if backend.name == name]
+        return backends
 
     # pylint: disable=signature-differs
     def get_backend(self, name: str, **processor_kwargs) -> ProcessorSimulator:
