@@ -13,7 +13,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 ##############################################################################
-
+from copy import deepcopy
 from typing import Any, Dict
 
 from pydantic.alias_generators import to_camel, to_snake
@@ -73,12 +73,8 @@ class AliceBobRemoteBackend(BackendV2):
         return self._translation_plugin
 
     def update_options(self, option_updates: Dict[str, Any]) -> Options:
-        options: Options = self.options
-        for key, value in option_updates.items():
-            if not hasattr(options, key):
-                raise ValueError(f'Backend does not support option "{key}"')
-            options.update_options(**{key: value})
-        return options
+        update_options_object(self.options, option_updates)
+        return self.options
 
     def run(self, run_input: QuantumCircuit, **kwargs) -> AliceBobRemoteJob:
         """Run the quantum circuit on the Alice & Bob backend by calling the
@@ -107,8 +103,11 @@ class AliceBobRemoteBackend(BackendV2):
         if self._verbose:
             display_new_line()
             display_current_line('Sending circuit to the API...')
-        options = self.update_options(kwargs)
-        input_params = _ab_input_params_from_options(options)
+        # Copy value instead of reference to avoid modifying backend options
+        # definitively
+        new_options = deepcopy(self.options)
+        update_options_object(new_options, kwargs)
+        input_params = _ab_input_params_from_options(new_options)
         job = jobs.create_job(self._api_client, self.name, input_params)
         run_input = PassManager([EnsurePreparationPass()]).run(run_input)
         jobs.upload_input(
@@ -164,3 +163,10 @@ def _determine_translation_plugin(target: Target) -> str:
     ) or any(gate not in instructions for gate in ['h', 't']):
         return 'state_preparation'
     return 'sk_synthesis'
+
+
+def update_options_object(options: Options, option_updates: Dict[str, Any]):
+    for key, value in option_updates.items():
+        if not hasattr(options, key):
+            raise ValueError(f'Backend does not support option "{key}"')
+        options.update_options(**{key: value})
