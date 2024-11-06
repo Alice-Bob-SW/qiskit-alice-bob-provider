@@ -52,6 +52,26 @@ def test_get_backend_with_options(mocked_targets) -> None:
     assert backend.options['average_nb_photons'] == 6.0
 
 
+def test_get_multiple_backends_with_options(mocked_targets) -> None:
+    """
+    Test that getting multiple backends with different options does not affect
+    the default backend options.
+    """
+    provider = AliceBobRemoteProvider(api_key='foo')
+    default_backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    _ = provider.get_backend(
+        'EMU:1Q:LESCANNE_2020', average_nb_photons=6, shots=10
+    )
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+
+    # Ensure that the backend objects are different instances
+    assert default_backend is not backend
+    # Ensure that the options objects are different instances
+    assert default_backend.options is not backend.options
+    # Ensure that the default options are equal
+    assert default_backend.options == backend.options
+
+
 def test_get_backend_options_validation(mocked_targets) -> None:
     provider = AliceBobRemoteProvider(api_key='foo')
     with pytest.raises(ValueError):
