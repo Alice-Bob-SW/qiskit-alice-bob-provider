@@ -22,7 +22,7 @@ will always install the  latest (and well-tested) version.
 
 ## Remote execution on Alice & Bob QPUs: use your API key
 
-To obtain an API key, please [contact Alice & Bob](https://alice-bob.com/contact/).
+To obtain an API key, get a Felis Cloud subscription on the [Google Cloud Marketplace](https://console.cloud.google.com/marketplace/product/cloud-prod-0/felis-cloud) or [contact Alice & Bob](https://alice-bob.com/contact/).
 
 You can initialize the Alice & Bob remote provider using your API key
 locally with:
