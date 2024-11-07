@@ -14,10 +14,12 @@
 #    limitations under the License.
 ##############################################################################
 
+from inspect import signature
 from itertools import product
 from typing import Dict, List, Union
 
 import numpy as np
+from typing_extensions import Type
 
 
 def pauli_errors_to_chi(pauli_errors: Dict[str, float]) -> np.ndarray:
@@ -220,3 +222,9 @@ def tensor_errors(
     for (a_pauli, a_prob), (b_pauli, b_prob) in product(a.items(), b.items()):
         output[b_pauli + a_pauli] = a_prob * b_prob
     return output
+
+
+def get_init_params(cls: Type) -> List[str]:
+    """Get the names of the parameters of a class's __init__ method"""
+    init_signature = signature(cls.__init__)
+    return list(init_signature.parameters.keys())[1:]  # Skip 'self'

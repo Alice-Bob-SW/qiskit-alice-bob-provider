@@ -23,6 +23,7 @@ from qiskit_aer import AerSimulator
 from qiskit_aer.backends.aerbackend import AerBackend
 
 from ..processor.description import ProcessorDescription
+from ..processor.utils import get_init_params
 from .job import ProcessorSimulationJob
 from .quantum_errors import build_quantum_error_passes
 from .readout_errors import build_readout_noise_model
@@ -73,12 +74,13 @@ class ProcessorSimulator(BackendV2):
 
         Args:
             processor (ProcessorDescription): the description of the quantum
-            processor to simulate
+                processor to simulate
             execution_backend (AerBackend, optional): the Qiskit simulator used
-            in the background for simulation. Defaults to AerSimulator().
+                in the background for simulation. Defaults to AerSimulator().
             name (Optional[str], optional): an optional name for the backend.
         """
         super().__init__(name=name, backend_version=1)
+        self._processor = processor
         self._target = processor_to_target(processor)
         self._execution_backend = execution_backend
         self._execution_backend.set_option('n_qubits', self._target.num_qubits)
@@ -141,11 +143,31 @@ class ProcessorSimulator(BackendV2):
 
         Args:
             run_input (Union[QuantumCircuit, List[QuantumCircuit]]): one or
-            multiple circuits to simulate.
+                multiple circuits to simulate.
             **options: additional arguments are interpreted as options for
-            the underlying execution backend, usually an instance of
-            AerSimulator.
+                the underlying execution backend, usually an instance of
+                AerSimulator.
+
+        Returns:
+            ProcessorSimulationJob: A wrapper of a submitted asynchronous
+                AerJob
+
+        Raises:
+            ValueError: if a custom A&B option is passed to backend.run()
         """
+        if options:
+            # Check that the options passed are not custom A&B options of the
+            # processor because they will be ignored in this function.
+            processor_params = get_init_params(self._processor.__class__)
+            for option in options:
+                if option not in processor_params:
+                    continue
+                raise ValueError(
+                    f'The Alice & Bob custom option {option} is not allowed '
+                    'for backend.run() with local provider. '
+                    'You should pass it to get_backend() instead.'
+                )
+
         if isinstance(run_input, QuantumCircuit):
             circuits = [run_input]
         else:
