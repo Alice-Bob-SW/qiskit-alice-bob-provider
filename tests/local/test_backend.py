@@ -1,10 +1,12 @@
 from typing import List
 
 import numpy as np
+import pytest
 from qiskit import QuantumCircuit, transpile
 from qiskit.circuit.library import Initialize
 
 from qiskit_alice_bob_provider.local.backend import ProcessorSimulator
+from qiskit_alice_bob_provider.processor.logical_cat import LogicalCatProcessor
 from qiskit_alice_bob_provider.processor.physical_cat import (
     PhysicalCatProcessor,
 )
@@ -41,6 +43,26 @@ def test_set_execution_backend_options() -> None:
     assert backend.options['shots'] == 7
     transpiled = transpile(circ, backend)
     assert sum(backend.run(transpiled).result().get_counts().values()) == 7
+
+
+def test_run_override_nbar_error() -> None:
+    """
+    Test that passing average_nb_photons option to backend.run() is not allowed
+    """
+    circ = QuantumCircuit(1, 1)
+    backend = ProcessorSimulator(PhysicalCatProcessor())
+    transpiled = transpile(circ, backend)
+    with pytest.raises(ValueError):
+        _ = backend.run(transpiled, shots=100, average_nb_photons=4)
+    with pytest.raises(ValueError):
+        _ = backend.run(transpiled, shots=100, kappa_1=4)
+
+    backend = ProcessorSimulator(LogicalCatProcessor())
+    transpiled = transpile(circ, backend)
+    with pytest.raises(ValueError):
+        _ = backend.run(transpiled, shots=100, average_nb_photons=4)
+    with pytest.raises(ValueError):
+        _ = backend.run(transpiled, shots=100, kappa_1=4)
 
 
 def test_translation_plugin() -> None:
