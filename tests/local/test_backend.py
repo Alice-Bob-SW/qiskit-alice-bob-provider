@@ -90,7 +90,7 @@ def test_translation_plugin() -> None:
     circ = QuantumCircuit(3)
     circ.initialize(2, [0, 1])
     circ.reset(2)
-    transpiled = transpile(circ, backend)
+    transpiled = transpile(circ, backend, optimization_level=1)
     _assert_many_initializes(transpiled, ['0', '1', '0'])
 
 
