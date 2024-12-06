@@ -177,7 +177,7 @@ def test_interpolated_cat() -> None:
     circ.measure_x(0, 0)
     circ.measure(0, 1)
 
-    job = backend.run(transpile(circ, backend))
+    job = backend.run(transpile(circ, backend, optimization_level=1))
     assert isinstance(job, ProcessorSimulationJob)
     noisy_circ = job.noisy_circuits()[0]
 
