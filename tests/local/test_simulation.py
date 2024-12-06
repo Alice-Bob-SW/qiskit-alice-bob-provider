@@ -177,7 +177,9 @@ def test_interpolated_cat() -> None:
     circ.measure_x(0, 0)
     circ.measure(0, 1)
 
-    job = backend.run(transpile(circ, backend))
+    # Seed fixed to avoid qubit shuffling from VF2Layout transpiler pass,
+    # needed for a deterministic test
+    job = backend.run(transpile(circ, backend, seed_transpiler=5))
     assert isinstance(job, ProcessorSimulationJob)
     noisy_circ = job.noisy_circuits()[0]
 

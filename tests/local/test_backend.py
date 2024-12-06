@@ -93,7 +93,10 @@ def test_translation_plugin() -> None:
     circ = QuantumCircuit(3)
     circ.initialize(2, [0, 1])
     circ.reset(2)
-    transpiled = transpile(circ, backend)
+
+    # Seed fixed to avoid qubit shuffling from VF2Layout transpiler pass,
+    # needed for a deterministic test
+    transpiled = transpile(circ, backend, seed_transpiler=4)
     _assert_many_initializes(transpiled, ['0', '1', '0'])
 
 
