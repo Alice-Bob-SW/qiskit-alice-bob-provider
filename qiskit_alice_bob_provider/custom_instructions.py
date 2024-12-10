@@ -19,11 +19,6 @@ from typing import Optional
 from qiskit.circuit import Instruction, InstructionSet, QuantumCircuit, Reset
 from qiskit.circuit.equivalence_library import SessionEquivalenceLibrary
 from qiskit.circuit.quantumcircuit import ClbitSpecifier, QubitSpecifier
-from qiskit.dagcircuit import DAGCircuit
-
-from qiskit_alice_bob_provider.local.patch.substitute_node_with_dag import (
-    substitute_node_with_dag,
-)
 
 
 class MeasureX(Instruction):
@@ -65,13 +60,3 @@ SessionEquivalenceLibrary.add_equivalence(
 _c = QuantumCircuit(1, 0)
 _c.initialize('0', 0)  # pylint: disable=no-member
 SessionEquivalenceLibrary.add_equivalence(Reset(), _c)
-
-
-# The function substitute_node_with_dag is patched to make the custom measure_x
-# instruction work with Qiskit 1.2.
-# It adds the else statement that was removed on lines 1610-1611
-# in dagcircuit.py in this commit :
-# https://github.com/Qiskit/qiskit/commit/353b0ea6bdd907e801ad8fa264f3444e0be942aa#diff-4fb31a3ade5ae57cfd91ea00dbf3c5b6ab066a8234a742d91f9c09a09edca2f7L1610-L1611
-# This function will be moved to Rust in Qiskit version 1.3
-# so we will have to find another solution.
-DAGCircuit.substitute_node_with_dag = substitute_node_with_dag
