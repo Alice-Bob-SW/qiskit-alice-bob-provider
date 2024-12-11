@@ -42,6 +42,8 @@ _1Q_INSTRUCTIONS = [
     't',
     'tdg',
     'h',
+    's',
+    'sdg',
 ]
 
 
