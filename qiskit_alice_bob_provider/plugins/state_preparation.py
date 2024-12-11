@@ -313,6 +313,35 @@ class StatePreparationPlugin(PassManagerStagePlugin):
             )
         )
 
+        # todo :
+        #  replace with custom unitary synthesis
+        #  use rotations in basis translation
+        #  move / add synthesis after basis translation
+        custom_pm.append(
+            UnitarySynthesis(
+                basis_gates,
+                approximation_degree=approximation_degree,
+                coupling_map=coupling_map,
+                backend_props=backend_props,
+                plugin_config=unitary_synthesis_plugin_config,
+                method=unitary_synthesis_method,
+                target=target,
+            )
+        )
+        custom_pm.append(
+            HighLevelSynthesis(
+                hls_config=hls_config,
+                coupling_map=coupling_map,
+                target=target,
+                use_qubit_indices=True,
+                equivalence_library=sel,
+                basis_gates=basis_gates,
+            )
+        )
+        custom_pm.append(
+            BasisTranslator(sel, basis_gates, target),
+        )
+
         default_pm = generate_translation_passmanager(
             target=pass_manager_config.target,
             basis_gates=pass_manager_config.basis_gates,

@@ -116,6 +116,42 @@ def test_synthesize_cz() -> None:
     assert len(transpiled.get_instructions('h')) == 2
 
 
+def test_all_gates():
+    # todo : rewrite to a proper test
+    backend = backend_logical
+
+    gate_name_map = get_standard_gate_name_mapping()
+
+    def create_circuit_with_gate(instruction):
+        if instruction.params:
+            # integer for delay param, otherwise an angle
+            params = [10 if p.name == 't' else np.pi / 5 for p in instruction.params]
+        else:
+            params = []
+        qc = QuantumCircuit(instruction.num_qubits, instruction.num_clbits)
+        args = params + list(range(instruction.num_qubits)) + list(range(instruction.num_clbits))
+        getattr(qc, instruction.name)(*args)  # apply the gate
+        return qc
+
+    gates_with_errors = []
+
+    # Test transpilation for all basis gates
+    for name, instruction in gate_name_map.items():
+        if name in ['c3sx', 'cu1', 'cu3', 'xx_minus_yy', 'xx_plus_yy', 'u1', 'u2', 'u3']:
+            # 'QuantumCircuit' object has no attribute '...'
+            continue
+        if name == 'global_phase':
+            # not a gate, just a float
+            continue
+        try:
+            qc = create_circuit_with_gate(instruction)
+            transpiled_qc = transpile(qc, backend=backend)
+            print(f"Successfully transpiled gate: {name}")
+        except Exception as e:
+            print(f"Failed to transpile gate: {name}. #Error: {e}")
+            gates_with_errors.append(name)
+
+
 def test_do_nothing_on_mx() -> None:
     backend = ProcessorSimulator(
         SimpleAllToAllProcessor(), translation_stage_plugin='sk_synthesis'
