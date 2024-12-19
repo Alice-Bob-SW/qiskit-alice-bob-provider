@@ -1,10 +1,13 @@
+import sys
 from typing import List
 
 import numpy as np
 import pytest
 from qiskit import QuantumCircuit, transpile
-from qiskit.circuit.library import Initialize
+from qiskit.circuit import Instruction
+from qiskit.circuit.library import Initialize, get_standard_gate_name_mapping
 
+from qiskit_alice_bob_provider import AliceBobLocalProvider
 from qiskit_alice_bob_provider.local.backend import ProcessorSimulator
 from qiskit_alice_bob_provider.processor.logical_cat import LogicalCatProcessor
 from qiskit_alice_bob_provider.processor.physical_cat import (
@@ -114,6 +117,74 @@ def test_synthesize_cz() -> None:
     transpiled = transpile(circ, backend)
     assert len(transpiled.get_instructions('cz')) == 0
     assert len(transpiled.get_instructions('h')) == 2
+
+
+def test_all_gates():
+    """Test transpilation for all basis gates"""
+    provider = AliceBobLocalProvider()
+    backend = provider.get_backend('EMU:40Q:LOGICAL_TARGET')
+
+    qiskit_gates = get_standard_gate_name_mapping()
+    skip_gates = [
+        # Trying to access this gates from the circuit attributes returns an
+        # error "'QuantumCircuit' object has no attribute '...'"
+        'c3sx',
+        'cu1',
+        'cu3',
+        'xx_minus_yy',
+        'xx_plus_yy',
+        'u1',
+        'u2',
+        'u3',
+        # This one is not a gate, just a float.
+        'global_phase',
+    ]
+    if sys.platform == 'darwin':
+        # For some reason, on macOS we have numerical instabilities with the
+        # Solovay Kitaev synthesis, with specific angles.
+        # For instance, a simple 1Q circuit with a RZ(5pi/4) gate fails to
+        # transpile with our logical backends, and typically raises :
+        #   ValueError('Input matrix is not orthogonal.')
+        # As a result, the synthesis currently fails for the gates below (this
+        # needs to be fixed).
+        skip_gates += [
+            'cry',
+            'rccx',
+            'rcccx',
+        ]
+
+    def create_circuit_with_gate(instruction: Instruction):
+        if instruction.params:
+            # Most parameters are angles -> use pi/5.
+            # Except for the delay instruction, which expects an integer for
+            # param 't' -> use 10.
+            params = [
+                10 if p.name == 't' else np.pi / 5 for p in instruction.params
+            ]
+        else:
+            params = []
+        circuit = QuantumCircuit(
+            instruction.num_qubits, instruction.num_clbits
+        )
+        args = (
+            params
+            + list(range(instruction.num_qubits))
+            + list(range(instruction.num_clbits))
+        )
+        # apply the gate
+        getattr(circuit, instruction.name)(*args)
+        return circuit
+
+    errors = []
+    for name, i in qiskit_gates.items():
+        if name in skip_gates:
+            continue
+        try:
+            circ = create_circuit_with_gate(i)
+            _ = transpile(circ, backend=backend)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            errors.append((name, e))
+    assert not errors
 
 
 def test_do_nothing_on_mx() -> None:

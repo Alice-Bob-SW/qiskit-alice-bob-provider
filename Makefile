@@ -1,4 +1,5 @@
 VENV=venv
+PIP?=pip
 
 MODULES=qiskit_alice_bob_provider tests
 BUILD_DIR=dist
@@ -24,7 +25,7 @@ $(VENV):
 	$(PYTHON) -m venv $(VENV)
 
 install: $(VENV)
-	. $(ACTIVATE) && pip install -e .[dev]
+	. $(ACTIVATE) && $(PIP) install -e .[dev]
 
 clear:
 	rm -rf $(VENV)
