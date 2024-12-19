@@ -1,4 +1,4 @@
-VENV=venv
+VENV=venv3.13
 
 MODULES=qiskit_alice_bob_provider tests
 BUILD_DIR=dist
