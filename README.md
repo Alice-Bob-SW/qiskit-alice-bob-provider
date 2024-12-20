@@ -20,6 +20,9 @@ pip install qiskit-alice-bob-provider
 `pip` will handle installing all the python dependencies automatically and you
 will always install the  latest (and well-tested) version.
 
+> [!WARNING]
+> Transpilation of gates CRY, RCCX and RCCCX does not work on macOS currently.
+
 ## Remote execution on Alice & Bob QPUs: use your API key
 
 To obtain an API key, get a Felis Cloud subscription on the [Google Cloud Marketplace](https://console.cloud.google.com/marketplace/product/cloud-prod-0/felis-cloud) or [contact Alice & Bob](https://alice-bob.com/contact/).
