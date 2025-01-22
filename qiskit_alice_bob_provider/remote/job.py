@@ -61,6 +61,7 @@ class AliceBobRemoteJob(JobV1):
         job_id: str,
         circuit: QuantumCircuit,
         verbose: bool,
+        has_memory: bool = False,
     ):
         """A job should not be instantiated manually but created by calling
         :func:`AliceBobRemoteBackend.run` or :func:`qiskit.execute`.
@@ -82,6 +83,8 @@ class AliceBobRemoteJob(JobV1):
         self._ab_status: Optional[AliceBobEventType] = None
         self._status: Optional[JobStatus] = None
         self._counts: Optional[Dict[str, int]] = None
+        self._memory: Optional[list[str]] = None
+        self._has_memory = has_memory
         self._files: Dict[str, _DownloadedFile] = {}
         self._metrics: Dict[str, Any] = {}
 
@@ -138,6 +141,12 @@ class AliceBobRemoteJob(JobV1):
             lambda: jobs.download_output(self._api_client, self.job_id()),
         )
 
+    def _get_memory_output(self) -> Optional[str]:
+        return self._get_file(
+            'memory',
+            lambda: jobs.download_memory(self._api_client, self.job_id()),
+        )
+
     def _get_counts(self) -> Dict[str, int]:
         """Transform a histogram returned by the API into Qiskit's histogram
         format.
@@ -145,8 +154,10 @@ class AliceBobRemoteJob(JobV1):
         if self._counts is not None:
             return self._counts
         self._counts = {}
+
         output = self._get_output()
         assert output is not None
+
         for row in csv.DictReader(
             StringIO(output),
             fieldnames=['memory', 'count'],
@@ -154,6 +165,17 @@ class AliceBobRemoteJob(JobV1):
         ):
             self._counts[hex(int(row['memory'], 2))] = int(row['count'])
         return self._counts
+
+    def _get_memory(self) -> Optional[list[str]]:
+        if self._memory is not None:
+            return self._memory
+
+        output = self._get_memory_output()
+
+        if output is not None:
+            self._memory = output.split(',')
+
+        return self._memory
 
     def _get_metrics(self) -> Dict[str, Any]:
         self._metrics = jobs.get_job_metrics(self._api_client, self.job_id())
@@ -251,6 +273,9 @@ class AliceBobRemoteJob(JobV1):
                     ),
                     data=ExperimentResultData(
                         counts=self._get_counts() if success else None,
+                        memory=self._get_memory()
+                        if success and self._has_memory
+                        else None,
                         input_qir=self._get_input_qir(),
                         transpiled_qir=self._get_transpiled_qir(),
                     ),
