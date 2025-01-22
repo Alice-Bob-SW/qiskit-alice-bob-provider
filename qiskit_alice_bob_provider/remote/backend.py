@@ -119,6 +119,7 @@ class AliceBobRemoteBackend(BackendV2):
             job_id=job['id'],
             circuit=run_input,
             verbose=self._verbose,
+            has_memory=input_params.get('memory', False),
         )
 
 

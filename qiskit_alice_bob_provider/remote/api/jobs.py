@@ -131,6 +131,22 @@ def download_output(client: ApiClient, job_id: str) -> Optional[str]:
     return _download_file(client, f'v1/jobs/{job_id}/output')
 
 
+def download_memory(client: ApiClient, job_id: str) -> Optional[str]:
+    """For a given job, download the memory of the program
+
+    This function will return None if the job is not complete or if the job
+    has failed.
+
+    Args:
+        client (ApiClient): a client for the Alice & Bob API
+        job_id (str): the ID of the job in the Alice & Bob API
+
+    Returns:
+        Optional[str]: the job memory if available
+    """
+    return _download_file(client, f'v1/jobs/{job_id}/memory')
+
+
 def download_transpiled(client: ApiClient, job_id: str) -> Optional[str]:
     """For a given job, download the transpiled program
 
