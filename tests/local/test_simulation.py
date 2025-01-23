@@ -2,7 +2,7 @@ from typing import Iterator, List, Set, Tuple
 
 import numpy as np
 import pytest
-from qiskit import QuantumCircuit, transpile
+from qiskit import QiskitError, QuantumCircuit, transpile
 from qiskit_aer.backends import AerSimulator
 from qiskit_aer.noise import NoiseModel, pauli_error
 
@@ -70,6 +70,38 @@ def test_circuit(
         print('==== Noisy circuit ====')
         print(job.noisy_circuits()[0])
         raise
+
+
+def test_memory_experiment() -> None:
+    circuit = QuantumCircuit(1, 1)
+    circuit.initialize('0', 0)
+    circuit.delay(2, unit='us')
+    circuit.measure(0, 0)
+    backend = ProcessorSimulator(SimpleProcessor())
+    job = backend.run(transpile(circuit, backend), shots=2, memory=True)
+    result = job.result()
+    assert sum(result.get_counts().values()) == 2
+    assert len(result.get_memory()) == 2
+    assert ''.join(result.get_memory()) == '11'
+
+
+def test_memory_without_parameter() -> None:
+    circuit = QuantumCircuit(1, 1)
+    circuit.initialize('0', 0)
+    circuit.delay(2, unit='us')
+    circuit.measure(0, 0)
+    backend = ProcessorSimulator(SimpleProcessor())
+    job = backend.run(transpile(circuit, backend), shots=2, memory=False)
+    result = job.result()
+    assert sum(result.get_counts().values()) == 2
+    with pytest.raises(QiskitError) as e:
+        result.get_memory()
+    assert (str(e.value)).find(
+        'No memory for experiment "None". '
+        'Please verify that you '
+        'either ran a measurement level 2 job with the memory flag set, '
+        'eg., "memory=True", or a measurement level 0/1 job.'
+    )
 
 
 def test_multiple_experiments() -> None:

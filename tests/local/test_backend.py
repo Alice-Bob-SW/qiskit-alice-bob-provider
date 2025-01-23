@@ -43,9 +43,12 @@ def test_set_execution_backend_options() -> None:
     circ.measure_x(0, 0)
     backend = ProcessorSimulator(PhysicalCatProcessor())
     backend.set_options(shots=7)
+    backend.set_options(memory=True)
     assert backend.options['shots'] == 7
     transpiled = transpile(circ, backend)
-    assert sum(backend.run(transpiled).result().get_counts().values()) == 7
+    run = backend.run(transpiled, memory=True)
+    assert sum(run.result().get_counts().values()) == 7
+    assert len(run.result().get_memory()) == 7
 
 
 def test_run_override_nbar_error() -> None:
