@@ -19,6 +19,7 @@
 from pathlib import Path
 from textwrap import dedent
 
+import numpy as np
 import pytest
 from qiskit import QiskitError, QuantumCircuit, transpile
 from qiskit.providers import Options
@@ -209,6 +210,12 @@ def test_ab_input_params_from_options() -> None:
     options = Options(shots=43, average_nb_photons=3.2, foo_hey='bar')
     params = _ab_input_params_from_options(options)
     assert params == {'nbShots': 43, 'averageNbPhotons': 3.2, 'fooHey': 'bar'}
+
+
+def test_ab_input_params_from_options_with_numpy() -> None:
+    options = Options(shots=43, average_nb_photons=np.int32(3), foo_hey='bar')
+    params = _ab_input_params_from_options(options)
+    assert params == {'nbShots': 43, 'averageNbPhotons': 3, 'fooHey': 'bar'}
 
 
 def test_translation_plugin_and_qir(mocked_targets) -> None:
