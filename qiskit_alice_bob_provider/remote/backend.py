@@ -16,6 +16,7 @@
 from copy import deepcopy
 from typing import Any, Dict
 
+import numpy as np
 from pydantic.alias_generators import to_camel, to_snake
 from qiskit import QuantumCircuit
 from qiskit.providers import BackendV2, Options
@@ -151,6 +152,8 @@ def _ab_input_params_from_options(options: Options) -> Dict:
         name = to_camel(snake_name)
         if name == 'shots':  # special case
             name = 'nbShots'
+        if isinstance(value, np.generic):
+            value = value.item()
         input_params[name] = value
     return input_params
 
