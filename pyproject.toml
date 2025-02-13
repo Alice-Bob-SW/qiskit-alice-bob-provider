@@ -7,7 +7,7 @@ name = "qiskit_alice_bob_provider"
 authors = [
     {name = "Alice & Bob Software Team"},
 ]
-version = "1.1.1"
+dynamic = ["version"]
 description = "Provider for running Qiskit circuits on Alice & Bob QPUs and simulators"
 readme = "README.md"
 license = {text = "Apache 2.0"}
@@ -55,6 +55,7 @@ dev = [
     "pre-commit>=2.21.0",
     "pylint==3.2.7",
     "pytest==7.2.1",
+    "python-semantic-release==9.18.1",
     "requests==2.32.3",
     "requests-mock==1.10.0",
     "traitlets==5.14.3",
@@ -74,6 +75,9 @@ sk_synthesis = "qiskit_alice_bob_provider.plugins.sk_synthesis:SKSynthesisPlugin
 [tool.setuptools.packages.find]
 include = ["qiskit_alice_bob_provider*"]
 
+[tool.setuptools.dynamic]
+version = {attr = "qiskit_alice_bob_provider.__version__"}
+
 [tool.black]
 skip-string-normalization = true
 line-length = 79
@@ -91,3 +95,30 @@ module = [
     "scipy.*"
 ]
 ignore_missing_imports = true
+
+[tool.semantic_release]
+version_variables = ["qiskit_alice_bob_provider/__init__.py:__version__"]
+tag_format = "v{version}"
+build_command = "make build"
+
+[tool.semantic_release.branches.main]
+match = "feat/#666-automatic-release"
+prerelease = true
+prerelease_token = "beta"
+
+[tool.semantic_release.branches.release]
+match = "release"
+prerelease = false
+
+[tool.semantic_release.changelog]
+mode = "init"
+changelog_file = "CHANGELOG.md"
+exclude_commit_patterns = [
+  '''chore(?:\([^)]*?\))?: .+''',
+  '''ci(?:\([^)]*?\))?: .+''',
+  '''refactor(?:\([^)]*?\))?: .+''',
+  '''style(?:\([^)]*?\))?: .+''',
+  '''test(?:\([^)]*?\))?: .+''',
+  '''build\((?!deps\): .+)''',
+  '''Merged? .*''',
+]
