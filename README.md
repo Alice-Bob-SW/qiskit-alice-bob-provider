@@ -18,7 +18,7 @@ pip install qiskit-alice-bob-provider
 ```
 
 `pip` will handle installing all the python dependencies automatically and you
-will always install the  latest (and well-tested) version.
+will always install the latest (and well-tested) version.
 
 > [!WARNING]
 > Transpilation of gates CRY, RCCX and RCCCX does not work on macOS currently.
@@ -115,3 +115,44 @@ backend = provider.get_backend(
 print(backend.run(circ, shots=100000).result().get_counts())
 # {'01': 557, '11': 49422, '10': 596, '00': 49425}
 ```
+
+## Setting Up Development Environment (for contributors only)
+
+To ensure code consistency and enforce commit message conventions, we use `pre-commit` (Python-based) and `commitlint` (Node.js-based). Follow these steps to set up your development environment.
+
+### Prerequisites
+
+You need the following installed on your system:
+
+- **Python 3.12**
+- **Node.js** (latest LTS version recommended, required for `commitlint`)
+- **pnpm** (used to install `commitlint` dependencies)
+
+### Installation Steps
+
+1. **Install Python dependencies**  
+   Run the following command to set up the Python environment and install dependencies:
+
+   ```bash
+   make install
+   ```
+
+   This will:
+
+   - Create a Python **virtual environment**
+   - Install all required dependencies, including `pre-commit`
+
+2. **Install commitlint dependencies**  
+   Run the following command to install the necessary Node.js packages:
+
+   ```bash
+   pnpm install
+   ```
+
+3. **Install Git hooks**  
+   Run the following command to install all required Git hooks:
+   ```bash
+   make precommit-hooks
+   ```
+
+Happy coding! 🚀
