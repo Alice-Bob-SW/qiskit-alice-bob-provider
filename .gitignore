@@ -39,3 +39,6 @@ debug.*
 
 # Node
 node_modules/
+
+# Releases
+release_env.txt

@@ -98,3 +98,23 @@ test-publish: build
 
 publish: build
 	. $(ACTIVATE) && python -m twine upload dist/*
+
+
+#### Release
+
+check-release:
+	. $(ACTIVATE) && \
+	NEW_VERSION=$$(semantic-release version --print 2>/dev/null || echo "") && \
+	LAST_VERSION=$$(semantic-release version --print-last-released 2>/dev/null || echo "") && \
+	echo "New version: $$NEW_VERSION" && \
+	echo "Last released version: $$LAST_VERSION" && \
+	if [ "$$NEW_VERSION" != "$$LAST_VERSION" ]; then \
+	  echo "RELEASED=true" >> release_env.txt; \
+	  echo "A new release will be created."; \
+	else \
+	  echo "RELEASED=false" >> release_env.txt; \
+	  echo "No new release will be created."; \
+	fi
+
+release-version:
+	. $(ACTIVATE) && semantic-release -v version

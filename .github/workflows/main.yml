@@ -1,10 +1,10 @@
-name: Checks and Tests
+name: Checks, Tests and Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, release]
   pull_request:
-    branches: [main]
+    branches: [main, release]
 
 jobs:
   # 🔹 Test on Ubuntu
@@ -80,7 +80,7 @@ jobs:
       - name: Run Lint
         run: make lint
 
-  # 🔹 Commit Message Check (Only on Pull Requests)
+  # 🔹 Commit Message Check
   commit-message-check:
     name: commit-message-check
     runs-on: ubuntu-latest
@@ -91,3 +91,69 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate Commit Messages
         uses: wagoid/commitlint-github-action@v6
+
+  # 🔹 Release Process
+  release:
+    name: release
+    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release') }}
+    runs-on: ubuntu-latest
+    needs: [tests-ubuntu, tests-macOS, tests-windows, commit-message-check]
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Create Virtual Environment & Install Dependencies
+        run: make install
+
+      - name: Check If a New Version Should Be Released
+        id: release
+        run: |
+          make check-release
+          cat release_env.txt >> $GITHUB_ENV
+
+      - name: Run Semantic Version Release
+        if: ${{ env.RELEASED == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          make release-version
+          echo "LAST_RELEASED_TAG=$(semantic-release version --print-last-released-tag 2>/dev/null || echo '')" >> $GITHUB_ENV
+
+      - name: Sync `release` into `main`
+        if: ${{ github.ref == 'refs/heads/release' && env.RELEASED == 'true' }}
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@users.noreply.github.com"
+          git fetch origin main release
+          git checkout main
+          git pull origin main
+          git merge --ff-only release || { echo "Fast-forward merge failed. Manual resolution required."; exit 1; }
+          git push origin main
+
+      - name: Publish to TestPyPI
+        if: ${{ github.ref == 'refs/heads/main' && env.RELEASED == 'true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+      - name: Publish to PyPI
+        if: ${{ github.ref == 'refs/heads/release' && env.RELEASED == 'true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Publish | Upload to GitHub Release Assets
+        if: ${{ env.RELEASED == 'true' }}
+        uses: python-semantic-release/publish-action@v9.19.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.LAST_RELEASED_TAG }}
