@@ -102,7 +102,7 @@ tag_format = "v{version}"
 build_command = "make build"
 
 [tool.semantic_release.branches.main]
-match = "feat/#666-automatic-release"
+match = "main"
 prerelease = true
 prerelease_token = "beta"
 
