@@ -1,71 +1,93 @@
-name: Tests
+name: Checks and Tests
+
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
 jobs:
+  # 🔹 Test on Ubuntu
   tests-ubuntu:
     name: tests-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: ["ubuntu-latest"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Deps
+      - name: Install Dependencies
         run: make install
-      - name: Install and Run Tests
+      - name: Run Unit Tests
         run: make unit-tests
+
+  # 🔹 Test on macOS
   tests-macOS:
     name: tests-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: ["macOS-latest"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Deps
+      - name: Install Dependencies
         run: make install
-      - name: Install and Run Tests
+      - name: Run Unit Tests
         run: make unit-tests
+
+  # 🔹 Test on Windows
   tests-windows:
     name: tests-python${{ matrix.python-version }}-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         os: ["windows-latest"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Deps
+      - name: Install Dependencies
         run: make install
-      - name: Install and Run Tests
+      - name: Run Unit Tests
         run: make unit-tests
+
+  # 🔹 Linting (Only on Pull Requests)
   lint:
     name: lint
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
-      - name: Install Deps
+          python-version: "3.12"
+      - name: Install Dependencies
         run: make install
-      - name: Run lint
+      - name: Run Lint
         run: make lint
+
+  # 🔹 Commit Message Check (Only on Pull Requests)
+  commit-message-check:
+    name: commit-message-check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Commit Messages
+        uses: wagoid/commitlint-github-action@v6

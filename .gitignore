@@ -36,3 +36,6 @@ venv/
 
 # Debug files to interract with the provider easily.
 debug.*
+
+# Node
+node_modules/

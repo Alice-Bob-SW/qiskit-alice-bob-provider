@@ -63,6 +63,11 @@ _mypy:
 
 lint: _check_black _check_isort _mypy _flake8 _pylint
 
+### Precommit
+precommit-hooks:
+	. $(ACTIVATE) && pre-commit install \
+		&& pre-commit install --hook-type commit-msg
+
 #### Tests
 
 unit-tests:
