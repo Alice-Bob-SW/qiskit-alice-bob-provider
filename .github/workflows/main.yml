@@ -149,13 +149,13 @@ jobs:
           git push origin main
 
       - name: Publish to TestPyPI
-        if: ${{ github.ref == 'refs/heads/main' && env.RELEASED == 'true' }}
+        if: ${{ env.RELEASED == 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish to PyPI
-        if: ${{ github.ref == 'refs/heads/release' && env.RELEASED == 'true' }}
+        if: ${{ env.RELEASED == 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Publish | Upload to GitHub Release Assets
