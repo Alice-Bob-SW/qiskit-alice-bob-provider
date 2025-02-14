@@ -1,6 +1,21 @@
 # CHANGELOG
 
 
+## v1.1.2-beta.1 (2025-02-14)
+
+### Bug Fixes
+
+- Issue when options are passed as numpy types
+  ([`c1523cd`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/c1523cd414dd3b28bcd53caf1778ef07a6c97ab9))
+
+When using the AliceBobRemoteProvider, the backend options are serialized as JSON to be sent to the
+  API. In some cases, the user might provide some option values as numpy types (eg.
+  `average_nb_photons=np.int32(4)`), which is not JSON serializable and therefore raises an error.
+
+This fix aims to convert numpy scalar values to their corresponding native Python type before
+  serialization. `value.item()` does just that.
+
+
 ## v1.1.1 (2025-02-13)
 
 ### Bug Fixes
