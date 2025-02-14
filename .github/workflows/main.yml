@@ -103,10 +103,17 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.CLOUD_CI_DEPLOY_APP_ID }}
+          private-key: ${{ secrets.CLOUD_CI_DEPLOY_PRIVATE_KEY }}
+
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -125,7 +132,7 @@ jobs:
       - name: Run Semantic Version Release
         if: ${{ env.RELEASED == 'true' }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           make release-version
           echo "LAST_RELEASED_TAG=$(semantic-release version --print-last-released-tag 2>/dev/null || echo '')" >> $GITHUB_ENV
