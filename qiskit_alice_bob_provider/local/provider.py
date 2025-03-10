@@ -63,6 +63,11 @@ class AliceBobLocalProvider(ProviderV1):
             average_nb_photons=19,
             name='EMU:40Q:LOGICAL_TARGET',
         )
+        self._backend_builders['EMU:40Q:LOGICAL_NOISELESS'] = partial(
+            self.build_logical_noiseless_backend,
+            n_qubits=40,
+            name='EMU:40Q:LOGICAL_NOISELESS',
+        )
         self._backend_builders['EMU:15Q:LOGICAL_EARLY'] = partial(
             self.build_logical_backend,
             n_qubits=15,
@@ -128,6 +133,23 @@ class AliceBobLocalProvider(ProviderV1):
             name=name,
         )
 
+    def build_logical_noiseless_backend(
+        self,
+        n_qubits: int = 40,
+        clock_cycle: float = 1e-9,
+        name: Optional[str] = None,
+        **processor_kwargs,
+    ) -> ProcessorSimulator:
+        return ProcessorSimulator(
+            processor=LogicalCatProcessor.create_noiseless(
+                n_qubits=n_qubits,
+                clock_cycle=clock_cycle,
+                **processor_kwargs,
+            ),
+            translation_stage_plugin='sk_synthesis',
+            name=name,
+        )
+
     # pylint: disable=too-many-arguments,too-many-positional-arguments
     def build_logical_backend(
         self,
@@ -146,7 +168,7 @@ class AliceBobLocalProvider(ProviderV1):
         about the arguments.
         """
         return ProcessorSimulator(
-            processor=LogicalCatProcessor(
+            processor=LogicalCatProcessor.create_noisy(
                 n_qubits=n_qubits,
                 distance=distance,
                 kappa_1=kappa_1,
