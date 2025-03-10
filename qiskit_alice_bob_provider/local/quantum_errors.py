@@ -16,7 +16,7 @@
 
 from typing import Callable, Dict, List, Optional, Sequence
 
-from qiskit.circuit import Delay, Instruction, QuantumCircuit
+from qiskit.circuit import Delay, Instruction, Measure, QuantumCircuit
 from qiskit.circuit.equivalence_library import (
     EquivalenceLibrary,
     SessionEquivalenceLibrary,
@@ -44,6 +44,11 @@ def build_quantum_error_passes(
     passes. Readout errors are handled separately and are contined in the
     simulation NoiseModel.
     """
+
+    if getattr(processor, 'noiseless', False):
+        # By definition, a noiseless cat doesn't produce any noise,
+        # therefore, we return an empty list of transformation passes.
+        return []
 
     all_to_all = processor.all_to_all_connectivity
 
@@ -155,23 +160,21 @@ def _transpilation_pass_from_instruction(
     instruction in question."""
 
     qiskit_instruction = processor_to_qiskit_instruction(instruction)
+    pass_factory = _pass_factory(
+        processor=processor,
+        instr_properties=instruction,
+    )
 
     if qiskit_instruction.name in _marker_gate_types:
         return LocalNoisePass(
-            _pass_factory(
-                processor=processor,
-                instr_properties=instruction,
-            ),
+            pass_factory,
             op_types=[_marker_gate_types[qiskit_instruction.name]],
             method='append',
         )
 
     else:
         return LocalNoisePass(
-            _pass_factory(
-                processor=processor,
-                instr_properties=instruction,
-            ),
+            pass_factory,
             op_types=[qiskit_instruction.base_class],
             method='append',
         )

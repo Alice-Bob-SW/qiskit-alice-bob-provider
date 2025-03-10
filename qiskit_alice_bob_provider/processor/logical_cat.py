@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import Dict, Iterator, List, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 
 import numpy as np
 
@@ -84,11 +84,72 @@ class LogicalCatProcessor(ProcessorDescription):
         self,
         n_qubits: int = 5,
         distance: int = 11,
-        kappa_1: float = 100,
-        kappa_2: float = 10_000_000,
+        kappa_1: float = 10,
+        kappa_2: float = 10_000,
+        average_nb_photons: float = 16,
+        clock_cycle: float = 1e-9,
+        noiseless: bool = False,
+    ):
+        self._distance = distance
+        self._kappa_1 = kappa_1
+        self._kappa_2 = kappa_2
+        self._average_nb_photons = average_nb_photons
+        self.n_qubits = n_qubits
+        self.clock_cycle = clock_cycle
+        self.noiseless = noiseless
+
+    @classmethod
+    def from_noisy(
+        cls,
+        n_qubits: int = 5,
+        distance: int = 11,
+        kappa_1: float = 10,
+        kappa_2: float = 10_000,
         average_nb_photons: float = 16,
         clock_cycle: float = 1e-9,
     ):
+        cls._validate_noisy_parameters(
+            distance, kappa_1, kappa_2, average_nb_photons
+        )
+        return cls(
+            n_qubits,
+            distance,
+            kappa_1,
+            kappa_2,
+            average_nb_photons,
+            clock_cycle,
+        )
+
+    @classmethod
+    def from_noiseless(
+        cls, n_qubits: int = 40, clock_cycle: float = 1e-9, **kwargs
+    ):
+        if len(kwargs.items()) != 0:
+            raise ValueError(
+                f"A noiseless LogicalCatProcessor cannot accept arguments {', '.join(kwargs.keys())}"
+            )
+        return cls(
+            n_qubits=n_qubits,
+            distance=15,
+            kappa_1=100,
+            kappa_2=10_000_000,
+            average_nb_photons=19,
+            clock_cycle=clock_cycle,
+            noiseless=True,
+        )
+
+    @staticmethod
+    def _validate_noisy_parameters(
+        distance: Optional[int],
+        kappa_1: Optional[float],
+        kappa_2: Optional[float],
+        average_nb_photons: Optional[float],
+    ) -> None:
+        """
+        Validate parameters for a noisy processor.
+        Raises:
+            ValueError: If any parameter is invalid.
+        """
         if distance % 2 != 1 or distance < 3:
             raise ValueError(
                 'The distance of the linear repetition code should be an odd '
@@ -107,12 +168,6 @@ class LogicalCatProcessor(ProcessorDescription):
             raise ValueError(
                 'The ratio kappa_1 / kappa_2 should be between 1e-7 and 1e-1'
             )
-        self._distance = distance
-        self._kappa_1 = kappa_1
-        self._kappa_2 = kappa_2
-        self._average_nb_photons = average_nb_photons
-        self.clock_cycle = clock_cycle
-        self.n_qubits = n_qubits
 
     def all_instructions(self) -> Iterator[InstructionProperties]:
         yield InstructionProperties(
@@ -129,41 +184,67 @@ class LogicalCatProcessor(ProcessorDescription):
         if name == 'delay':
             assert len(params) == 1
             duration = params[0]
-            errors = _idle_error(
-                d=self._distance,
-                k1=self._kappa_1,
-                k2=self._kappa_2,
-                nbar=self._average_nb_photons,
-                t=duration,
+            errors = (
+                (
+                    _idle_error(
+                        d=self._distance,
+                        k1=self._kappa_1,
+                        k2=self._kappa_2,
+                        nbar=self._average_nb_photons,
+                        t=duration,
+                    )
+                )
+                if not self.noiseless
+                else None
             )
         elif name in _1Q_INSTRUCTIONS:
-            duration = _discrete_gate_time(d=self._distance, k2=self._kappa_2)
-            errors = _1q_logical_error(
-                d=self._distance,
-                nbar=self._average_nb_photons,
-                k1=self._kappa_1,
-                k2=self._kappa_2,
+            duration = discrete_gate_time(d=self._distance, k2=self._kappa_2)
+            errors = (
+                (
+                    _1q_logical_error(
+                        d=self._distance,
+                        nbar=self._average_nb_photons,
+                        k1=self._kappa_1,
+                        k2=self._kappa_2,
+                    )
+                )
+                if not self.noiseless
+                else None
             )
         elif name == 'cx':
-            duration = _discrete_gate_time(d=self._distance, k2=self._kappa_2)
-            errors = _cx_error(
-                d=self._distance,
-                k1=self._kappa_1,
-                k2=self._kappa_2,
-                nbar=self._average_nb_photons,
+            duration = discrete_gate_time(d=self._distance, k2=self._kappa_2)
+            errors = (
+                (
+                    _cx_error(
+                        d=self._distance,
+                        k1=self._kappa_1,
+                        k2=self._kappa_2,
+                        nbar=self._average_nb_photons,
+                    )
+                )
+                if not self.noiseless
+                else None
             )
         elif name == 'ccx':
-            duration = _discrete_gate_time(d=self._distance, k2=self._kappa_2)
-            errors = _ccx_error(
-                d=self._distance,
-                k1=self._kappa_1,
-                k2=self._kappa_2,
-                nbar=self._average_nb_photons,
+            duration = discrete_gate_time(d=self._distance, k2=self._kappa_2)
+            errors = (
+                (
+                    _ccx_error(
+                        d=self._distance,
+                        k1=self._kappa_1,
+                        k2=self._kappa_2,
+                        nbar=self._average_nb_photons,
+                    )
+                )
+                if not self.noiseless
+                else None
             )
         else:
             raise ValueError(f'Unknown instruction name "{name}"')
         try:
-            quantum_errors = pauli_errors_to_chi(errors)
+            # If the process is noiseless, the errors variable will be None
+            # So we have to take account of that
+            quantum_errors = pauli_errors_to_chi(errors) if errors else None
         except ValueError as e:
             raise ValueError(
                 f'The parameters of the processor (distance={self._distance}, '
@@ -178,7 +259,7 @@ class LogicalCatProcessor(ProcessorDescription):
         )
 
 
-def _discrete_gate_time(d: int, k2: float) -> float:
+def discrete_gate_time(d: int, k2: float) -> float:
     # [AB-SHOR] https://arxiv.org/pdf/2302.06639v1.pdf
     # p. 4.
     # The gate time is dominated by the duration of the error correction cycle.
@@ -223,7 +304,7 @@ def _idle_error(
 ) -> Dict[str, float]:
     # Count the number of error correction cycles within duration t and compose
     # that many times the error correction cycle error.
-    cycle_time = _discrete_gate_time(d=d, k2=k2)
+    cycle_time = discrete_gate_time(d=d, k2=k2)
     corr_cycles = int(t // cycle_time)
     cycle_error = _1q_logical_error(d=d, nbar=nbar, k1=k1, k2=k2)
     # Why not an empty dict for the initial error? If an empty dict, the Pauli
