@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.1.2-beta.4 (2025-03-12)
+
+### Build System
+
+- Pypi publishing
+  ([`667501d`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/667501d68c8603398b50fcb33dc76c18ec8745f7))
+
+
 ## v1.1.2-beta.3 (2025-03-12)
 
 ### Build System
