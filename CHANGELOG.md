@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.1.2-beta.2 (2025-03-12)
+
+### Build System
+
+- **deps**: Upgrade qiskit-aer to <0.17
+  ([`f672e2a`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/f672e2ad28848c01bb131085d15512abbb6e0c1d))
+
+
 ## v1.1.2-beta.1 (2025-02-14)
 
 ### Bug Fixes
