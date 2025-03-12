@@ -148,14 +148,6 @@ jobs:
           git merge --ff-only release || { echo "Fast-forward merge failed. Manual resolution required."; exit 1; }
           git push origin main
 
-      - name: Publish to TestPyPI
-        if: ${{ env.RELEASED == 'true' }}
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true
-          verbose: true
-
       - name: Publish to PyPI
         if: ${{ env.RELEASED == 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
