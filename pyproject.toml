@@ -101,6 +101,9 @@ version_variables = ["qiskit_alice_bob_provider/__init__.py:__version__"]
 tag_format = "v{version}"
 build_command = "make build"
 
+[tool.semantic_release.commit_parser_options]
+patch_tags = ["fix", "perf", "build"]
+
 [tool.semantic_release.branches.main]
 match = "main"
 prerelease = true
