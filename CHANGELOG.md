@@ -1,6 +1,16 @@
 # CHANGELOG
 
 
+## v1.1.2-beta.3 (2025-03-12)
+
+### Build System
+
+- **deps**: Update qiskit dependency
+  ([`cb6d736`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/cb6d736ff35923edcba0efefbf8ab62c8823eda9))
+
+Upgrade our qiskit dependency to 1.4.1. No code changes are required to pass unit tests.
+
+
 ## v1.1.2-beta.2 (2025-03-12)
 
 ### Build System
