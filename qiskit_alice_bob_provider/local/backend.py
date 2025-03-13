@@ -17,6 +17,7 @@
 from typing import List, Optional, Union
 
 from qiskit import QuantumCircuit
+from qiskit.primitives import BackendSamplerV2
 from qiskit.providers import BackendV2, Options
 from qiskit.transpiler import PassManager, Target
 from qiskit_aer import AerSimulator
@@ -84,9 +85,7 @@ class ProcessorSimulator(BackendV2):
         self._target = processor_to_target(processor)
         self._execution_backend = execution_backend
         self._execution_backend.set_option('n_qubits', self._target.num_qubits)
-        self._noise_pass_manager = PassManager(
-            build_quantum_error_passes(processor)
-        )
+        self._noise_pass_manager = PassManager(build_quantum_error_passes(processor))
         self._noise_model = build_readout_noise_model(processor)
         self._scheduling_stage_plugin = scheduling_stage_plugin
         self._translation_stage_plugin = translation_stage_plugin
@@ -125,7 +124,7 @@ class ProcessorSimulator(BackendV2):
         self._execution_backend.set_options(**fields)
 
     def __repr__(self) -> str:
-        return f'<ProcessorSimulator(name={self.name})>'
+        return f"<ProcessorSimulator(name={self.name})>"
 
     @property
     def max_circuits(self) -> Optional[int]:
@@ -163,7 +162,7 @@ class ProcessorSimulator(BackendV2):
                 if option not in processor_params:
                     continue
                 raise ValueError(
-                    f'The Alice & Bob custom option {option} is not allowed '
+                    f"The Alice & Bob custom option {option} is not allowed "
                     'for backend.run() with local provider. '
                     'You should pass it to get_backend() instead.'
                 )
@@ -215,3 +214,6 @@ class ProcessorSimulator(BackendV2):
         specified translation plugin
         (e.g. translation_plugin.LocalStatePreparationPlugin)"""
         return self._translation_stage_plugin
+
+    def sampler(self, options=None):
+        return BackendSamplerV2(backend=self, options=options)
