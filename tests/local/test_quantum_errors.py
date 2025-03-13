@@ -8,6 +8,7 @@ from qiskit_alice_bob_provider.local.quantum_errors import (
 from qiskit_alice_bob_provider.processor.description import (
     ProcessorDescription,
 )
+from qiskit_alice_bob_provider.processor.logical_cat import LogicalCatProcessor
 
 from .processor_fixture import (
     AllToAllProcessorWithQubitInstruction,
@@ -53,6 +54,39 @@ def test_noise_on_initialize(proc: ProcessorDescription) -> None:
         if n_qubits == 1:
             qubit = circ.find_bit(errors[0].qubits[0]).index
             assert qubit == index
+
+
+def test_noiseless_on_initialize() -> None:
+    proc = LogicalCatProcessor.create_noiseless()
+    circ = QuantumCircuit(3)
+    circ.initialize('+', 0)
+    circ.initialize('-', 1)
+    circ.initialize('0', 2)
+    pm = PassManager(build_quantum_error_passes(proc))
+    transpiled = pm.run(circ)
+
+    for label, _, _ in [
+        ('p+_error', 1, 0),
+        ('p-_error', 0, 0),
+        ('p0_error', 1, 2),
+        ('p1_error', 0, 0),
+    ]:
+        errors = transpiled.get_instructions(label)
+        assert len(errors) == 0
+
+
+def test_noiseless_on_mx() -> None:
+    proc = LogicalCatProcessor.create_noiseless()
+    circ = QuantumCircuit(3, 3)
+    circ.measure_x(0, 0)
+    circ.measure_x(1, 1)
+    circ.measure(2, 2)
+    pm = PassManager(build_quantum_error_passes(proc))
+    transpiled = pm.run(circ)
+
+    # Only qubits 0 and 1 had a measure in the x basis
+    mx_errors = transpiled.get_instructions('mx_error')
+    assert len(mx_errors) == 0
 
 
 @pytest.mark.parametrize(
