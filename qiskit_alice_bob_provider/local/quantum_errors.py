@@ -45,6 +45,11 @@ def build_quantum_error_passes(
     simulation NoiseModel.
     """
 
+    if getattr(processor, 'noiseless', False):
+        # By definition, a noiseless cat doesn't produce any noise,
+        # therefore, we return an empty list of transformation passes.
+        return []
+
     all_to_all = processor.all_to_all_connectivity
 
     passes = [_AddMeasureMarkerPass()]
@@ -149,32 +154,27 @@ _Pass = Callable[[Instruction, Sequence[int]], Optional[Instruction]]
 def _transpilation_pass_from_instruction(
     processor: ProcessorDescription,
     instruction: InstructionProperties,
-) -> Optional[LocalNoisePass]:
+) -> LocalNoisePass:
     """From an instruction defined in the processor, create a
     LocalNoisePass inserting quantum noise after occurrences of the
     instruction in question."""
 
     qiskit_instruction = processor_to_qiskit_instruction(instruction)
+    pass_factory = _pass_factory(
+        processor=processor,
+        instr_properties=instruction,
+    )
+    op_types = [
+        _marker_gate_types[qiskit_instruction.name]
+        if qiskit_instruction.name in _marker_gate_types
+        else qiskit_instruction.base_class
+    ]
 
-    if qiskit_instruction.name in _marker_gate_types:
-        return LocalNoisePass(
-            _pass_factory(
-                processor=processor,
-                instr_properties=instruction,
-            ),
-            op_types=[_marker_gate_types[qiskit_instruction.name]],
-            method='append',
-        )
-
-    else:
-        return LocalNoisePass(
-            _pass_factory(
-                processor=processor,
-                instr_properties=instruction,
-            ),
-            op_types=[qiskit_instruction.base_class],
-            method='append',
-        )
+    return LocalNoisePass(
+        pass_factory,
+        op_types=op_types,
+        method='append',
+    )
 
 
 def _pass_factory(

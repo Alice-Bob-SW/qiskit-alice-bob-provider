@@ -40,6 +40,12 @@ def build_readout_noise_model(
     basis, so we would need to assign two readout errors per qubit. This is
     impossible in the current state of Qiskit.
     """
+
+    if getattr(proc, 'noiseless', False):
+        # By definition, a noiseless cat doesn't produce any noise,
+        # therefore, we return no NoiseModel.
+        return None
+
     if proc.all_to_all_connectivity:
         return _build_all_to_all_readout_noise_model(proc)
     return _build_physical_readout_noise_model(proc)
