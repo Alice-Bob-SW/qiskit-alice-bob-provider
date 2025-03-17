@@ -17,7 +17,14 @@
 import warnings
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
-from qiskit.circuit import Barrier, Delay, Instruction, Parameter, Qubit
+from qiskit.circuit import (
+    Barrier,
+    ControlFlowOp,
+    Delay,
+    Instruction,
+    Parameter,
+    Qubit,
+)
 from qiskit.transpiler.instruction_durations import (
     InstructionDurations,
     InstructionDurationsType,
@@ -76,6 +83,8 @@ class ProcessorInstructionDurations(InstructionDurations):
             TranspilerError: No duration is defined for the instruction.
         """
         if isinstance(inst, Barrier):
+            return 0
+        elif isinstance(inst, ControlFlowOp):
             return 0
         elif isinstance(inst, Delay):
             with warnings.catch_warnings():
