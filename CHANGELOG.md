@@ -1,6 +1,16 @@
 # CHANGELOG
 
 
+## v1.2.0-beta.2 (2025-03-20)
+
+### Features
+
+- Add support for noiseless backend
+  ([`23f58e0`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/23f58e0c3c0fed894ff64a0ce9cc9419c31c0ce2))
+
+Add a 'noiseless' parameter to the logical_cat process that removes any noise.
+
+
 ## v1.2.0-beta.1 (2025-03-20)
 
 ### Features
