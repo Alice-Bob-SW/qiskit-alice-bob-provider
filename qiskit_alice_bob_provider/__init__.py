@@ -19,4 +19,4 @@
 from .local import AliceBobLocalProvider
 from .remote import AliceBobRemoteProvider
 
-__version__ = '1.1.2-beta.4'
+__version__ = '1.2.0-beta.1'

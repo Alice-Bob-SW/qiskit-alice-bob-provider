@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.2.0-beta.1 (2025-03-20)
+
+### Features
+
+- Support Python 3.13
+  ([`6209c8f`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/6209c8fbd537a04be53920af20e7bd8217bf475f))
+
+
 ## v1.1.2-beta.4 (2025-03-12)
 
 ### Build System
