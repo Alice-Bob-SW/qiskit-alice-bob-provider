@@ -33,6 +33,13 @@ poetry.lock
 
 # virtual environments
 venv/
+.direnv/
 
 # Debug files to interract with the provider easily.
 debug.*
+
+# Node
+node_modules/
+
+# Releases
+release_env.txt

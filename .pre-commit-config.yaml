@@ -1,5 +1,12 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.2.0
+    rev: v5.0.0
     hooks:
       - id: double-quote-string-fixer
+  - repo: local
+    hooks:
+      - id: commitlint
+        name: Commitlint
+        language: system
+        entry: npx commitlint --edit
+        stages: [commit-msg]
