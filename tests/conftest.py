@@ -165,6 +165,7 @@ def all_instructions_target() -> dict:
             {'signature': '__quantum__qis__y__body:void (%Qubit*)'},
             {'signature': '__quantum__qis__h__body:void (%Qubit*)'},
             {'signature': '__quantum__qis__s__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__s__adj:void (%Qubit*)'},
             {'signature': '__quantum__qis__t__body:void (%Qubit*)'},
             {
                 'signature': (
