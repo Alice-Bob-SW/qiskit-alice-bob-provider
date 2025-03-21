@@ -16,7 +16,13 @@
 
 from typing import Dict, List, Tuple
 
-from qiskit.circuit import Instruction
+from qiskit.circuit import (
+    ForLoopOp,
+    IfElseOp,
+    Instruction,
+    SwitchCaseOp,
+    WhileLoopOp,
+)
 from qiskit.transpiler import Target
 
 from ..processor.description import ProcessorDescription
@@ -99,6 +105,14 @@ def processor_to_target(processor: ProcessorDescription) -> Target:
             properties=properties,
             name=qiskit_instr.name,
         )
+    # Add essential control flow operations to the target
+    # framework because it doesn't include control
+    # flow operations by default.
+    target.add_instruction(IfElseOp, name='if_else')
+    target.add_instruction(WhileLoopOp, name='while_loop')
+    target.add_instruction(ForLoopOp, name='for_loop')
+    target.add_instruction(SwitchCaseOp, name='switch_case')
+
     target._instruction_durations = (  # pylint: disable=protected-access
         ProcessorInstructionDurations(processor=processor)
     )
