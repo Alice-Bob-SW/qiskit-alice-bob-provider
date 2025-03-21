@@ -32,6 +32,7 @@ from qiskit.circuit.library import (
     RYGate,
     RZGate,
     RZZGate,
+    SdgGate,
     SGate,
     SwapGate,
     TdgGate,
@@ -125,6 +126,8 @@ def _qir_signature_to_qiskit_instructions(
         return [('rz', RZGate(phi))]
     elif instr_short_name == 's':
         return [('s', SGate())]
+    elif instr_short_name == 'sdg':
+        return [('sdg', SdgGate())]
     elif instr_short_name == 'swap':
         return [('swap', SwapGate())]
     elif instr_short_name == 't':
