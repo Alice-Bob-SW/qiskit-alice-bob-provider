@@ -38,7 +38,9 @@ def _memoized_basic_approximations(
 ) -> List[GateSequence]:
     """Generating approximations for Solovay-Kitaev is costly: this function
     caches those approximations"""
-    return generate_basic_approximations(basis_gates=basis_gates, depth=depth)
+    return generate_basic_approximations(
+        basis_gates=list(basis_gates), depth=depth
+    )
 
 
 class SolovayKitaevPlugin(PassManagerStagePlugin):
