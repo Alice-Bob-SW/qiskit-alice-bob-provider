@@ -14,14 +14,15 @@
 #    limitations under the License.
 ##############################################################################
 from copy import deepcopy
-from typing import Any, Callable, Dict
+from typing import Callable, FrozenSet, List, Optional
 
 import numpy as np
-from qiskit.circuit import ControlFlowOp, Instruction, Qubit, Reset
+from qiskit.circuit import Gate, Instruction, Qubit, Reset
 from qiskit.circuit.equivalence_library import SessionEquivalenceLibrary
 from qiskit.circuit.library import Initialize, RZGate
-from qiskit.converters import circuit_to_dag, dag_to_circuit
 from qiskit.dagcircuit import DAGCircuit, DAGInNode, DAGOpNode
+from qiskit.synthesis import SolovayKitaevDecomposition
+from qiskit.synthesis.discrete_basis.gate_sequence import GateSequence
 from qiskit.transpiler import (
     PassManager,
     PassManagerConfig,
@@ -32,12 +33,7 @@ from qiskit.transpiler.passes import (
     BasisTranslator,
     HighLevelSynthesis,
     TrivialLayout,
-    UnitarySynthesis,
     UnrollCustomDefinitions,
-)
-from qiskit.transpiler.passes.synthesis.plugin import UnitarySynthesisPlugin
-from qiskit.transpiler.passes.synthesis.unitary_synthesis import (
-    DefaultUnitarySynthesis,
 )
 from qiskit.transpiler.preset_passmanagers.common import (
     generate_embed_passmanager,
@@ -49,16 +45,40 @@ def _reset_prep() -> Instruction:
     return Reset()
 
 
-def _get_unitary_synthesis(config: PassManagerConfig):
-    return CustomUnitarySynthesis(
-        config.basis_gates,
-        approximation_degree=config.approximation_degree,
-        coupling_map=config.coupling_map,
-        backend_props=config.backend_properties,
-        plugin_config=config.unitary_synthesis_plugin_config,
-        method=config.unitary_synthesis_method,
-        target=config.target,
-    )
+class CustomSolovayKitaev(TransformationPass):
+    def __init__(
+        self,
+        basic_approximations: List[GateSequence],
+        gates_to_decompose: FrozenSet[str],
+    ):
+        super().__init__()
+        self._basic_approximations = basic_approximations
+        self._gates_to_decompose = gates_to_decompose
+
+    def run(self, dag: DAGCircuit) -> DAGCircuit:
+        sk = SolovayKitaevDecomposition(self._basic_approximations)
+        for node in dag.named_nodes(*self._gates_to_decompose):
+            n_qubits = len(node.qargs)
+            min_qubits = 1
+            max_qubits = 1
+            if (n_qubits > max_qubits) or (n_qubits < min_qubits):
+                continue
+
+            unitary = node.op.to_matrix()
+            check_input = not isinstance(node.op, Gate)
+            approximate_dag = sk.run(
+                unitary, 3, return_dag=True, check_input=check_input
+            )
+            if approximate_dag is not None:
+                dag.substitute_node_with_dag(node, approximate_dag)
+        return dag
+
+
+def _get_solovay_kitaev(
+    approximations: List[GateSequence],
+    gates_to_decompose: frozenset[str],
+):
+    return CustomSolovayKitaev(approximations, gates_to_decompose)
 
 
 def _get_high_level_synthesis(config: PassManagerConfig):
@@ -230,84 +250,6 @@ class BreakDownInitializePass(TransformationPass):
         return dag
 
 
-class CustomUnitarySynthesis(UnitarySynthesis):
-    """
-    Synthesize gates according to their basis gates.
-
-    This is a replacement of the base UnitarySynthesis pass to handle the
-    SK synthesis on Alice & Bob targets.
-
-    The pass overrides the _run_main_loop method to remove an "optimization"
-    update that skips non control operational nodes, such as the gates we
-    synthesize with Solovay-Kitaev (rx, rz...)
-    https://github.com/Qiskit/qiskit/commit/d2ab4dfb480dbe77c42d01dc9a9c6d11cb9aa12c
-    """
-
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
-    def _run_main_loop(
-        self,
-        dag: DAGCircuit,
-        qubit_indices: Dict[Qubit, int],
-        plugin_method: UnitarySynthesisPlugin,
-        plugin_kwargs: Dict[str, Any],
-        default_method: DefaultUnitarySynthesis,
-        default_kwargs: Dict[str, Any],
-    ):
-        """Inner loop for the optimizer, after all DAG-independent set-up has
-        been completed."""
-        for node in dag.op_nodes(ControlFlowOp):
-            node.op = node.op.replace_blocks(
-                [
-                    dag_to_circuit(
-                        self._run_main_loop(
-                            circuit_to_dag(block),
-                            {
-                                inner: qubit_indices[outer]
-                                for inner, outer in zip(
-                                    block.qubits, node.qargs
-                                )
-                            },
-                            plugin_method,
-                            plugin_kwargs,
-                            default_method,
-                            default_kwargs,
-                        ),
-                        copy_operations=False,
-                    )
-                    for block in node.op.blocks
-                ]
-            )
-
-        for node in dag.named_nodes(*self._synth_gates):
-            if (
-                self._min_qubits is not None
-                and len(node.qargs) < self._min_qubits
-            ):
-                continue
-            synth_dag = None
-            unitary = node.op.to_matrix()
-            n_qubits = len(node.qargs)
-            if (
-                plugin_method.max_qubits is not None
-                and n_qubits > plugin_method.max_qubits
-            ) or (
-                plugin_method.min_qubits is not None
-                and n_qubits < plugin_method.min_qubits
-            ):
-                method, kwargs = default_method, default_kwargs
-            else:
-                method, kwargs = plugin_method, plugin_kwargs
-            if method.supports_coupling_map:
-                kwargs['coupling_map'] = (
-                    self._coupling_map,
-                    [qubit_indices[x] for x in node.qargs],
-                )
-            synth_dag = method.run(unitary, **kwargs)
-            if synth_dag is not None:
-                dag.substitute_node_with_dag(node, synth_dag)
-        return dag
-
-
 class StatePreparationPlugin(PassManagerStagePlugin):
     """A translation plugin built on top of the base translator plugin with
     the extra operations:
@@ -321,6 +263,8 @@ class StatePreparationPlugin(PassManagerStagePlugin):
         self,
         pass_manager_config: PassManagerConfig,
         optimization_level=None,
+        _sk_approximations: Optional[List[GateSequence]] = None,
+        _sk_gates_to_decompose: Optional[frozenset[str]] = None,
     ) -> PassManager:
         custom_pm = PassManager()
         custom_pm.append(TrivialLayout(pass_manager_config.target))
@@ -348,7 +292,7 @@ class StatePreparationPlugin(PassManagerStagePlugin):
         if 'rz' in pass_manager_config.target:
             # In this case, no need to modify the BasisTranslator pass and to
             # force the SK synthesis after.
-            need_synthesis = False
+            need_second_sk = False
             basis_translator_target = pass_manager_config.target
         else:
             # In this case, our basis target consists of Clifford + T gate,
@@ -396,7 +340,7 @@ class StatePreparationPlugin(PassManagerStagePlugin):
             #      └───┘┌─┴─┐┌─────┐┌─┴─┐┌───┐
             # q_1: ─────┤ X ├┤ Tdg ├┤ X ├┤ T ├
             #           └───┘└─────┘└───┘└───┘
-            need_synthesis = True
+            need_second_sk = True
 
             # Ideally, we would use the `target_basis` argument of
             # BasisTranslator to specify we want to add the "rz" gate.
@@ -407,7 +351,19 @@ class StatePreparationPlugin(PassManagerStagePlugin):
             basis_translator_target = deepcopy(pass_manager_config.target)
             basis_translator_target.add_instruction(RZGate(0))
 
-        custom_pm.append(_get_unitary_synthesis(pass_manager_config))
+        use_solovay_kitaev = (
+            _sk_approximations is not None
+            and _sk_gates_to_decompose is not None
+        )
+
+        solovay_kitaev: Optional[CustomSolovayKitaev] = None
+        if use_solovay_kitaev:
+            assert _sk_approximations is not None
+            assert _sk_gates_to_decompose is not None
+            solovay_kitaev = _get_solovay_kitaev(
+                _sk_approximations, _sk_gates_to_decompose
+            )
+            custom_pm.append(solovay_kitaev)
         custom_pm.append(_get_high_level_synthesis(pass_manager_config))
         custom_pm.append(
             BasisTranslator(
@@ -416,10 +372,25 @@ class StatePreparationPlugin(PassManagerStagePlugin):
                 basis_translator_target,
             ),
         )
-        if need_synthesis:
-            custom_pm.append(_get_unitary_synthesis(pass_manager_config))
+        if use_solovay_kitaev and need_second_sk and solovay_kitaev:
+            custom_pm.append(solovay_kitaev)
 
         custom_pm += generate_embed_passmanager(
             pass_manager_config.coupling_map
         )
         return custom_pm
+
+    def pass_manager_with_sk(
+        self,
+        pass_manager_config: PassManagerConfig,
+        optimization_level=None,
+        sk_approximations: Optional[List[GateSequence]] = None,
+        sk_gates_to_decompose: Optional[frozenset[str]] = None,
+    ) -> PassManager:
+        """Creates a pass manager that uses Solovay-Kitaev decomposition."""
+        return self.pass_manager(
+            pass_manager_config=pass_manager_config,
+            optimization_level=optimization_level,
+            _sk_approximations=sk_approximations,
+            _sk_gates_to_decompose=sk_gates_to_decompose,
+        )

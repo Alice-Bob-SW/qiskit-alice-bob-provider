@@ -166,7 +166,7 @@ def _determine_translation_plugin(target: Target) -> str:
         rotation in instructions for rotation in ['u', 'rx', 'ry', 'rz']
     ) or any(gate not in instructions for gate in ['h', 't']):
         return 'state_preparation'
-    return 'sk_synthesis'
+    return 'solovay_kitaev'
 
 
 def update_options_object(options: Options, option_updates: Dict[str, Any]):

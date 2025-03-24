@@ -265,5 +265,5 @@ def test_determine_translation_plugin(mocked_targets) -> None:
 
     # ok
     assert (
-        p.get_backend('H_T').get_translation_stage_plugin() == 'sk_synthesis'
+        p.get_backend('H_T').get_translation_stage_plugin() == 'solovay_kitaev'
     )

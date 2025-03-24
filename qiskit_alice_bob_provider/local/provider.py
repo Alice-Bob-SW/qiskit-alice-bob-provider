@@ -146,7 +146,7 @@ class AliceBobLocalProvider(ProviderV1):
                 clock_cycle=clock_cycle,
                 **processor_kwargs,
             ),
-            translation_stage_plugin='sk_synthesis',
+            translation_stage_plugin='solovay_kitaev',
             name=name,
         )
 
@@ -176,7 +176,7 @@ class AliceBobLocalProvider(ProviderV1):
                 average_nb_photons=average_nb_photons,
                 clock_cycle=clock_cycle,
             ),
-            translation_stage_plugin='sk_synthesis',
+            translation_stage_plugin='solovay_kitaev',
             name=name,
         )
 
