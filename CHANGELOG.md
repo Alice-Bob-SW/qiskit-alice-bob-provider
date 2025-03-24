@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v1.2.0-beta.3 (2025-03-24)
+
+### Build System
+
+- **deps**: Minimum version for qiskit-aer
+  ([`862e367`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/862e367839914acfbd4b73b8e6cc248d0f35e1e1))
+
+Enforce qiskit-aer 0.16.1 minimum to support Python 3.13
+
+- **deps**: Relax qiskit-aer <0.18
+  ([`592ba00`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/592ba0053ee77ef0920dd9a54249276e66e2bbd3))
+
+
 ## v1.2.0-beta.2 (2025-03-20)
 
 ### Features
