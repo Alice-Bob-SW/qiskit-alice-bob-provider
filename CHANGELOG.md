@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.2.0-beta.4 (2025-03-25)
+
+### Features
+
+- Add SdgGate support for translating qiskit from qir by remote backends
+  ([`d1ad864`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/d1ad8644118872af5d06f88e9b605f135b84c3fc))
+
+
 ## v1.2.0-beta.3 (2025-03-24)
 
 ### Build System
