@@ -1,4 +1,3 @@
-import sys
 from typing import List
 
 import numpy as np
@@ -145,19 +144,6 @@ def test_all_gates():
         # This one is not a gate, just a float.
         'global_phase',
     ]
-    if sys.platform == 'darwin':
-        # For some reason, on macOS we have numerical instabilities with the
-        # Solovay Kitaev synthesis, with specific angles.
-        # For instance, a simple 1Q circuit with a RZ(5pi/4) gate fails to
-        # transpile with our logical backends, and typically raises :
-        #   ValueError('Input matrix is not orthogonal.')
-        # As a result, the synthesis currently fails for the gates below (this
-        # needs to be fixed).
-        skip_gates += [
-            'cry',
-            'rccx',
-            'rcccx',
-        ]
 
     def create_circuit_with_gate(instruction: Instruction):
         if instruction.params:
