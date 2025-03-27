@@ -71,7 +71,7 @@ ab_asap = "qiskit_alice_bob_provider.plugins.ab_asap:AliceBobASAPSchedulingPlugi
 
 [project.entry-points."qiskit.transpiler.translation"]
 state_preparation = "qiskit_alice_bob_provider.plugins.state_preparation:StatePreparationPlugin"
-sk_synthesis = "qiskit_alice_bob_provider.plugins.sk_synthesis:SKSynthesisPlugin"
+solovay_kitaev = "qiskit_alice_bob_provider.plugins.solovay_kitaev:SolovayKitaevPlugin"
 
 [tool.setuptools.packages.find]
 include = ["qiskit_alice_bob_provider*"]

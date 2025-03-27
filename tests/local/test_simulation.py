@@ -49,7 +49,7 @@ def gen_circuits() -> Iterator[Tuple[str, QuantumCircuit, Set[str]]]:
             ProcessorSimulator(SimpleProcessor()),
             ProcessorSimulator(
                 SimpleAllToAllProcessor(),
-                translation_stage_plugin='sk_synthesis',
+                translation_stage_plugin='solovay_kitaev',
             ),
         ]
     ),
