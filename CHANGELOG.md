@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.2.0-beta.5 (2025-03-27)
+
+### Build System
+
+- **deps**: Use stable version of qiskit-qir
+  ([`31c8778`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/31c877899b5458a3d82622c250355277d80af235))
+
+
 ## v1.2.0-beta.4 (2025-03-25)
 
 ### Features
