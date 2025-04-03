@@ -16,9 +16,10 @@
 
 from typing import cast
 
+from qiskit.circuit import ControlFlowOp
 from qiskit.transpiler import PassManager, PassManagerConfig
 from qiskit.transpiler.instruction_durations import InstructionDurations
-from qiskit.transpiler.passes import TimeUnitConversion
+from qiskit.transpiler.passes import ASAPScheduleAnalysis, TimeUnitConversion
 from qiskit.transpiler.preset_passmanagers.common import generate_scheduling
 from qiskit.transpiler.preset_passmanagers.plugin import PassManagerStagePlugin
 
@@ -100,6 +101,16 @@ class AliceBobASAPSchedulingPlugin(PassManagerStagePlugin):
                         CustomTimeUnitConversion(
                             target=pass_manager_config.target
                         ),
+                    )
+                if isinstance(subtask, ASAPScheduleAnalysis):
+                    # By default, the ASAPScheduleAnalysis pass only supports
+                    # conditionals for Gate & Delay instructions. We add the
+                    # support for ControlFlowOp (which itself allows for
+                    # If-Else, For-Loop, While-Loop and Switch-Case
+                    # to be supported)
+                    subtask.CONDITIONAL_SUPPORTED = (
+                        *subtask.CONDITIONAL_SUPPORTED,
+                        ControlFlowOp,
                     )
 
         return pm

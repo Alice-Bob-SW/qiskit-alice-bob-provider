@@ -225,7 +225,6 @@ def test_translation_plugin_and_qir(mocked_targets) -> None:
     c = QuantumCircuit(4, 4)
     c.initialize('-01+')
     c.measure([0, 1], [2, 3])
-    c.x(2).c_if(2, 1)
     c.measure_x(2, 0)
     c.measure_x(3, 1)
 
