@@ -1,6 +1,25 @@
 # CHANGELOG
 
 
+## v1.3.0-beta.1 (2025-04-08)
+
+### Features
+
+- Add control flow operations to target framework
+  ([`eb61e13`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/eb61e13f5bf85aac8ff9b66d6ec8a09e9df3fb83))
+
+- Add ControlFlowOp support to ASAPScheduleAnalysis for conditional instructions
+  ([`4c4c2cb`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/4c4c2cb367b5633554e313dc31e37d4a2668db81))
+
+- Add support for ControlFlowOp in instruction durations
+  ([`aad4563`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/aad456369a0021647805e3ce2f83db6467a290cc))
+
+set the duration of the control flow operations to 0
+
+- Skip ControlFlowOp in instruction processing from sk_synthesis
+  ([`14d4e30`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/14d4e30146f7a8ec1232770c5f38c834dd5b5b81))
+
+
 ## v1.2.0 (2025-03-27)
 
 
