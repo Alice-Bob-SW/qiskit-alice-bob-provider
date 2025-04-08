@@ -70,15 +70,14 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
         discrete_basis_gates: Set[str] = set()
         discrete_1q_basis_gates: Set[str] = set()
         for instr, _ in target.instructions:
-            if isclass(instr):
-                # At this point, the control flow operations
-                # are not yet instantiated which means the
-                # instruction can be a class. We have to check if
-                # the class is a subclass of 'ControlFlowOp',
-                # in which case we can skip the rest of the loop
-                # iteration to avoid throwing any errors.
-                if issubclass(instr, ControlFlowOp):
-                    continue
+            # At this point, the control flow operations
+            # are not yet instantiated which means the
+            # instruction can be a class. We have to check if
+            # the class is a subclass of 'ControlFlowOp',
+            # in which case we can skip the rest of the loop
+            # iteration to avoid throwing any errors.
+            if isclass(instr) and issubclass(instr, ControlFlowOp):
+                continue
 
             assert isinstance(instr, Instruction)
             if len(instr.params) != 0 or instr.name in {
