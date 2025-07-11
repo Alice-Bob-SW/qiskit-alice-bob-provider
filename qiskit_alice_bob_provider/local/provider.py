@@ -16,11 +16,13 @@
 
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Literal, overload
 
 import numpy as np
 from qiskit.providers import BackendV2, ProviderV1
 
+from .noise_model import NoiseModel, TimeModel, NoiseFunction, TimeFunction
+from ..processor.custom_logical_cat import CustomLogicalCat
 from ..processor.interpolated_cat import InterpolatedCatProcessor
 from ..processor.logical_cat import LogicalCatProcessor
 from ..processor.physical_cat import PhysicalCatProcessor
@@ -83,6 +85,10 @@ class AliceBobLocalProvider(ProviderV1):
             name='EMU:1Q:LESCANNE_2020',
             average_nb_photons=4,
         )
+        self._backend_builders['EMU:CUSTOM_LOGICAL'] = partial(
+            self.build_custom_logical_backend,
+            name='EMU:CUSTOM_LOGICAL',
+        )
 
     # pylint: disable=arguments-differ
     def backends(self, name: Optional[str] = None) -> List[BackendV2]:
@@ -100,7 +106,7 @@ class AliceBobLocalProvider(ProviderV1):
             return [backend for backend in backends if backend.name == name]
         return backends
 
-    # pylint: disable=signature-differs
+    # pylint: disable=signature-differs,arguments-differ
     def get_backend(self, name: str, **processor_kwargs) -> ProcessorSimulator:
         return self._backend_builders[name](**processor_kwargs)
 
@@ -145,6 +151,37 @@ class AliceBobLocalProvider(ProviderV1):
                 n_qubits=n_qubits,
                 clock_cycle=clock_cycle,
                 **processor_kwargs,
+            ),
+            translation_stage_plugin='sk_synthesis',
+            name=name,
+        )
+
+    def build_custom_logical_backend(
+        self,
+        backend_parameters: dict[str, float] = {
+            'n_qubits': 15,
+            'clock_cycle': 1e-9,
+            'kappa_1': 100,
+            'kappa_2': 10_000_000,
+            'average_nb_photons': 16,
+        },
+        noise_models: dict[str, NoiseFunction] = {},
+        time_models: dict[str, TimeFunction] = {},
+        default_1q_noise_model: Optional[NoiseFunction] = None,
+        default_1q_time_model: Optional[TimeFunction] = None,
+        validate_parameters: Callable[
+            [dict[str, float]], bool
+        ] = lambda _: True,
+        name: Optional[str] = None,
+    ):
+        return ProcessorSimulator(
+            processor=CustomLogicalCat(
+                backend_parameters=backend_parameters,
+                noise_models=noise_models,
+                time_models=time_models,
+                default_1q_noise_model=default_1q_noise_model,
+                default_1q_time_model=default_1q_time_model,
+                validate_parameters=validate_parameters,
             ),
             translation_stage_plugin='sk_synthesis',
             name=name,
