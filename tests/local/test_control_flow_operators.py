@@ -90,11 +90,19 @@ CIRCUITS = [
 
 @pytest.mark.parametrize('make_circ', CIRCUITS)
 @pytest.mark.parametrize('backend_name', get_backends())
-def test_circuit_runs_on_simulators(make_circ, backend_name):
+def test_circuit_runs_on_simulators(
+    make_circ, backend_name, default_custom_emulator_parameters
+):
     provider = AliceBobLocalProvider()
-    backend = provider.get_backend(backend_name)
+    backend = provider.get_backend(
+        backend_name,
+        **default_custom_emulator_parameters
+        if backend_name == 'EMU:CUSTOM_LOGICAL'
+        else {},
+    )
+
     circuit = make_circ()
-    transpiled = transpile(circuit, backend)
+    transpiled = transpile(circuit, backend, optimization_level=0)
     job = backend.run(transpiled, shots=10)
     result = job.result()
     assert result.success is True
