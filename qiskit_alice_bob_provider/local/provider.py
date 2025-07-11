@@ -16,17 +16,19 @@
 
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Literal, Optional, Tuple, overload
 
 import numpy as np
 from qiskit.providers import BackendV2, ProviderV1
 
+from ..processor.custom_cat import CustomCat
 from ..processor.interpolated_cat import InterpolatedCatProcessor
 from ..processor.logical_cat import LogicalCatProcessor
 from ..processor.physical_cat import PhysicalCatProcessor
 from ..processor.serialization.model import SerializedProcessor
 from .backend import ProcessorSimulator
 from .coupling_maps import circular_map, rectangular_map
+from .noise_model import NoiseFunction, TimeFunction
 
 _PARENT_DIR = Path(__file__).parent
 
@@ -100,8 +102,83 @@ class AliceBobLocalProvider(ProviderV1):
             return [backend for backend in backends if backend.name == name]
         return backends
 
+    # Overloads for specific backend types
+    @overload
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def get_backend(
+        self,
+        name: Literal['EMU:6Q:PHYSICAL_CATS', 'EMU:40Q:PHYSICAL_CATS'],
+        *,
+        n_qubits: Optional[int] = None,
+        kappa_1: Optional[float] = None,
+        kappa_2: Optional[float] = None,
+        average_nb_photons: Optional[float] = None,
+        clock_cycle: Optional[float] = None,
+        coupling_map: Optional[List[Tuple[int, int]]] = None,
+    ) -> ProcessorSimulator:
+        """Get a physical cat backend."""
+
+    @overload
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def get_backend(
+        self,
+        name: Literal['EMU:40Q:LOGICAL_TARGET', 'EMU:15Q:LOGICAL_EARLY'],
+        *,
+        n_qubits: Optional[int] = None,
+        distance: Optional[int] = None,
+        kappa_1: Optional[float] = None,
+        kappa_2: Optional[float] = None,
+        average_nb_photons: Optional[float] = None,
+        clock_cycle: Optional[float] = None,
+    ) -> ProcessorSimulator:
+        """Get a logical cat backend."""
+
+    @overload
     # pylint: disable=signature-differs
+    def get_backend(
+        self,
+        name: Literal['EMU:40Q:LOGICAL_NOISELESS'],
+        *,
+        n_qubits: Optional[int] = None,
+        clock_cycle: Optional[float] = None,
+        **processor_kwargs,
+    ) -> ProcessorSimulator:
+        """Get a logical noiseless backend."""
+
+    @overload
+    def get_backend(
+        self,
+        name: Literal['EMU:1Q:LESCANNE_2020'],
+        *,
+        clock_cycle: Optional[float] = None,
+        average_nb_photons: Optional[float] = None,
+    ) -> ProcessorSimulator:
+        """Get a serialized backend."""
+
+    @overload
+    # pylint: disable=signature-differs,arguments-differ
+    def get_backend(
+        self,
+        name: str,
+        **processor_kwargs,
+    ) -> ProcessorSimulator:
+        """Get any backend by name with arbitrary kwargs."""
+
+    # pylint: disable=signature-differs,arguments-differ
     def get_backend(self, name: str, **processor_kwargs) -> ProcessorSimulator:
+        """Get a backend by name with optional processor-specific parameters.
+
+        Args:
+            name: The name of the backend to retrieve
+            **processor_kwargs: Backend-specific parameters that will be passed
+                to the appropriate builder method
+
+        Returns:
+            ProcessorSimulator: The requested backend instance
+
+        Raises:
+            KeyError: If the backend name is not found
+        """
         return self._backend_builders[name](**processor_kwargs)
 
     # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -145,6 +222,43 @@ class AliceBobLocalProvider(ProviderV1):
                 n_qubits=n_qubits,
                 clock_cycle=clock_cycle,
                 **processor_kwargs,
+            ),
+            translation_stage_plugin='sk_synthesis',
+            name=name,
+        )
+
+    def build_custom_backend(
+        self,
+        backend_parameters: Optional[dict[str, float]] = None,
+        noise_models: Optional[dict[str, NoiseFunction]] = None,
+        time_models: Optional[dict[str, TimeFunction]] = None,
+        default_1q_noise_model: Optional[NoiseFunction] = None,
+        default_1q_time_model: Optional[TimeFunction] = None,
+        validate_parameters: Callable[
+            [dict[str, float]], bool
+        ] = lambda _: True,
+        name: Optional[str] = None,
+    ):
+        if backend_parameters is None:
+            backend_parameters = {
+                'n_qubits': 15,
+                'clock_cycle': 1e-9,
+                'kappa_1': 100,
+                'kappa_2': 10_000_000,
+                'average_nb_photons': 16,
+            }
+        if noise_models is None:
+            noise_models = {}
+        if time_models is None:
+            time_models = {}
+        return ProcessorSimulator(
+            processor=CustomCat(
+                backend_parameters=backend_parameters,
+                noise_models=noise_models,
+                time_models=time_models,
+                default_1q_noise_model=default_1q_noise_model,
+                default_1q_time_model=default_1q_time_model,
+                validate_parameters=validate_parameters,
             ),
             translation_stage_plugin='sk_synthesis',
             name=name,
