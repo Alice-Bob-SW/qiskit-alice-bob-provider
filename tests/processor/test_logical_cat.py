@@ -55,9 +55,8 @@ def test_from_noiseless_parameter_validator_ok(arguments) -> None:
     ],
 )
 def test_from_noiseless_parameter_validation_raises(arguments) -> None:
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match=NOISELESS_CAT_ERROR):
         LogicalCatProcessor.create_noiseless(**arguments)
-    assert e.value.args[0] == NOISELESS_CAT_ERROR
 
 
 @pytest.mark.parametrize(
@@ -69,9 +68,8 @@ def test_from_noiseless_parameter_validation_raises(arguments) -> None:
     ],
 )
 def test_noiseless_parameter_validation_raises(arguments) -> None:
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match=NOISELESS_CAT_ERROR):
         LogicalCatProcessor(**arguments, noiseless=True)
-    assert e.value.args[0] == NOISELESS_CAT_ERROR
 
 
 @pytest.mark.parametrize(

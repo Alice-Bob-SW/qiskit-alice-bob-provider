@@ -16,10 +16,18 @@
 
 # pylint: disable=redefined-outer-name
 
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import pytest
 from requests_mock.mocker import Mocker
+
+from qiskit_alice_bob_provider.processor.logical_cat import (
+    NOISELESS_VALUES,
+    _1q_logical_error,
+    _cx_error,
+    _discrete_gate_time,
+    _idle_error,
+)
 
 
 def pytest_addoption(parser):
@@ -35,6 +43,68 @@ def pytest_addoption(parser):
         dest='api_key',
         default=None,
     )
+
+
+@pytest.fixture
+def default_custom_emulator_parameters():
+    """Returns the default custom emulator."""
+
+    def delay_noise(gate_params: list[float], backend_params: dict[str, Any]):
+        return _idle_error(
+            gate_params[0],
+            int(backend_params['distance']),
+            float(backend_params['average_nb_photons']),
+            float(backend_params['kappa_1']),
+            float(backend_params['kappa_2']),
+        )
+
+    def delay_time(gate_params: list[float], _backend_params: dict[str, Any]):
+        return gate_params[0]
+
+    def default_noise_1q(
+        _gate_params: list[float], backend_params: dict[str, Any]
+    ):
+        return _1q_logical_error(
+            backend_params['distance'],
+            backend_params['average_nb_photons'],
+            backend_params['kappa_1'],
+            backend_params['kappa_2'],
+        )
+
+    def default_time_1q(
+        _gate_params: list[float], backend_params: dict[str, Any]
+    ):
+        return _discrete_gate_time(
+            backend_params['distance'], backend_params['kappa_2']
+        )
+
+    def cx_error(
+        _gate_params: list[float], backend_params: dict[str, Any]
+    ) -> dict[str, float]:
+        """CX error function for custom logical cat backend."""
+        return _cx_error(
+            backend_params['distance'],
+            backend_params['average_nb_photons'],
+            backend_params['kappa_1'],
+            backend_params['kappa_2'],
+        )
+
+    params = NOISELESS_VALUES.copy()
+    params['n_qubits'] = 40
+    params['clock_cycle'] = 1e-9
+
+    return {
+        'backend_parameters': params,
+        'noise_models': {
+            'delay': delay_noise,
+            'cx': cx_error,
+        },
+        'time_models': {
+            'delay': delay_time,
+        },
+        'default_1q_noise_model': default_noise_1q,
+        'default_1q_time_model': default_time_1q,
+    }
 
 
 @pytest.fixture
