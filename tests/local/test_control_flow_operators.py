@@ -13,7 +13,7 @@ qreg = QuantumRegister(1, 'q')
 creg = ClassicalRegister(1, 'c')
 
 
-def get_backends():
+def get_backends() -> list[str]:
     """
     Return a list of all the names of each available backends.
     This is for better logging when running the tests.
@@ -47,7 +47,7 @@ def generate_if_circuit():
 def generate_while_circuit():
     while_circ = QuantumCircuit(qreg, creg)
     while_circ.name = 'While'
-    while_circ.rz(np.pi, qreg[0])  # Ensure q[0] is initially |1>
+    while_circ.z(qreg[0])  # Ensure q[0] is initially |1>
     while_circ.measure(qreg[0], creg[0])
 
     with while_circ.while_loop((creg[0], 1)):
@@ -89,12 +89,23 @@ CIRCUITS = [
 
 
 @pytest.mark.parametrize('make_circ', CIRCUITS)
-@pytest.mark.parametrize('backend_name', get_backends())
-def test_circuit_runs_on_simulators(make_circ, backend_name):
+@pytest.mark.parametrize(
+    'backend_name', [*get_backends(), 'EMU:CUSTOM_LOGICAL']
+)
+def test_circuit_runs_on_simulators(
+    make_circ, backend_name, default_custom_emulator_parameters
+):
     provider = AliceBobLocalProvider()
-    backend = provider.get_backend(backend_name)
+
+    if backend_name == 'EMU:CUSTOM_LOGICAL':
+        backend = provider.build_custom_backend(
+            **default_custom_emulator_parameters
+        )
+    else:
+        backend = provider.get_backend(backend_name)
+
     circuit = make_circ()
-    transpiled = transpile(circuit, backend)
+    transpiled = transpile(circuit, backend, optimization_level=0)
     job = backend.run(transpiled, shots=10)
     result = job.result()
     assert result.success is True
