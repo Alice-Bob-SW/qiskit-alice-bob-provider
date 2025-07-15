@@ -87,6 +87,10 @@ line-length = 79
 profile = "black"
 line_length = 79
 
+[tool.mypy]
+plugins = "numpy.typing.mypy_plugin"
+disable_error_code = ['index']
+
 [[tool.mypy.overrides]]
 module = [
     "setuptools",
