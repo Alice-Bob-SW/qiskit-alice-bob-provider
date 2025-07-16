@@ -61,7 +61,12 @@ _pylint:
 _mypy:
 	. $(ACTIVATE) && mypy $(MODULES)
 
-lint: _check_black _check_isort _mypy _flake8 _pylint
+lint:
+	-$(MAKE) _check_black
+	-$(MAKE) _check_isort
+	-$(MAKE) _mypy
+	-$(MAKE) _flake8
+	-$(MAKE) _pylint
 
 ### Precommit
 precommit-hooks:
