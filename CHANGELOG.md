@@ -1,6 +1,28 @@
 # CHANGELOG
 
 
+## v1.3.0-beta.2 (2025-08-06)
+
+### Bug Fixes
+
+- Update lint target in Makefile to run checks in sequence
+  ([`2c1b320`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/2c1b320784ac4fccc2e8256a1baaeab54d5a80b6))
+
+### Features
+
+- Add custom logical backend builder with customizable parameters
+  ([`5fde800`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/5fde8003331e10497b19222f4d83ae88d9cbc72a))
+
+- Add CustomCat processor with customizable noise and time models
+  ([`aa3ea9e`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/aa3ea9eafdc14b0670ba780d8b1d7bbba0fc6c55))
+
+- Add mypy configuration with numpy typing plugin
+  ([`4ce3e8f`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/4ce3e8f018290e11b9862d7083c344bf7ebaca15))
+
+- Add noise and time model dataclasses for quantum gates
+  ([`cc41171`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/cc4117193b8f7f4df2158c7107ce04519eedf2df))
+
+
 ## v1.3.0-beta.1 (2025-04-08)
 
 ### Features
