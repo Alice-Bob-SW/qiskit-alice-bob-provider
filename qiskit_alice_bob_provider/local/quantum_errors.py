@@ -41,7 +41,7 @@ def build_quantum_error_passes(
     quantum processor.
 
     Note that the readout errors are not inserted by these transpilation
-    passes. Readout errors are handled separately and are contined in the
+    passes. Readout errors are handled separately and are contained in the
     simulation NoiseModel.
     """
 
@@ -241,7 +241,7 @@ def _pass_factory(
         # simulation performance because the wrapping sub-circuit is transpiled
         # away later right before simulation.
         # Can't we just rename the error instruction itself? No because it
-        # needs to have the name "kraus" for Qiskit Aer to understand what thi
+        # needs to have the name "kraus" for Qiskit Aer to understand what this
         # is.
         wrapper_circ = QuantumCircuit(
             error_instr.num_qubits,

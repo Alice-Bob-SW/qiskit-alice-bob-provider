@@ -88,7 +88,7 @@ def test_get_backend_options_validation(mocked_targets) -> None:
 
 
 def test_execute_options_validation(mocked_targets) -> None:
-    # We are permissive in our options sytem, allowing the user to both
+    # We are permissive in our options system, allowing the user to both
     # define options when creating the backend and executing.
     # We therefore need to test both behaviors.
     c = QuantumCircuit(1, 1)

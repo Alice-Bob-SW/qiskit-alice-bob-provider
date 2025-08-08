@@ -103,7 +103,7 @@ class ProcessorDescription(ABC):
     # in the ProcessorDescription (usually seconds).
     #
     # Note that the ProcessorDescription does not return durations in
-    # multiples of the clock cyle and accepts durations (e.g., for delay)
+    # multiples of the clock cycle and accepts durations (e.g., for delay)
     # that are not multiples of clock cycle.
     #
     # If respecting the clock cycle is important, it is up to the user (e.g.,
