@@ -140,7 +140,7 @@ class LocalNoisePass(TransformationPass):
                 )
 
             # If the new op is not a QuantumCircuit or Instruction, attempt
-            # to conver to an Instruction
+            # to convert to an Instruction
             if not isinstance(new_op, (QuantumCircuit, Instruction)):
                 try:
                     new_op = new_op.to_instruction()

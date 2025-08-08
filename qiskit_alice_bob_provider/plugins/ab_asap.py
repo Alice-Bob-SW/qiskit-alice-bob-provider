@@ -93,7 +93,7 @@ class AliceBobASAPSchedulingPlugin(PassManagerStagePlugin):
         # pylint: disable=protected-access
         for task in pm._tasks:
             for i, subtask in enumerate(task):
-                # Substitue the default TimeUnitConversion with our
+                # Substitute the default TimeUnitConversion with our
                 # custom implementation.
                 if isinstance(subtask, TimeUnitConversion):
                     pm.replace(

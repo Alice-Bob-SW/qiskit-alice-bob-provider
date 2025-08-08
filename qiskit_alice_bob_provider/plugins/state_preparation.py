@@ -133,8 +133,8 @@ class EnsurePreparationPass(TransformationPass):
 
 class IntToLabelInitializePass(TransformationPass):
     """
-    A transpilation pass that transforms intializations using integers into
-    intializations using labels.
+    A transpilation pass that transforms initializations using integers into
+    initializations using labels.
 
     Example:
     ```

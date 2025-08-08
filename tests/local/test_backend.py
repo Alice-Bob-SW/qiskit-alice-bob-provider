@@ -86,13 +86,13 @@ def test_translation_plugin() -> None:
     transpiled = transpile(circ, backend)
     _assert_one_initialize(transpiled, '0')
 
-    # if reset, convert to Intialize('0')
+    # if reset, convert to Initialize('0')
     circ = QuantumCircuit(1)
     circ.reset(0)
     transpiled = transpile(circ, backend)
     _assert_one_initialize(transpiled, '0')
 
-    # if reset, convert to Intialize('0')
+    # if reset, convert to Initialize('0')
     circ = QuantumCircuit(3)
     circ.initialize(2, [0, 1])
     circ.reset(2)

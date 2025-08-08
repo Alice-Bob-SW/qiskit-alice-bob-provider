@@ -157,7 +157,7 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
                         # pylint: disable=protected-access
                         subtask._synth_gates = synth_gates
                         # Can't pass basis gates in
-                        # unitary_synthesis_plugin_config because overriden
+                        # unitary_synthesis_plugin_config because overridden
                         # by global basis_gates.
                         # This seems to be a Qiskit bug (why give the
                         # possibility to specify basis gates in the plugin

@@ -261,7 +261,7 @@ This commit does this by removing CZ & CCZ from the list of gates to synthesize,
   ([`9f1656c`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/9f1656ce7f2700513bdc99480295bbfdd27600cc))
 
 We are missing this step to be able to transpile circuits with custom defined gates (such as
-  Margolus). The gates are now unrolled to their lowest definitions before being synthetized.
+  Margolus). The gates are now unrolled to their lowest definitions before being synthesized.
 
 ### Documentation
 
