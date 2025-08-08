@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.3.0-beta.3 (2025-08-08)
+
+### Bug Fixes
+
+- Typo
+  ([`1e35c9f`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/1e35c9fb28cb0c2b0f8469d1a7f21b7673f80f11))
+
+
 ## v1.3.0-beta.2 (2025-08-06)
 
 ### Bug Fixes
@@ -261,7 +269,7 @@ This commit does this by removing CZ & CCZ from the list of gates to synthesize,
   ([`9f1656c`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/9f1656ce7f2700513bdc99480295bbfdd27600cc))
 
 We are missing this step to be able to transpile circuits with custom defined gates (such as
-  Margolus). The gates are now unrolled to their lowest definitions before being synthesized.
+  Margolus). The gates are now unrolled to their lowest definitions before being synthetized.
 
 ### Documentation
 
