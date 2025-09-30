@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.3.0-beta.4 (2025-09-30)
+
+### Bug Fixes
+
+- Update type hint for backend_parameters to use Any instead of float
+  ([`1066b2e`](https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/commit/1066b2ed2b46685c403a6982c9cc927ac1da8ae3))
+
+
 ## v1.3.0-beta.3 (2025-08-08)
 
 ### Bug Fixes
