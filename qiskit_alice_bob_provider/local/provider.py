@@ -16,7 +16,16 @@
 
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Literal, Optional, Tuple, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    overload,
+)
 
 import numpy as np
 from qiskit.providers import BackendV2, ProviderV1
@@ -229,7 +238,7 @@ class AliceBobLocalProvider(ProviderV1):
 
     def build_custom_backend(
         self,
-        backend_parameters: Optional[dict[str, float]] = None,
+        backend_parameters: Optional[dict[str, Any]] = None,
         noise_models: Optional[dict[str, NoiseFunction]] = None,
         time_models: Optional[dict[str, TimeFunction]] = None,
         default_1q_noise_model: Optional[NoiseFunction] = None,
