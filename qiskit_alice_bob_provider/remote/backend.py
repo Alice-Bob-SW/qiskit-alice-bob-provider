@@ -73,6 +73,13 @@ class AliceBobRemoteBackend(BackendV2):
         """
         return self._translation_plugin
 
+    def get_optimization_stage_plugin(self):
+        """Returns the optimization stage plugin name for SK synthesis
+        backends, or None for others."""
+        if self._translation_plugin == 'sk_synthesis':
+            return 'ab_optimization'
+        return None
+
     def update_options(self, option_updates: Dict[str, Any]) -> Options:
         update_options_object(self.options, option_updates)
         return self.options

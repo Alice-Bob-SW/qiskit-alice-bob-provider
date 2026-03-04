@@ -233,6 +233,7 @@ class AliceBobLocalProvider(ProviderV1):
                 **processor_kwargs,
             ),
             translation_stage_plugin='sk_synthesis',
+            optimization_stage_plugin='ab_optimization',
             name=name,
         )
 
@@ -270,6 +271,7 @@ class AliceBobLocalProvider(ProviderV1):
                 validate_parameters=validate_parameters,
             ),
             translation_stage_plugin='sk_synthesis',
+            optimization_stage_plugin='ab_optimization',
             name=name,
         )
 
@@ -300,6 +302,7 @@ class AliceBobLocalProvider(ProviderV1):
                 clock_cycle=clock_cycle,
             ),
             translation_stage_plugin='sk_synthesis',
+            optimization_stage_plugin='ab_optimization',
             name=name,
         )
 

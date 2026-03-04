@@ -67,6 +67,7 @@ class ProcessorSimulator(BackendV2):
         name: Optional[str] = None,
         scheduling_stage_plugin: str = 'ab_asap',
         translation_stage_plugin: str = 'state_preparation',
+        optimization_stage_plugin: Optional[str] = None,
     ):
         """A Qiskit backend enabling transpilation to and simulation of an
         arbitrary quantum processor, as described by a ProcessorDescription
@@ -78,6 +79,9 @@ class ProcessorSimulator(BackendV2):
             execution_backend (AerBackend, optional): the Qiskit simulator used
                 in the background for simulation. Defaults to AerSimulator().
             name (Optional[str], optional): an optional name for the backend.
+            optimization_stage_plugin (Optional[str], optional): the name of
+                the optimization stage plugin to use. Defaults to None (use
+                Qiskit defaults).
         """
         super().__init__(name=name, backend_version=1)
         self._processor = processor
@@ -90,6 +94,7 @@ class ProcessorSimulator(BackendV2):
         self._noise_model = build_readout_noise_model(processor)
         self._scheduling_stage_plugin = scheduling_stage_plugin
         self._translation_stage_plugin = translation_stage_plugin
+        self._optimization_stage_plugin = optimization_stage_plugin
 
     @property
     def target(self) -> Target:
@@ -215,3 +220,8 @@ class ProcessorSimulator(BackendV2):
         specified translation plugin
         (e.g. translation_plugin.LocalStatePreparationPlugin)"""
         return self._translation_stage_plugin
+
+    def get_optimization_stage_plugin(self) -> Optional[str]:
+        """Returns the name of the optimization stage plugin to use, or None
+        to use Qiskit defaults."""
+        return self._optimization_stage_plugin

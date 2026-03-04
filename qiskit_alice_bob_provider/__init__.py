@@ -18,5 +18,6 @@
 
 from .local import AliceBobLocalProvider
 from .remote import AliceBobRemoteProvider
+from .transpile import transpile
 
 __version__ = '1.3.0-beta.4'

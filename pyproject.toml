@@ -66,6 +66,9 @@ dev = [
     "types-requests==2.30.0.0"
 ]
 
+[project.entry-points."qiskit.transpiler.optimization"]
+ab_optimization = "qiskit_alice_bob_provider.plugins.optimization:AliceBobOptimizationPlugin"
+
 [project.entry-points."qiskit.transpiler.scheduling"]
 ab_asap = "qiskit_alice_bob_provider.plugins.ab_asap:AliceBobASAPSchedulingPlugin"
 
