@@ -123,3 +123,29 @@ check-release:
 
 release-version:
 	. $(ACTIVATE) && semantic-release -v version
+
+
+#### Dev container
+
+# Primary path: drive .devcontainer/devcontainer.json with the devcontainer CLI
+# (install once on the host: npm i -g @devcontainers/cli). The build.sh + run.sh
+# scripts in .devcontainer/ remain as a pure-docker fallback that needs no CLI.
+
+DEVCONTAINER=devcontainer
+WORKSPACE_FOLDER=.
+
+# Build (if needed) and start the persistent dev container; runs postCreate once.
+dev:
+	$(DEVCONTAINER) up --workspace-folder $(WORKSPACE_FOLDER)
+
+# Open a shell in the running container (starts it first if needed).
+dev-shell: dev
+	$(DEVCONTAINER) exec --workspace-folder $(WORKSPACE_FOLDER) bash
+
+# Run Claude Code in the running container (starts it first if needed).
+dev-claude: dev
+	$(DEVCONTAINER) exec --workspace-folder $(WORKSPACE_FOLDER) claude
+
+# Stop and remove the dev container for this workspace.
+dev-down:
+	docker rm -f $$(docker ps -aq --filter label=devcontainer.local_folder=$$(pwd)) 2>/dev/null || true

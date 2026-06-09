@@ -1,0 +1,66 @@
+{
+  "name": "qiskit-alice-bob-provider",
+
+  // Build from the Dockerfile in this folder, but with the repo root as the
+  // build context so the COPY paths (pyproject.toml, the package, ...) resolve.
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "PYTHON_VERSION": "3.11"
+    }
+  },
+
+  // Mount the repo at /workspace, matching the editable install in the image.
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+
+  // Run as the non-root user created in the Dockerfile. The UID/GID are
+  // updated to match the host user so mounted files keep the right ownership.
+  "remoteUser": "dev",
+  "updateRemoteUserUID": true,
+
+  // Bind-mount the host's Claude config/auth (and ~/.netrc) so the container
+  // reuses your existing host login instead of a separate volume.
+  // NOTE: these host paths must already exist before starting the container.
+  // If a source path is missing, Docker/Podman silently creates an empty
+  // *directory* in its place, which breaks Claude. Run once on the host:
+  //   touch ~/.claude.json ~/.netrc && mkdir -p ~/.claude
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/dev/.claude,type=bind",
+    "source=${localEnv:HOME}/.claude.json,target=/home/dev/.claude.json,type=bind",
+    "source=${localEnv:HOME}/.netrc,target=/home/dev/.netrc,type=bind",
+    "source=${localEnv:HOME}/.gitconfig_devcontainer,target=/home/dev/.gitconfig,type=bind"
+  ],
+
+  // The `:z` SELinux relabel flag from a `docker run -v ...:z` cannot be
+  // expressed in the mount strings above (they map to `docker --mount`, which
+  // has no relabel option). On an SELinux host, disabling label confinement for
+  // the container is the equivalent fix; it's a harmless no-op on non-SELinux
+  // hosts (e.g. Ubuntu/AppArmor).
+  "runArgs": ["--security-opt", "label=disable"],
+
+  // Deps are already baked into ~/.venv at build time. Re-run the editable
+  // install to pick up any pyproject changes since the image was built (fast --
+  // deps are already satisfied), install the Node deps used by the commitlint
+  // commit-msg hook, and install the git/commit-msg pre-commit hooks into the
+  // now-mounted repo.
+  "postCreateCommand": "~/.venv/bin/pip install -e .[dev] && pnpm install && ~/.venv/bin/pre-commit install && ~/.venv/bin/pre-commit install --hook-type commit-msg",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.mypy-type-checker",
+        "ms-python.pylint",
+        "ms-python.isort"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "${containerEnv:HOME}/.venv/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"]
+      }
+    }
+  }
+}
