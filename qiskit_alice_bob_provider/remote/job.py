@@ -26,11 +26,7 @@ from qiskit.providers.backend import BackendV2
 from qiskit.providers.exceptions import JobTimeoutError
 from qiskit.providers.jobstatus import JOB_FINAL_STATES
 from qiskit.result import Result
-from qiskit.result.models import (
-    ExperimentResult,
-    ExperimentResultData,
-    QobjExperimentHeader,
-)
+from qiskit.result.models import ExperimentResult, ExperimentResultData
 
 from .api import jobs
 from .api.client import ApiClient
@@ -266,11 +262,11 @@ class AliceBobRemoteJob(JobV1):
                     shots=self._last_response['inputParams']['nbShots'],
                     success=success,
                     status=str(self._last_response['errors']),
-                    header=QobjExperimentHeader(
-                        name=self._circuit.name,
-                        input_params=self._last_response['inputParams'],
-                        memory_slots=self._circuit.num_clbits,
-                    ),
+                    header={
+                        'name': self._circuit.name,
+                        'input_params': self._last_response['inputParams'],
+                        'memory_slots': self._circuit.num_clbits,
+                    },
                     data=ExperimentResultData(
                         counts=self._get_counts() if success else None,
                         memory=self._get_memory()

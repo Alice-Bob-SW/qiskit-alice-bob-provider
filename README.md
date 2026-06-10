@@ -116,6 +116,15 @@ print(backend.run(circ, shots=100000).result().get_counts())
 # {'01': 557, '11': 49422, '10': 596, '00': 49425}
 ```
 
+> **Note on logical backends and `optimization_level`.** The logical backends
+> (`EMU:*:LOGICAL_*`) expose a purely discrete (Clifford+T) gate set and rely on
+> Solovay-Kitaev synthesis. Qiskit's optimization stage at `optimization_level >= 2`
+> consolidates multi-qubit blocks into unitaries and tries to re-synthesize them
+> against the target, which is not possible for a discrete target. Since Qiskit
+> 2.0 the default `optimization_level` is `2`, so when transpiling for a logical
+> backend pass `optimization_level=1` (or `0`) explicitly, e.g.
+> `transpile(circ, backend, optimization_level=1)`.
+
 ## Setting Up Development Environment (for contributors only)
 
 To ensure code consistency and enforce commit message conventions, we use `pre-commit` (Python-based) and `commitlint` (Node.js-based). Follow these steps to set up your development environment.

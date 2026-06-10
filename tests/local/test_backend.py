@@ -187,7 +187,13 @@ def test_all_gates():
             continue
         try:
             circ = create_circuit_with_gate(i)
-            _ = transpile(circ, backend=backend)
+            # Logical backends expose a purely discrete (Clifford+T) target.
+            # At optimization_level >= 2 Qiskit's optimization stage collects
+            # and consolidates 2-qubit blocks into unitaries and then tries to
+            # re-synthesize them against that discrete target, which is not
+            # possible (only Solovay-Kitaev can target it). Since Qiskit 2.0
+            # the default optimization level is 2, so we pin level 1 here.
+            _ = transpile(circ, backend=backend, optimization_level=1)
         except Exception as e:  # pylint: disable=broad-exception-caught
             errors.append((name, e))
     assert not errors

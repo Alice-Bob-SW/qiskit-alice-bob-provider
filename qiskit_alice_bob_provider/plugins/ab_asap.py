@@ -14,63 +14,64 @@
 #    limitations under the License.
 ##############################################################################
 
-from typing import cast
-
 from qiskit.circuit import ControlFlowOp
+from qiskit.circuit.parameterexpression import ParameterExpression
+from qiskit.dagcircuit import DAGCircuit, DAGOpNode
 from qiskit.transpiler import PassManager, PassManagerConfig
-from qiskit.transpiler.instruction_durations import InstructionDurations
-from qiskit.transpiler.passes import ASAPScheduleAnalysis, TimeUnitConversion
+from qiskit.transpiler.passes import ASAPScheduleAnalysis, PadDelay
 from qiskit.transpiler.preset_passmanagers.common import generate_scheduling
 from qiskit.transpiler.preset_passmanagers.plugin import PassManagerStagePlugin
 
-from qiskit_alice_bob_provider.local.instruction_durations import (
-    ProcessorInstructionDurations,
-)
 
+class ProcessorASAPScheduleAnalysis(ASAPScheduleAnalysis):
+    """ASAP scheduling analysis that resolves instruction durations from the
+    full operation (with its bound parameters) instead of the gate name only.
 
-class CustomTimeUnitConversion(TimeUnitConversion):
+    Since Qiskit 2.0, ``BaseScheduler._get_node_duration`` queries durations
+    with just the instruction *name*
+    (``self.durations.get(node.name, indices)``). Alice & Bob's
+    :class:`ProcessorInstructionDurations` computes parameter-dependent
+    durations and needs the operation's parameters, both to disambiguate
+    instructions that share a Qiskit name (e.g. ``Initialize('0')`` vs
+    ``Initialize('+')``) and to evaluate continuously parameter-dependent
+    durations (e.g. ``rz(theta)``). We therefore override the lookup to pass
+    ``node.op``.
     """
-    This is a replacement of the base TimeUnitConversion pass to handle the
-    ProcessorInstructionDurations object created for Alice & Bob backends.
 
-    The pass overrides the _update_inst_durations method to apply the base
-    durations from Alice & Bob's ProcessorInstructionDuration instead of
-    the generic InstructionDurations class from Qiskit.
+    def _get_node_duration(self, node: DAGOpNode, dag: DAGCircuit) -> int:
+        if node.name == 'delay':
+            # `TimeUnitConversion` already handled the unit conversion.
+            return node.op.duration
+
+        indices = [dag.find_bit(qarg).index for qarg in node.qargs]
+        unit = 's' if self.durations.dt is None else 'dt'
+        duration = self.durations.get(node.op, indices, unit=unit)
+
+        if isinstance(duration, ParameterExpression):
+            duration = duration.numeric()
+        return duration
+
+
+class ProcessorPadDelay(PadDelay):
+    """Delay-padding pass that resolves durations from the full operation.
+
+    Like :class:`ProcessorASAPScheduleAnalysis`, the upstream
+    ``BasePadding.get_duration`` looks durations up by gate name (and prefers
+    ``Target`` instruction properties, which do not carry the Alice & Bob
+    durations). We override it to query the
+    :class:`ProcessorInstructionDurations` with ``node.op`` instead.
     """
 
-    def _update_inst_durations(self, dag) -> InstructionDurations:
-        """Update instruction durations with circuit information.
-        If the dag contains gate calibrations and no instruction durations were
-        provided through the target or as a standalone input, the circuit
-        calibration durations will be used. The priority order for
-        instruction durations is: target > standalone > circuit.
-        """
-        if not isinstance(self.inst_durations, ProcessorInstructionDurations):
-            return self.inst_durations
-
-        # pylint: disable=protected-access
-        circ_durations = ProcessorInstructionDurations(
-            self.inst_durations._proc
-        )
-
-        if dag.calibrations:
-            cal_durations = []
-            for gate, gate_cals in dag.calibrations.items():
-                for (qubits, parameters), schedule in gate_cals.items():
-                    cal_durations.append(
-                        (gate, qubits, parameters, schedule.duration)
-                    )
-            circ_durations.update(cal_durations, circ_durations.dt)
-
-        if self._durations_provided:
-            # We cast dt to float for mypy, to match the signature required by
-            # update(), but the real type of dt is indeed Optional[float].
-            circ_durations.update(
-                self.inst_durations,
-                cast(float, getattr(self.inst_durations, 'dt', None)),
-            )
-
-        return circ_durations
+    def get_duration(self, node: DAGOpNode, dag: DAGCircuit) -> int:
+        if node.name == 'delay':
+            return node.op.duration
+        if node.name == 'barrier':
+            return 0
+        indices = [dag.find_bit(qarg).index for qarg in node.qargs]
+        duration = self.durations.get(node.op, indices)
+        if isinstance(duration, ParameterExpression):
+            duration = duration.numeric()
+        return duration
 
 
 class AliceBobASAPSchedulingPlugin(PassManagerStagePlugin):
@@ -86,31 +87,46 @@ class AliceBobASAPSchedulingPlugin(PassManagerStagePlugin):
             instruction_durations=pass_manager_config.instruction_durations,
             scheduling_method='asap',
             timing_constraints=pass_manager_config.timing_constraints,
-            inst_map=pass_manager_config.inst_map,
             target=pass_manager_config.target,
         )
 
+        # `generate_scheduling` hardcodes the upstream `ASAPScheduleAnalysis`
+        # and `PadDelay`, neither of which can read Alice & Bob's
+        # parameter-dependent durations. Replace them with our processor-aware
+        # variants (and teach the scheduler to handle control-flow operations).
         # pylint: disable=protected-access
-        for task in pm._tasks:
-            for i, subtask in enumerate(task):
-                # Substitute the default TimeUnitConversion with our
-                # custom implementation.
-                if isinstance(subtask, TimeUnitConversion):
-                    pm.replace(
-                        i,
-                        CustomTimeUnitConversion(
-                            target=pass_manager_config.target
-                        ),
-                    )
-                if isinstance(subtask, ASAPScheduleAnalysis):
-                    # By default, the ASAPScheduleAnalysis pass only supports
-                    # conditionals for Gate & Delay instructions. We add the
-                    # support for ControlFlowOp (which itself allows for
-                    # If-Else, For-Loop, While-Loop and Switch-Case
-                    # to be supported)
-                    subtask.CONDITIONAL_SUPPORTED = (
-                        *subtask.CONDITIONAL_SUPPORTED,
-                        ControlFlowOp,
-                    )
+        for index, task in enumerate(pm._tasks):
+            if any(
+                isinstance(subtask, ASAPScheduleAnalysis) for subtask in task
+            ):
+                scheduler = ProcessorASAPScheduleAnalysis(
+                    pass_manager_config.instruction_durations,
+                    target=pass_manager_config.target,
+                )
+                # By default, the scheduling analysis pass only supports
+                # conditionals for Gate & Delay instructions. We add support
+                # for ControlFlowOp (which itself covers If-Else, For-Loop,
+                # While-Loop and Switch-Case).
+                scheduler.CONDITIONAL_SUPPORTED = (
+                    *scheduler.CONDITIONAL_SUPPORTED,
+                    ControlFlowOp,
+                )
+                pm.replace(index, scheduler)
+            elif any(isinstance(subtask, PadDelay) for subtask in task):
+                # Unlike `BaseScheduler`, `BasePadding` keeps the `durations`
+                # argument as-is instead of preferring `target.durations()`.
+                # We therefore hand it the processor durations explicitly (the
+                # dynamic ones live on the target, not in
+                # `pass_manager_config.instruction_durations`).
+                target = pass_manager_config.target
+                durations = (
+                    target.durations()
+                    if target is not None
+                    else pass_manager_config.instruction_durations
+                )
+                pm.replace(
+                    index,
+                    ProcessorPadDelay(target=target, durations=durations),
+                )
 
         return pm

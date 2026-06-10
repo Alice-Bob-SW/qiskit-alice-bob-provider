@@ -1,7 +1,7 @@
 import inspect
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Callable, Optional, TypeVar, Union, cast, overload
+from typing import Any, Callable, Optional, TypeVar, Union, overload
 
 BackendParameters = dict[str, Any]
 GateParameters = list[float]

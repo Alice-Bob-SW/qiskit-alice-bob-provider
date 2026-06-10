@@ -21,9 +21,9 @@ from qiskit.circuit import ControlFlowOp, Instruction
 from qiskit.circuit.library.standard_gates import (
     get_standard_gate_name_mapping,
 )
-from qiskit.synthesis.discrete_basis.gate_sequence import GateSequence
-from qiskit.synthesis.discrete_basis.solovay_kitaev import (
-    generate_basic_approximations,
+from qiskit.synthesis import generate_basic_approximations
+from qiskit.synthesis.discrete_basis.generate_basis_approximations import (
+    GateSequence,
 )
 from qiskit.transpiler import PassManager, PassManagerConfig, Target
 from qiskit.transpiler.passes.synthesis import UnitarySynthesis
@@ -104,7 +104,17 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
             ),
         )
 
-        # List gates to synthesize (all gates except basis gates)
+        # List the gates to synthesize with Solovay-Kitaev. SK only
+        # approximates single-qubit rotations, so we restrict the set to
+        # 1-qubit gates (minus the discrete basis). Multi-qubit gates are
+        # decomposed into the discrete basis plus 1-qubit rotations by
+        # ``HighLevelSynthesis``/``BasisTranslator``; those leftover rotations
+        # are then discretized by the SK pass that runs after the translator.
+        #
+        # (In Qiskit 2.x the default unitary-synthesis fallback can no longer
+        # decompose an arbitrary multi-qubit unitary against the purely
+        # discrete logical target, so routing multi-qubit gates through the
+        # equivalence-library passes instead of unitary synthesis is required.)
         synth_gates: Set[str] = set()
         for name, instr in get_standard_gate_name_mapping().items():
             if name in {
@@ -116,6 +126,8 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
                 'ccz',
                 'cswap',
             }:
+                continue
+            if instr.num_qubits != 1:
                 continue
             synth_gates.add(name)
         synth_gates -= set(discrete_basis_gates)
@@ -130,7 +142,6 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
         # Use above SK approximations by default
         pass_manager_config.unitary_synthesis_plugin_config = {
             'basic_approximations': approximations,
-            'basis_gates': discrete_basis_gates,
             **(pass_manager_config.unitary_synthesis_plugin_config or {}),
         }
 
@@ -159,9 +170,13 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
                         # Can't pass basis gates in
                         # unitary_synthesis_plugin_config because overridden
                         # by global basis_gates.
-                        # This seems to be a Qiskit bug (why give the
-                        # possibility to specify basis gates in the plugin
-                        # config if that was not the intent?)
+                        # These basis gates are used by the default synthesis
+                        # method (for multi-qubit unitaries). The
+                        # Solovay-Kitaev plugin instead relies on the
+                        # precomputed ``basic_approximations`` passed through
+                        # the plugin config; ``CustomUnitarySynthesis`` makes
+                        # sure the two are not handed to the SK plugin at the
+                        # same time.
                         # pylint: disable=protected-access
                         subtask._basis_gates = discrete_basis_gates
 
