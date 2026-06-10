@@ -15,8 +15,8 @@ Local noise addition pass.
 
 from typing import Callable, Iterable, Optional, Sequence, Union
 
-from qiskit.circuit import Instruction, QuantumCircuit
-from qiskit.converters import circuit_to_dag
+from qiskit.circuit import ControlFlowOp, Instruction, QuantumCircuit
+from qiskit.converters import circuit_to_dag, dag_to_circuit
 from qiskit.dagcircuit import DAGCircuit
 from qiskit.transpiler import TransformationPass
 from qiskit.transpiler.exceptions import TranspilerError
@@ -28,8 +28,8 @@ InstructionLike = Union[Instruction, QuantumError, QuantumCircuit]
 class LocalNoisePass(TransformationPass):
     """Transpiler pass to insert noise into a circuit.
 
-    Note from Alice & Bob: this class is adapted to support classically
-    controlled gates.
+    This class also inserts noise inside the blocks of control-flow
+    operations.
 
     The noise in this pass is defined by a noise function or callable with
     signature
@@ -105,6 +105,10 @@ class LocalNoisePass(TransformationPass):
         """
         qubit_indices = {qubit: idx for idx, qubit in enumerate(dag.qubits)}
         for node in dag.topological_op_nodes():
+            if isinstance(node.op, ControlFlowOp):
+                self._process_control_flow_op(node, dag, qubit_indices)
+                continue
+
             if self._ops and not isinstance(node.op, self._ops):
                 continue
 
@@ -128,15 +132,12 @@ class LocalNoisePass(TransformationPass):
             new_dag.add_qubits(node.qargs)
             new_dag.add_clbits(node.cargs)
 
-            # Note from Alice & Bob: the only change is to use a copy of
-            # node.op with the classical conditioning removed.
-            node_op_without_cond = node.op.to_mutable()
-            node_op_without_cond.condition = None
+            op_copy = node.op.to_mutable()
 
             # If appending re-apply original op node first
             if self._method == 'append':
                 new_dag.apply_operation_back(
-                    node_op_without_cond, qargs=node.qargs, cargs=node.cargs
+                    op_copy, qargs=node.qargs, cargs=node.cargs
                 )
 
             # If the new op is not a QuantumCircuit or Instruction, attempt
@@ -180,9 +181,33 @@ class LocalNoisePass(TransformationPass):
             # If prepending reapply original op node last
             if self._method == 'prepend':
                 new_dag.apply_operation_back(
-                    node_op_without_cond, qargs=node.qargs, cargs=node.cargs
+                    op_copy, qargs=node.qargs, cargs=node.cargs
                 )
 
             dag.substitute_node_with_dag(node, new_dag)
 
         return dag
+
+    def _process_control_flow_op(
+        self, node, dag: DAGCircuit, qubit_indices: dict
+    ) -> None:
+        """Insert noise inside the blocks of a control-flow operation."""
+        outer_indices = [qubit_indices[q] for q in node.qargs]
+
+        inner_func = self._func
+
+        # The noise function expects the qubit indices of the outer circuit.
+        def remapped_func(inst, qubits):
+            return inner_func(inst, [outer_indices[q] for q in qubits])
+
+        new_blocks = []
+        for block in node.op.blocks:
+            sub_pass = LocalNoisePass(
+                func=remapped_func,
+                op_types=self._ops or None,
+                method=self._method,
+            )
+            new_block_dag = sub_pass.run(circuit_to_dag(block))
+            new_blocks.append(dag_to_circuit(new_block_dag))
+
+        dag.substitute_node(node, node.op.replace_blocks(new_blocks))

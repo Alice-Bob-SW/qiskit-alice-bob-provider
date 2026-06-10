@@ -17,7 +17,8 @@
 import logging
 from typing import List, Optional
 
-from qiskit.providers import BackendV2, ProviderV1
+from qiskit.providers import BackendV2
+from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.providerutils import filter_backends
 
 from qiskit_alice_bob_provider.remote.api.version import (
@@ -30,7 +31,7 @@ from .api.targets import list_targets
 from .backend import AliceBobRemoteBackend
 
 
-class AliceBobRemoteProvider(ProviderV1):
+class AliceBobRemoteProvider:
     """
     Class listing and providing access to all Alice & Bob remote backends.
     """
@@ -84,7 +85,7 @@ class AliceBobRemoteProvider(ProviderV1):
         Returns:
             AliceBobRemoteBackend: backend matching the given name.
         """
-        backend = super().get_backend(name)
+        backend = self._get_single_backend(name)
         # We allow to set the options when getting the backend,
         # to align with what we do in the local provider.
         if kwargs:
@@ -92,6 +93,18 @@ class AliceBobRemoteProvider(ProviderV1):
 
         backend._verbose = verbose
         return backend
+
+    def _get_single_backend(
+        self, name=None, **kwargs
+    ) -> AliceBobRemoteBackend:
+        backends = self.backends(name, **kwargs)
+        if len(backends) > 1:
+            raise QiskitBackendNotFoundError(
+                'More than one backend matches the criteria'
+            )
+        if not backends:
+            raise QiskitBackendNotFoundError('No backend matches the criteria')
+        return backends[0]
 
     def backends(
         self, name: Optional[str] = None, **kwargs

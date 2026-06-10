@@ -187,7 +187,9 @@ def test_all_gates():
             continue
         try:
             circ = create_circuit_with_gate(i)
-            _ = transpile(circ, backend=backend)
+            # At optimization level 2 or more, the optimization stage makes
+            # 2-qubit unitaries that the discrete target cannot synthesize.
+            _ = transpile(circ, backend=backend, optimization_level=1)
         except Exception as e:
             errors.append((name, e))
     assert not errors

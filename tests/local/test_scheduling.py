@@ -2,7 +2,9 @@ from typing import Iterator, Tuple
 
 import pytest
 from qiskit import QuantumCircuit, transpile
+from qiskit.circuit import Parameter
 from qiskit.circuit.library import Initialize
+from qiskit.transpiler import TranspilerError
 
 from qiskit_alice_bob_provider.local.backend import ProcessorSimulator
 from qiskit_alice_bob_provider.processor.description import (
@@ -104,3 +106,31 @@ def test_reset_to_initialize(proc: ProcessorDescription) -> None:
     assert isinstance(initializes[0].operation, Initialize)
     assert initializes[0].operation.params[0] == '0'
     assert len(transpiled.get_instructions('reset')) == 0
+
+
+def test_unbound_parameter_duration_raises_transpiler_error() -> None:
+    circ = QuantumCircuit(1, 1)
+    circ.initialize('0', 0)
+    circ.rz(Parameter('theta'), 0)
+    circ.measure(0, 0)
+    backend = ProcessorSimulator(SimpleProcessor())
+    with pytest.raises(
+        TranspilerError,
+        match=r'rz on qubits \[0\] depends on the unbound parameters theta\. '
+        'Bind',
+    ):
+        transpile(circ, backend, optimization_level=0)
+
+
+def test_unbound_parameter_delay_raises_transpiler_error() -> None:
+    circ = QuantumCircuit(1, 1)
+    circ.initialize('0', 0)
+    circ.delay(Parameter('t'), 0, unit='us')
+    circ.measure(0, 0)
+    backend = ProcessorSimulator(SimpleProcessor())
+    with pytest.raises(
+        TranspilerError,
+        match=r'delay on qubits \[0\] depends on the unbound parameters t\. '
+        'Bind',
+    ):
+        transpile(circ, backend, optimization_level=0)

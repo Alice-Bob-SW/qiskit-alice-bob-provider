@@ -284,7 +284,8 @@ def test_conditional_instruction() -> None:
     circ = QuantumCircuit(2, 2)
     circ.initialize('++')
     circ.measure_x(0, 0)
-    circ.x(1).c_if(0, 0)
+    with circ.if_test((circ.clbits[0], 0)):
+        circ.x(1)
     circ.measure_x(1, 1)
     assert backend.run(
         transpile(circ, backend), shots=1
@@ -293,7 +294,8 @@ def test_conditional_instruction() -> None:
     circ = QuantumCircuit(2, 2)
     circ.initialize('+-')
     circ.measure_x(0, 0)
-    circ.x(1).c_if(0, 0)
+    with circ.if_test((circ.clbits[0], 0)):
+        circ.x(1)
     circ.measure_x(1, 1)
     job = backend.run(transpile(circ, backend), shots=1)
     assert job.result().get_counts() == {'01': 1}

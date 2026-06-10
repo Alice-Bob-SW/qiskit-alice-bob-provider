@@ -13,32 +13,54 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 ##############################################################################
-from functools import lru_cache
 from inspect import isclass
-from typing import FrozenSet, List, Set
+from typing import Set
 
-from qiskit.circuit import ControlFlowOp, Instruction
+from qiskit.circuit import ControlFlowOp, Instruction, ParameterExpression
 from qiskit.circuit.library.standard_gates import (
     get_standard_gate_name_mapping,
 )
-from qiskit.synthesis.discrete_basis.gate_sequence import GateSequence
-from qiskit.synthesis.discrete_basis.solovay_kitaev import (
-    generate_basic_approximations,
+from qiskit.converters import circuit_to_dag
+from qiskit.dagcircuit import DAGCircuit
+from qiskit.transpiler import (
+    AnalysisPass,
+    PassManager,
+    PassManagerConfig,
+    Target,
+    TranspilerError,
 )
-from qiskit.transpiler import PassManager, PassManagerConfig, Target
 from qiskit.transpiler.passes.synthesis import UnitarySynthesis
 from qiskit.transpiler.preset_passmanagers.plugin import PassManagerStagePlugin
 
 from .state_preparation import StatePreparationPlugin
 
 
-@lru_cache(maxsize=1)
-def _memoized_basic_approximations(
-    basis_gates: FrozenSet[str], depth: int
-) -> List[GateSequence]:
-    """Generating approximations for Solovay-Kitaev is costly: this function
-    caches those approximations"""
-    return generate_basic_approximations(basis_gates=basis_gates, depth=depth)
+class UnboundParameterCheck(AnalysisPass):
+    """Raises TranspilerError if an operation has an unbound parameter.
+
+    The Solovay-Kitaev synthesis needs a numeric value for each rotation.
+    """
+
+    def run(self, dag: DAGCircuit) -> None:
+        for node in dag.op_nodes():
+            if isinstance(node.op, ControlFlowOp):
+                for block in node.op.blocks:
+                    self.run(circuit_to_dag(block))
+                continue
+            names = sorted(
+                {
+                    parameter.name
+                    for param in node.op.params
+                    if isinstance(param, ParameterExpression)
+                    for parameter in param.parameters
+                }
+            )
+            if names:
+                raise TranspilerError(
+                    f'{node.op.name} depends on the unbound parameters '
+                    f'{", ".join(names)}. Bind the parameters with '
+                    'assign_parameters before transpile.'
+                )
 
 
 class SKSynthesisPlugin(PassManagerStagePlugin):
@@ -51,8 +73,8 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
       all backend basis gates can be used as basis gates for the SK synthesis.
       Unfortunately, Qiskit does not allow setting a different basis gate
       set for the synthesis step, so we hack our way around it.
-    * Compute approximations for the SK synthesis using only the 1-qubit gates
-      of the SK basis gate set
+    * Restrict the SK synthesis to the 1-qubit gates of the SK basis gate
+      set, with a recursion degree of 3 by default
     * Mix the SK synthesis with the transpilation passes from
       StatePreparationPlugin
 
@@ -94,17 +116,9 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
                 discrete_1q_basis_gates.add(instr.name)
             discrete_basis_gates.add(instr.name)
 
-        # Compute approximations for the Solovay-Kitaev synthesis
-        approximations = _memoized_basic_approximations(
-            basis_gates=frozenset(discrete_1q_basis_gates),
-            depth=(
-                (
-                    pass_manager_config.unitary_synthesis_plugin_config or {}
-                ).get('depth', 5)
-            ),
-        )
-
-        # List gates to synthesize (all gates except basis gates)
+        # Solovay-Kitaev synthesizes 1-qubit gates only. The translation
+        # passes decompose the multi-qubit gates, and a second synthesis pass
+        # discretizes the rotations that remain.
         synth_gates: Set[str] = set()
         for name, instr in get_standard_gate_name_mapping().items():
             if name in {
@@ -117,6 +131,8 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
                 'cswap',
             }:
                 continue
+            if instr.num_qubits != 1:
+                continue
             synth_gates.add(name)
         synth_gates -= set(discrete_basis_gates)
 
@@ -127,10 +143,9 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
             else pass_manager_config.unitary_synthesis_method
         )
 
-        # Use above SK approximations by default
         pass_manager_config.unitary_synthesis_plugin_config = {
-            'basic_approximations': approximations,
-            'basis_gates': discrete_basis_gates,
+            'depth': 5,
+            'recursion_degree': 3,
             **(pass_manager_config.unitary_synthesis_plugin_config or {}),
         }
 
@@ -154,12 +169,8 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
                         # synthesize in UnitarySynthesis, and the default
                         # _synth_gates is just 'unitary'!
                         subtask._synth_gates = synth_gates
-                        # Can't pass basis gates in
-                        # unitary_synthesis_plugin_config because overridden
-                        # by global basis_gates.
-                        # This seems to be a Qiskit bug (why give the
-                        # possibility to specify basis gates in the plugin
-                        # config if that was not the intent?)
-                        subtask._basis_gates = discrete_basis_gates
+                        # The Solovay-Kitaev decomposition accepts
+                        # 1-qubit basis gates only.
+                        subtask._basis_gates = discrete_1q_basis_gates
 
-        return pm
+        return PassManager([UnboundParameterCheck()]) + pm

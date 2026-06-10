@@ -28,7 +28,7 @@ from typing import (
 )
 
 import numpy as np
-from qiskit.providers import BackendV2, ProviderV1
+from qiskit.providers import BackendV2
 
 from ..processor.custom_cat import CustomCat
 from ..processor.interpolated_cat import InterpolatedCatProcessor
@@ -42,7 +42,7 @@ from .noise_model import NoiseFunction, TimeFunction
 _PARENT_DIR = Path(__file__).parent
 
 
-class AliceBobLocalProvider(ProviderV1):
+class AliceBobLocalProvider:
     """Class listing a number of preset backends simulating cat qubit based
     quantum processors.
 

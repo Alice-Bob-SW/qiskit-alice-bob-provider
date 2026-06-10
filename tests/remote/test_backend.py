@@ -22,7 +22,6 @@ import numpy as np
 import pytest
 from qiskit import QiskitError, QuantumCircuit, transpile
 from qiskit.providers import Options
-from qiskit.pulse.schedule import Schedule
 from qiskit.result import Result
 from qiskit.transpiler.exceptions import TranspilerError
 from requests_mock.mocker import Mocker
@@ -116,8 +115,8 @@ def test_too_many_qubits_clients_side(mocked_targets) -> None:
 def test_input_not_quantum_circuit(mocked_targets) -> None:
     c1 = QuantumCircuit(1, 1)
     c2 = QuantumCircuit(1, 1)
-    s1 = Schedule()
-    s2 = Schedule()
+    s1 = object()
+    s2 = object()
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     with pytest.raises(NotImplementedError):
