@@ -17,6 +17,7 @@
 from typing import List, Optional, Union
 
 from qiskit import QuantumCircuit
+from qiskit.circuit import CONTROL_FLOW_OP_NAMES
 from qiskit.providers import BackendV2, Options
 from qiskit.transpiler import PassManager, Target
 from qiskit_aer import AerSimulator
@@ -183,13 +184,20 @@ class ProcessorSimulator(BackendV2):
         # We then need to decompose once again the 'state_preparation' gate
         # introduced when decomposing the 'initialize' gate. The second call to
         # decompose() will decompose them into their clifford representation.
+        # The control-flow names in the filter let this call reach the gates
+        # inside control-flow blocks.
         # Note: this will cause instructions that may not be in the processor
         # instruction set to appear. This is not an issue though, because at
         # this stage the noise has already been inserted and all
         # transformations done by the Qiskit transpiler don't change the
         # simulation results.
         decomposed = [
-            c.decompose().decompose(gates_to_decompose=['state_preparation'])
+            c.decompose().decompose(
+                gates_to_decompose=[
+                    'state_preparation',
+                    *CONTROL_FLOW_OP_NAMES,
+                ]
+            )
             for c in noisy_circuits
         ]
 

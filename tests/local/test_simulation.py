@@ -301,6 +301,18 @@ def test_conditional_instruction() -> None:
     assert job.result().get_counts() == {'01': 1}
 
 
+def test_initialize_inside_control_flow() -> None:
+    backend = ProcessorSimulator(_ConditioningProcessor())
+    circ = QuantumCircuit(2, 2)
+    circ.initialize('++')
+    circ.measure_x(0, 0)
+    with circ.if_test((circ.clbits[0], 0)):
+        circ.initialize('-', 1)
+    circ.measure_x(1, 1)
+    job = backend.run(transpile(circ, backend), shots=1)
+    assert job.result().get_counts() == {'10': 1}
+
+
 def test_large_processor() -> None:
     """A processor with more qubits (40 here) than accepted by AerSimulator
     (29 on my machine, this is based on system memory) would fail. A fix was
