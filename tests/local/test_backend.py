@@ -1,4 +1,3 @@
-import sys
 from typing import List
 
 import numpy as np
@@ -125,7 +124,8 @@ def test_synthesize_cz() -> None:
     assert len(transpiled.get_instructions('h')) == 2
 
 
-def test_all_gates():
+@pytest.mark.parametrize('optimization_level', [0, 1, 2, 3])
+def test_all_gates(optimization_level: int):
     """Test transpilation for all basis gates"""
     provider = AliceBobLocalProvider()
     backend = provider.get_backend('EMU:40Q:LOGICAL_TARGET')
@@ -145,19 +145,6 @@ def test_all_gates():
         # This one is not a gate, just a float.
         'global_phase',
     ]
-    if sys.platform == 'darwin':
-        # For some reason, on macOS we have numerical instabilities with the
-        # Solovay Kitaev synthesis, with specific angles.
-        # For instance, a simple 1Q circuit with a RZ(5pi/4) gate fails to
-        # transpile with our logical backends, and typically raises :
-        #   ValueError('Input matrix is not orthogonal.')
-        # As a result, the synthesis currently fails for the gates below (this
-        # needs to be fixed).
-        skip_gates += [
-            'cry',
-            'rccx',
-            'rcccx',
-        ]
 
     def create_circuit_with_gate(instruction: Instruction):
         if instruction.params:
@@ -187,9 +174,9 @@ def test_all_gates():
             continue
         try:
             circ = create_circuit_with_gate(i)
-            # At optimization level 2 or more, the optimization stage makes
-            # 2-qubit unitaries that the discrete target cannot synthesize.
-            _ = transpile(circ, backend=backend, optimization_level=1)
+            _ = transpile(
+                circ, backend=backend, optimization_level=optimization_level
+            )
         except Exception as e:
             errors.append((name, e))
     assert not errors
