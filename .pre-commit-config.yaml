@@ -1,12 +1,30 @@
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-      - id: double-quote-string-fixer
-  - repo: local
+      - id: check-case-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.20
     hooks:
-      - id: commitlint
-        name: Commitlint
-        language: system
-        entry: npx commitlint --edit
+      - id: ruff-check
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        args: ["--skip=*.lock,CHANGELOG.md", "--ignore-words-list=aer,ser"]
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.2.0
+    hooks:
+      - id: conventional-pre-commit
         stages: [commit-msg]
+        args: []

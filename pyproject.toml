@@ -43,19 +43,14 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black==23.1.0",
-    "codespell==2.2.2",
-    "flake8>=5.0.4",
-    "flake8-quotes==3.4.0",
-    "isort>=5.11.5",
     "mock==5.1.0",
     "mypy==1.0.0",
     "mypy-extensions==1.0.0",
     "pre-commit>=2.21.0",
-    "pylint==3.2.7",
     "pytest==7.2.1",
     "requests==2.32.3",
     "requests-mock==1.10.0",
+    "ruff==0.15.20",
     "traitlets==5.14.3",
     "types-mock==5.1.0",
     "types-requests==2.30.0.0"
@@ -73,13 +68,19 @@ include = ["qiskit_alice_bob_provider*"]
 
 [tool.setuptools_scm]
 
-[tool.black]
-skip-string-normalization = true
+[tool.ruff]
 line-length = 79
+target-version = "py39"
 
-[tool.isort]
-profile = "black"
-line_length = 79
+[tool.ruff.format]
+quote-style = "single"
+line-ending = "lf"
+
+[tool.ruff.lint]
+extend-select = [
+    "I",  # isort
+    "RUF100",  # useless noqa
+]
 
 [tool.mypy]
 plugins = "numpy.typing.mypy_plugin"
