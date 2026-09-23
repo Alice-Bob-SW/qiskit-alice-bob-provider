@@ -1,7 +1,7 @@
 import inspect
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Callable, Optional, TypeVar, Union, cast, overload
+from typing import Any, Callable, Optional, TypeVar, Union, overload
 
 BackendParameters = dict[str, Any]
 GateParameters = list[float]
@@ -58,19 +58,17 @@ def _call_function_safely(
 @overload
 def _to_hashable(
     param: GateParameters,
-) -> tuple[float, ...]:
-    ...
+) -> tuple[float, ...]: ...
 
 
 @overload
 def _to_hashable(
     param: BackendParameters,
-) -> tuple[tuple[str, Any], ...]:
-    ...
+) -> tuple[tuple[str, Any], ...]: ...
 
 
 def _to_hashable(
-    param: Union[GateParameters, BackendParameters]
+    param: Union[GateParameters, BackendParameters],
 ) -> Union[tuple[tuple[str, Any], ...], tuple[float, ...]]:
     """
     Generate a hash for the given parameters.

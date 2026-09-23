@@ -12,6 +12,7 @@
 """
 Local noise addition pass.
 """
+
 from typing import Callable, Iterable, Optional, Sequence, Union
 
 from qiskit.circuit import Instruction, QuantumCircuit
@@ -93,7 +94,6 @@ class LocalNoisePass(TransformationPass):
                 'operation types (or None)'
             )
 
-    # pylint: disable=too-many-branches
     def run(self, dag: DAGCircuit) -> DAGCircuit:
         """Run the LocalNoisePass pass on `dag`.
         Args:

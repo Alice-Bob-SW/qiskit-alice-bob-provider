@@ -136,7 +136,6 @@ def test_1q_instruction() -> None:
 
 
 def test_1q_instruction_noiseless() -> None:
-    # pylint: disable=protected-access
     proc = LogicalCatProcessor.create_noiseless()
     d, _, _, k2 = (
         proc._distance,

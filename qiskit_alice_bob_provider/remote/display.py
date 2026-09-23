@@ -26,7 +26,6 @@ def display_current_line(text: str) -> None:
 
 
 def _new_line_ipython() -> None:
-    # pylint: disable=global-statement, invalid-name
     global current_label
     current_label = Label()
     display(current_label)

@@ -33,7 +33,7 @@ def test_2_qubit_gate() -> None:
         'XI': 0.3,
         'IY': 0.2,
         'ZY': 0.4,
-        'II': 0.2  # II is wrong but this should not matter because it is
+        'II': 0.2,  # II is wrong but this should not matter because it is
         # recomputed anyway by pauli_errors_to_chi
     }
     chi = pauli_errors_to_chi(d)

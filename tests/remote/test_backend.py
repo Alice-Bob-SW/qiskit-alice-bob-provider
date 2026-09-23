@@ -14,7 +14,6 @@
 #    limitations under the License.
 ##############################################################################
 
-# pylint: disable=unused-argument
 
 from pathlib import Path
 from textwrap import dedent

@@ -39,12 +39,9 @@ def test_create_local_backend_with_custom_processor(
     # Then
     assert backend is not None
     assert backend.name == 'EMU:CUSTOM_LOGICAL'
-    # pylint: disable=protected-access
     assert backend._processor.n_qubits == 40
-    # pylint: disable=protected-access
     assert backend._processor.clock_cycle == 1e-9
     assert (
-        # pylint: disable=protected-access
         backend._processor.backend_parameters
         == default_custom_emulator_parameters['backend_parameters']
     )
@@ -195,9 +192,9 @@ def test_invalid_noise_model_parameters(default_custom_emulator_parameters):
     def invalid_noise_function(_params, _backend_params):
         return {'X': 1.2, 'Y': -0.1, 'Z': 0.5}
 
-    default_custom_emulator_parameters[
-        'default_1q_noise_model'
-    ] = invalid_noise_function
+    default_custom_emulator_parameters['default_1q_noise_model'] = (
+        invalid_noise_function
+    )
 
     processor = CustomCat(**default_custom_emulator_parameters)
 
@@ -214,9 +211,9 @@ def test_invalid_time_model_parameters(default_custom_emulator_parameters):
     def invalid_time_function(_params, _backend_params):
         return -1
 
-    default_custom_emulator_parameters[
-        'default_1q_time_model'
-    ] = invalid_time_function
+    default_custom_emulator_parameters['default_1q_time_model'] = (
+        invalid_time_function
+    )
 
     processor = CustomCat(**default_custom_emulator_parameters)
 

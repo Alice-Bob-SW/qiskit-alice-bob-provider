@@ -134,8 +134,7 @@ def _build_interpolator(
         def constant_interpolator(
             # Can't use "_" because this would cause mypy to not understand
             # that this function is an Interpolator.
-            # pylint: disable=unused-argument
-            x: Union[float, List[float], np.ndarray]
+            x: Union[float, List[float], np.ndarray],
         ) -> np.ndarray:
             return np.array(constant)
 
@@ -165,7 +164,7 @@ def _build_interpolator(
         )
 
     def protected_interpolator(
-        x: Union[float, List[float], np.ndarray]
+        x: Union[float, List[float], np.ndarray],
     ) -> np.ndarray:
         error_message = (
             f'Could not interpolate requested point ({x}) because it is '

@@ -144,7 +144,7 @@ def index_to_pauli_label(n_qubits: int, index: int) -> str:
 
 
 def full_flip_error(
-    linearized_probs: Union[np.ndarray, List[float], List[List[float]]]
+    linearized_probs: Union[np.ndarray, List[float], List[List[float]]],
 ) -> np.ndarray:
     """The general formula for the probabilities of Pauli errors from their
     linearized versions in the region close to 0.

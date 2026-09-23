@@ -92,7 +92,6 @@ class _MeasureMarkerGate(IGate):
         library.add_equivalence(self, circuit)
 
 
-# pylint: disable=too-many-ancestors
 class _MxMarkerGate(_MeasureMarkerGate):
     """A virtual gate that is inserted before every MeasureX"""
 
@@ -100,7 +99,6 @@ class _MxMarkerGate(_MeasureMarkerGate):
         super().__init__(label=label)
 
 
-# pylint: disable=too-many-ancestors
 class _MzMarkerGate(_MeasureMarkerGate):
     """A virtual gate that is inserted before every MeasureZ"""
 

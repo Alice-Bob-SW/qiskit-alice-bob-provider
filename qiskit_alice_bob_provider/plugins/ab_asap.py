@@ -48,7 +48,6 @@ class CustomTimeUnitConversion(TimeUnitConversion):
         if not isinstance(self.inst_durations, ProcessorInstructionDurations):
             return self.inst_durations
 
-        # pylint: disable=protected-access
         circ_durations = ProcessorInstructionDurations(
             self.inst_durations._proc
         )
@@ -90,7 +89,6 @@ class AliceBobASAPSchedulingPlugin(PassManagerStagePlugin):
             target=pass_manager_config.target,
         )
 
-        # pylint: disable=protected-access
         for task in pm._tasks:
             for i, subtask in enumerate(task):
                 # Substitute the default TimeUnitConversion with our

@@ -18,7 +18,6 @@ def test_get_backends() -> None:
     assert ab.get_backend('EMU:6Q:PHYSICAL_CATS').name == backends[0].name
 
 
-# pylint: disable=protected-access
 def test_get_backend_change_nbar() -> None:
     ab = AliceBobLocalProvider()
     backend = ab.get_backend('EMU:6Q:PHYSICAL_CATS', average_nb_photons=9)

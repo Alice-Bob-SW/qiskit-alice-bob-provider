@@ -113,7 +113,7 @@ def processor_to_target(processor: ProcessorDescription) -> Target:
     target.add_instruction(ForLoopOp, name='for_loop')
     target.add_instruction(SwitchCaseOp, name='switch_case')
 
-    target._instruction_durations = (  # pylint: disable=protected-access
-        ProcessorInstructionDurations(processor=processor)
+    target._instruction_durations = ProcessorInstructionDurations(
+        processor=processor
     )
     return target

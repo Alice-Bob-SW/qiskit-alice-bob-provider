@@ -21,7 +21,6 @@ def get_provider_status() -> ProviderStatus:
         pypi_response = requests.get(url=PROVIDER_PYPI_URL, timeout=1.0)
         assert pypi_response.status_code == 200
         pypi_version = pypi_response.json()['info']['version']
-    # pylint: disable=broad-exception-caught
     except Exception as e:
         logging.exception(e)
         return ProviderStatus.UNKNOWN

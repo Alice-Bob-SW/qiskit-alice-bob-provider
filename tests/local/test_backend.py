@@ -188,7 +188,7 @@ def test_all_gates():
         try:
             circ = create_circuit_with_gate(i)
             _ = transpile(circ, backend=backend)
-        except Exception as e:  # pylint: disable=broad-exception-caught
+        except Exception as e:
             errors.append((name, e))
     assert not errors
 

@@ -49,11 +49,9 @@ class _DownloadedFile:
     content: Optional[str]
 
 
-# pylint: disable=too-many-instance-attributes
 class AliceBobRemoteJob(JobV1):
     """A Qiskit job referencing a job executed in the Alice & Bob API"""
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         backend: BackendV2,

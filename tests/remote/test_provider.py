@@ -1,5 +1,3 @@
-# pylint: disable=unused-argument
-
 from qiskit_alice_bob_provider import AliceBobRemoteProvider
 
 

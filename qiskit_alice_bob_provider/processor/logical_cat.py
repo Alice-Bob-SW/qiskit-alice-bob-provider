@@ -91,7 +91,6 @@ class LogicalCatProcessor(ProcessorDescription):
     taken from different sources referenced in the code below.
     """
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         n_qubits: int = 5,

@@ -90,7 +90,6 @@ class AliceBobRemoteProvider(ProviderV1):
         if kwargs:
             backend.update_options(kwargs)
 
-        # pylint: disable=protected-access
         backend._verbose = verbose
         return backend
 

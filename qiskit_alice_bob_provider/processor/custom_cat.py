@@ -31,7 +31,6 @@ _1Q_INSTRUCTIONS = [
 
 
 class CustomCat(ProcessorDescription):
-    # pylint: disable=too-many-instance-attributes,too-many-arguments
     def __init__(
         self,
         backend_parameters: Optional[dict[str, Any]] = None,
@@ -39,9 +38,9 @@ class CustomCat(ProcessorDescription):
         time_models: Optional[dict[str, TimeFunction]] = None,
         default_1q_noise_model: Optional[NoiseFunction] = None,
         default_1q_time_model: Optional[TimeFunction] = None,
-        validate_parameters: Callable[
-            [dict[str, float]], bool
-        ] = lambda _: True,
+        validate_parameters: Callable[[dict[str, float]], bool] = lambda _: (
+            True
+        ),
         name: Optional[str] = 'CustomCat',
     ):
         self.backend_parameters = (
@@ -53,15 +52,15 @@ class CustomCat(ProcessorDescription):
         self.time_models: dict[str, TimeFunction] = (
             time_models if time_models else {}
         )
-        self.default_1q_noise_model: Optional[
-            NoiseFunction
-        ] = default_1q_noise_model
-        self.default_1q_time_model: Optional[
-            TimeFunction
-        ] = default_1q_time_model
-        self.validate_parameters: Callable[
-            [dict[str, float]], bool
-        ] = validate_parameters
+        self.default_1q_noise_model: Optional[NoiseFunction] = (
+            default_1q_noise_model
+        )
+        self.default_1q_time_model: Optional[TimeFunction] = (
+            default_1q_time_model
+        )
+        self.validate_parameters: Callable[[dict[str, float]], bool] = (
+            validate_parameters
+        )
 
         if not self.validate_parameters(self.backend_parameters):
             raise ValueError(f'Invalid parameters provided for {name}.')

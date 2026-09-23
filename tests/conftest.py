@@ -14,7 +14,6 @@
 #    limitations under the License.
 ##############################################################################
 
-# pylint: disable=redefined-outer-name
 
 from typing import Any, Dict, List
 
@@ -130,7 +129,7 @@ def single_cat_target() -> dict:
             {'signature': '__quantum__qis__x__body:void (%Qubit*)'},
             {
                 'signature': (
-                    '__quantum__qis__mz__body:void ' '(%Qubit*, %Result*)'
+                    '__quantum__qis__mz__body:void (%Qubit*, %Result*)'
                 )
             },
             {'signature': '__quantum__qis__m__body:void (%Qubit*, %Result*)'},
@@ -872,7 +871,7 @@ def failed_validation_job(mocked_targets: Mocker) -> Mocker:
             'error': {
                 'code': 400,
                 'message': (
-                    'Input param \"averageNbPhotons\" '
+                    'Input param "averageNbPhotons" '
                     'must be in the range [1, 10].'
                 ),
             }
@@ -886,8 +885,7 @@ def failed_validation_job(mocked_targets: Mocker) -> Mocker:
             'error': {
                 'code': 404,
                 'message': (
-                    'Could not find job '
-                    'f0484867-d154-4c64-b4e4-aa2c4a3fa504'
+                    'Could not find job f0484867-d154-4c64-b4e4-aa2c4a3fa504'
                 ),
             }
         },
@@ -900,8 +898,7 @@ def failed_validation_job(mocked_targets: Mocker) -> Mocker:
             'error': {
                 'code': 404,
                 'message': (
-                    'Could not find job '
-                    'f0484867-d154-4c64-b4e4-aa2c4a3fa504'
+                    'Could not find job f0484867-d154-4c64-b4e4-aa2c4a3fa504'
                 ),
             }
         },
@@ -914,8 +911,7 @@ def failed_validation_job(mocked_targets: Mocker) -> Mocker:
             'error': {
                 'code': 404,
                 'message': (
-                    'Could not find job '
-                    'f0484867-d154-4c64-b4e4-aa2c4a3fa504'
+                    'Could not find job f0484867-d154-4c64-b4e4-aa2c4a3fa504'
                 ),
             }
         },
@@ -928,8 +924,7 @@ def failed_validation_job(mocked_targets: Mocker) -> Mocker:
             'error': {
                 'code': 404,
                 'message': (
-                    'Could not find job '
-                    'f0484867-d154-4c64-b4e4-aa2c4a3fa504'
+                    'Could not find job f0484867-d154-4c64-b4e4-aa2c4a3fa504'
                 ),
             }
         },
@@ -942,8 +937,7 @@ def failed_validation_job(mocked_targets: Mocker) -> Mocker:
             'error': {
                 'code': 404,
                 'message': (
-                    'Could not find job '
-                    'f0484867-d154-4c64-b4e4-aa2c4a3fa504'
+                    'Could not find job f0484867-d154-4c64-b4e4-aa2c4a3fa504'
                 ),
             }
         },

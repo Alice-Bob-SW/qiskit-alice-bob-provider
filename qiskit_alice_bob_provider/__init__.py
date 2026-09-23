@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 
-# flake8: noqa: F401
+# ruff: noqa: F401
 
 from importlib.metadata import version
 

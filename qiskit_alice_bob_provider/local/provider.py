@@ -95,7 +95,6 @@ class AliceBobLocalProvider(ProviderV1):
             average_nb_photons=4,
         )
 
-    # pylint: disable=arguments-differ
     def backends(self, name: Optional[str] = None) -> List[BackendV2]:
         """Return a list of backends.
 
@@ -113,7 +112,6 @@ class AliceBobLocalProvider(ProviderV1):
 
     # Overloads for specific backend types
     @overload
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def get_backend(
         self,
         name: Literal['EMU:6Q:PHYSICAL_CATS', 'EMU:40Q:PHYSICAL_CATS'],
@@ -128,7 +126,6 @@ class AliceBobLocalProvider(ProviderV1):
         """Get a physical cat backend."""
 
     @overload
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def get_backend(
         self,
         name: Literal['EMU:40Q:LOGICAL_TARGET', 'EMU:15Q:LOGICAL_EARLY'],
@@ -143,7 +140,6 @@ class AliceBobLocalProvider(ProviderV1):
         """Get a logical cat backend."""
 
     @overload
-    # pylint: disable=signature-differs
     def get_backend(
         self,
         name: Literal['EMU:40Q:LOGICAL_NOISELESS'],
@@ -165,7 +161,6 @@ class AliceBobLocalProvider(ProviderV1):
         """Get a serialized backend."""
 
     @overload
-    # pylint: disable=signature-differs,arguments-differ
     def get_backend(
         self,
         name: str,
@@ -173,7 +168,6 @@ class AliceBobLocalProvider(ProviderV1):
     ) -> ProcessorSimulator:
         """Get any backend by name with arbitrary kwargs."""
 
-    # pylint: disable=signature-differs,arguments-differ
     def get_backend(self, name: str, **processor_kwargs) -> ProcessorSimulator:
         """Get a backend by name with optional processor-specific parameters.
 
@@ -190,7 +184,6 @@ class AliceBobLocalProvider(ProviderV1):
         """
         return self._backend_builders[name](**processor_kwargs)
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def build_physical_backend(
         self,
         n_qubits: int = 5,
@@ -243,9 +236,9 @@ class AliceBobLocalProvider(ProviderV1):
         time_models: Optional[dict[str, TimeFunction]] = None,
         default_1q_noise_model: Optional[NoiseFunction] = None,
         default_1q_time_model: Optional[TimeFunction] = None,
-        validate_parameters: Callable[
-            [dict[str, float]], bool
-        ] = lambda _: True,
+        validate_parameters: Callable[[dict[str, float]], bool] = lambda _: (
+            True
+        ),
         name: Optional[str] = None,
     ):
         if backend_parameters is None:
@@ -273,7 +266,6 @@ class AliceBobLocalProvider(ProviderV1):
             name=name,
         )
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def build_logical_backend(
         self,
         n_qubits: int = 40,

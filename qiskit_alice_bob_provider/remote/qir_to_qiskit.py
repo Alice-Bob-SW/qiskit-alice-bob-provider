@@ -76,7 +76,6 @@ _UNSUPPORTED_WARNING = (
 )
 
 
-# pylint: disable=too-many-branches,too-many-return-statements
 def _qir_signature_to_qiskit_instructions(
     signature: str,
 ) -> List[Tuple[str, Instruction]]:

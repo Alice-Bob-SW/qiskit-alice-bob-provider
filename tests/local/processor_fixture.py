@@ -12,7 +12,7 @@ from qiskit_alice_bob_provider.processor.description import (
 from qiskit_alice_bob_provider.processor.utils import pauli_errors_to_chi
 
 
-def _simple_apply_instruction(  # pylint: disable=too-many-return-statements
+def _simple_apply_instruction(
     name: str, params: List[float]
 ) -> AppliedInstruction:
     if name == 'delay':

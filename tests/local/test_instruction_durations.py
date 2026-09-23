@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 from typing import Iterator, List, Tuple
 
 import pytest

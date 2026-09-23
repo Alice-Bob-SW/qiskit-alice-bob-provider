@@ -30,7 +30,6 @@ class AliceBobEventType(Enum):
         )
         return cls.UNKNOWN
 
-    # pylint: disable=too-many-return-statements
     def to_qiskit_status(self) -> JobStatus:
         """_summary_
         Args:
