@@ -16,7 +16,9 @@
 
 # flake8: noqa: F401
 
+from importlib.metadata import version
+
 from .local import AliceBobLocalProvider
 from .remote import AliceBobRemoteProvider
 
-__version__ = '1.3.0-beta.4'
+__version__ = version('qiskit_alice_bob_provider')

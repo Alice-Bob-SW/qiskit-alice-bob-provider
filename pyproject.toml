@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -41,12 +41,10 @@ dependencies = [
     "tenacity"
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "black==23.1.0",
-    "build==0.10.0",
     "codespell==2.2.2",
-    "coverage==7.2.2",
     "flake8>=5.0.4",
     "flake8-quotes==3.4.0",
     "isort>=5.11.5",
@@ -56,13 +54,10 @@ dev = [
     "pre-commit>=2.21.0",
     "pylint==3.2.7",
     "pytest==7.2.1",
-    "python-semantic-release==9.18.1",
     "requests==2.32.3",
     "requests-mock==1.10.0",
     "traitlets==5.14.3",
-    "twine==5.1.1",
     "types-mock==5.1.0",
-    "types-setuptools==70.0.0.20240524",
     "types-requests==2.30.0.0"
 ]
 
@@ -76,8 +71,7 @@ sk_synthesis = "qiskit_alice_bob_provider.plugins.sk_synthesis:SKSynthesisPlugin
 [tool.setuptools.packages.find]
 include = ["qiskit_alice_bob_provider*"]
 
-[tool.setuptools.dynamic]
-version = {attr = "qiskit_alice_bob_provider.__version__"}
+[tool.setuptools_scm]
 
 [tool.black]
 skip-string-normalization = true
@@ -93,40 +87,9 @@ disable_error_code = ['index']
 
 [[tool.mypy.overrides]]
 module = [
-    "setuptools",
     "qiskit.*",
     "qiskit_qir.*",
     "qiskit_aer.*",
     "scipy.*"
 ]
 ignore_missing_imports = true
-
-[tool.semantic_release]
-version_variables = ["qiskit_alice_bob_provider/__init__.py:__version__"]
-tag_format = "v{version}"
-build_command = "make build"
-
-[tool.semantic_release.commit_parser_options]
-patch_tags = ["fix", "perf", "build"]
-
-[tool.semantic_release.branches.main]
-match = "main"
-prerelease = true
-prerelease_token = "beta"
-
-[tool.semantic_release.branches.release]
-match = "release"
-prerelease = false
-
-[tool.semantic_release.changelog]
-mode = "init"
-changelog_file = "CHANGELOG.md"
-exclude_commit_patterns = [
-  '''chore(?:\([^)]*?\))?: .+''',
-  '''ci(?:\([^)]*?\))?: .+''',
-  '''refactor(?:\([^)]*?\))?: .+''',
-  '''style(?:\([^)]*?\))?: .+''',
-  '''test(?:\([^)]*?\))?: .+''',
-  '''build\((?!deps\): .+)''',
-  '''Merged? .*''',
-]
