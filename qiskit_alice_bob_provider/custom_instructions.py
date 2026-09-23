@@ -42,12 +42,6 @@ def _measure_x(
 # Patching the QuantumCircuit class to add a `measure_x` method.
 QuantumCircuit.measure_x = _measure_x
 
-# Add MeasureX to the session equivalence library
-_measure_x_inst = MeasureX()
-SessionEquivalenceLibrary.add_equivalence(
-    _measure_x_inst, _measure_x_inst.definition
-)
-
 
 # Add an equivalent from Reset to Initialize('0'). This is useful in the case
 # of the local provider.
