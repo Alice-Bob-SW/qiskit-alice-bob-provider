@@ -14,7 +14,6 @@
 #    limitations under the License.
 ##############################################################################
 
-from qiskit.circuit import ControlFlowOp
 from qiskit.circuit.parameterexpression import ParameterExpression
 from qiskit.dagcircuit import DAGCircuit, DAGOpNode
 from qiskit.transpiler import (
@@ -107,14 +106,6 @@ class AliceBobASAPSchedulingPlugin(PassManagerStagePlugin):
                 scheduler = ProcessorASAPScheduleAnalysis(
                     pass_manager_config.instruction_durations,
                     target=pass_manager_config.target,
-                )
-                # By default, the scheduling analysis pass only supports
-                # conditionals for Gate & Delay instructions. We add support
-                # for ControlFlowOp (which itself covers If-Else, For-Loop,
-                # While-Loop and Switch-Case).
-                scheduler.CONDITIONAL_SUPPORTED = (
-                    *scheduler.CONDITIONAL_SUPPORTED,
-                    ControlFlowOp,
                 )
                 pm.replace(index, scheduler)
             elif any(isinstance(subtask, PadDelay) for subtask in task):
