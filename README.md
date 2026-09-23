@@ -20,8 +20,41 @@ pip install qiskit-alice-bob-provider
 `pip` will handle installing all the python dependencies automatically and you
 will always install the latest (and well-tested) version.
 
-> [!WARNING]
-> Transpilation of gates CRY, RCCX and RCCCX does not work on macOS currently.
+The provider requires Python 3.10 to 3.13 and Qiskit 2.x (2.5 or a later 2.x
+release).
+
+## Migration from Qiskit 1.x
+
+If your code was written for Qiskit 1.x, update it as follows:
+
+- Replace `c_if` with `if_test`:
+
+  ```python
+  # Qiskit 1.x
+  circ.x(0).c_if(0, 1)
+  # Qiskit 2.x
+  with circ.if_test((circ.clbits[0], 1)):
+      circ.x(0)
+  ```
+
+- Read the result headers as dictionaries: write
+  `result.results[0].header['name']`, not `result.results[0].header.name`.
+- `qiskit.execute`, `BackendV1` and `ProviderV1` do not exist. Call
+  `transpile(circ, backend)`, then `backend.run(...)`. The provider backends
+  are `BackendV2` instances.
+- Give the backend to `transpile`. `transpile(circ, basis_gates=[...])` does
+  not accept the provider instructions (`initialize`, `measure_x`), and
+  `transpile` has no `instruction_durations` argument.
+- Bind the parameters with `assign_parameters` before you call `transpile`.
+  The durations of `delay` and `rz` and the Solovay-Kitaev synthesis need the
+  parameter values, so an unbound parameter causes an error. For the same
+  reason, do not give parameter values to `BackendSamplerV2` in a PUB.
+- `QuantumCircuit.duration` still works, but Qiskit marks it as deprecated.
+  Its replacement, `QuantumCircuit.estimate_duration(backend.target)`, does
+  not work with the provider backends yet.
+- On `EMU:40Q:PHYSICAL_CATS`, prepare each qubit with its own `initialize`.
+  A multi-qubit `initialize`, for example `circ.initialize('0000+')`, stops the
+  VF2 layout pass, and the transpiler can then add SWAP gates.
 
 ## Remote execution on Alice & Bob QPUs: use your API key
 
@@ -66,7 +99,8 @@ from qiskit import QuantumCircuit, transpile
 
 provider = AliceBobLocalProvider()
 print(provider.backends())
-# EMU:6Q:PHYSICAL_CATS, EMU:40Q:PHYSICAL_CATS, EMU:1Q:LESCANNE_2020
+# EMU:6Q:PHYSICAL_CATS, EMU:40Q:PHYSICAL_CATS, EMU:40Q:LOGICAL_TARGET,
+# EMU:40Q:LOGICAL_NOISELESS, EMU:15Q:LOGICAL_EARLY, EMU:1Q:LESCANNE_2020
 ```
 
 The `EMU:nQ:PHYSICAL_CATS` backends are theoretical models of quantum processors made
@@ -74,6 +108,26 @@ up of physical cat qubits.
 They can be used to study the properties of error correction codes implemented
 with physical cat qubits, for different hardware performance levels
 (see the parameters of class `PhysicalCatProcessor`).
+
+The `EMU:nQ:LOGICAL_*` backends model logical qubits made of physical cat
+qubits, assembled with a repetition code that corrects phase flips.
+They expose the discrete Clifford+T gate set (`h`, `s`, `sdg`, `t`, `tdg`, `x`,
+`z`, `cx`, `ccx`), so the transpiler approximates any other rotation with the
+Solovay-Kitaev algorithm.
+The default recursion degree is 3, and the default depth of the basic
+approximations is 5. A higher degree gives a longer circuit. It gives a more
+accurate approximation only if the depth is also high enough. To change them:
+
+```python
+transpile(
+    circ,
+    backend,
+    unitary_synthesis_plugin_config={'recursion_degree': 3, 'depth': 10},
+)
+```
+
+Qiskit 2.5 does not accept a `basic_approximations` value in this
+configuration.
 
 The `EMU:1Q:LESCANNE_2020` backend is an interpolated model simulating the processor
 used in the [seminal paper](https://arxiv.org/pdf/1907.11729.pdf) by Raphaël
@@ -106,14 +160,14 @@ print(transpile(circ, backend).draw())
 # *Displays a timed and scheduled circuit*
 
 print(backend.run(circ, shots=100000).result().get_counts())
-# {'11': 49823, '00': 50177}
+# {'00': 49910, '11': 50090}
 
 # Changing the cat size from 16 (default) to 4 and k1/k2 to 1e-2.
 backend = provider.get_backend(
     'EMU:6Q:PHYSICAL_CATS', average_nb_photons=4, kappa_2=1e4
 )
 print(backend.run(circ, shots=100000).result().get_counts())
-# {'01': 557, '11': 49422, '10': 596, '00': 49425}
+# {'01': 1788, '10': 1757, '00': 48122, '11': 48333}
 ```
 
 ## Setting Up Development Environment (for contributors only)
@@ -124,6 +178,9 @@ You need [uv](https://docs.astral.sh/uv/). Then run:
 uv sync                        # create .venv/ with dev dependencies
 uv run pre-commit install      # install the git hooks
 uv run pytest                  # run the tests
+uv run ruff format             # format the code
+uv run ruff check              # lint the code
+uv run mypy .                  # check the types
 ```
 
 Commit messages follow
