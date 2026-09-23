@@ -113,7 +113,7 @@ def chi_to_pauli_errors(chi: np.ndarray) -> Dict[str, float]:
     n_qubits = int(np.round(np.log(chi.shape[0]) / np.log(4)))
     out = {}
     chi_diag = np.diag(chi)
-    indices = np.nonzero(chi_diag)[0]
+    indices = np.nonzero(chi_diag)[0].tolist()
     for idx in indices:
         out[index_to_pauli_label(n_qubits=n_qubits, index=idx)] = chi_diag[idx]
     return out
