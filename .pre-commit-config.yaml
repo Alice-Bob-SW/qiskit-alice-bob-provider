@@ -20,7 +20,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        args: ["--skip=*.lock,CHANGELOG.md", "--ignore-words-list=aer,ser"]
+        args: ["--skip=*.lock", "--ignore-words-list=aer,ser"]
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.2.0

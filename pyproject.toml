@@ -28,7 +28,7 @@ classifiers=[
     "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Physics",
 ]
-urls = {Homepage = "https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider", "Alice & Bob" = "https://alice-bob.com/"}
+urls = {Homepage = "https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider", Changelog = "https://github.com/Alice-Bob-SW/qiskit-alice-bob-provider/releases", "Alice & Bob" = "https://alice-bob.com/"}
 requires-python = ">=3.9, <3.14"
 dependencies = [
     "ipython",
