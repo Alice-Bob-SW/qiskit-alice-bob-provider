@@ -1,0 +1,37 @@
+name: Publish
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install build python-semantic-release==10.7.0
+      - run: python -m build
+      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish the release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git checkout -B main
+          cat > psr-config.toml << 'TOML'
+          [semantic_release]
+          tag_format = "v{version}"
+
+          [semantic_release.remote]
+          type = "github"
+          token = { env = "GH_TOKEN" }
+          TOML
+          semantic-release --config psr-config.toml \
+            changelog --post-to-release-tag "$GITHUB_REF_NAME"
