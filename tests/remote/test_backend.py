@@ -204,6 +204,84 @@ def test_delay_instruction_recognized() -> None:
     assert delay_call in qir
 
 
+def _job_created(mocker: Mocker) -> bool:
+    return any(
+        r.method == 'POST' and r.path == '/v1/jobs/'
+        for r in mocker.request_history
+    )
+
+
+def test_dt_delay_refused_before_job_creation(successful_job: Mocker) -> None:
+    c = QuantumCircuit(1, 1)
+    c.delay(100_000, 0, unit='dt')
+    c.measure(0, 0)
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    transpiled = transpile(c, backend)
+    with pytest.raises(
+        TranspilerError, match=r'qubits \[0\] has the unit "dt"'
+    ):
+        backend.run(transpiled)
+    assert not _job_created(successful_job)
+
+
+def test_dt_delay_in_if_test_refused_before_job_creation(
+    successful_job: Mocker,
+) -> None:
+    c = QuantumCircuit(1, 1)
+    c.measure(0, 0)
+    with c.if_test((c.clbits[0], 1)):
+        c.delay(100_000, 0, unit='dt')
+    c.measure(0, 0)
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    with pytest.raises(
+        TranspilerError, match=r'qubits \[0\] has the unit "dt"'
+    ):
+        backend.run(c)
+    assert not _job_created(successful_job)
+
+
+def test_dt_delay_in_block_reports_the_outer_qubit(
+    successful_job: Mocker,
+) -> None:
+    c = QuantumCircuit(3, 1)
+    c.measure(0, 0)
+    with c.if_test((c.clbits[0], 1)):
+        c.delay(100_000, 2, unit='dt')
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('ALL_INSTRUCTIONS')
+    with pytest.raises(TranspilerError, match=r'qubits \[2\] has the unit'):
+        backend.run(c)
+    assert not _job_created(successful_job)
+
+
+@pytest.mark.parametrize(
+    'duration, unit, qir_duration',
+    [(100, 'us', '1.000000e+02'), (3000, 'ns', '3.000000e+00')],
+)
+def test_time_unit_delay_runs(
+    successful_job: Mocker, duration: int, unit: str, qir_duration: str
+) -> None:
+    c = QuantumCircuit(1, 1)
+    c.delay(duration, 0, unit=unit)
+    c.measure(0, 0)
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    job = backend.run(transpile(c, backend))
+    assert job.result(wait=0).get_counts()
+    upload = next(
+        r
+        for r in successful_job.request_history
+        if r.method == 'POST' and r.path == '/v1/jobs/my-job/input'
+    )
+    delay_call = (
+        'call void @__quantum__qis__delay__body'
+        f'(double {qir_duration}, %Qubit* null)'
+    )
+    assert delay_call in upload.body.decode()
+
+
 def test_ab_input_params_from_options() -> None:
     options = Options(shots=43, average_nb_photons=3.2, foo_hey='bar')
     params = _ab_input_params_from_options(options)

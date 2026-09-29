@@ -14,13 +14,14 @@
 #    limitations under the License.
 ##############################################################################
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 from pydantic.alias_generators import to_camel, to_snake
 from qiskit import QuantumCircuit
+from qiskit.circuit import ControlFlowOp, Delay, Qubit
 from qiskit.providers import BackendV2, Options
-from qiskit.transpiler import PassManager, Target
+from qiskit.transpiler import PassManager, Target, TranspilerError
 from qiskit_qir import to_qir_module
 
 from ..plugins.state_preparation import EnsurePreparationPass
@@ -101,6 +102,7 @@ class AliceBobRemoteBackend(BackendV2):
                 'Experiments input not supported by the Alice & Bob provider. '
                 'Please provide an instance of QuantumCircuit.'
             )
+        _check_no_dt_delay(run_input)
         if self._verbose:
             display_new_line()
             display_current_line('Sending circuit to the API...')
@@ -122,6 +124,27 @@ class AliceBobRemoteBackend(BackendV2):
             verbose=self._verbose,
             has_memory=input_params.get('memory', False),
         )
+
+
+def _check_no_dt_delay(
+    circuit: QuantumCircuit, qubit_indices: Optional[Dict[Qubit, int]] = None
+) -> None:
+    """Raise TranspilerError if a delay, also in a control-flow block, has
+    the unit dt."""
+    if qubit_indices is None:
+        qubit_indices = {qubit: i for i, qubit in enumerate(circuit.qubits)}
+    for instruction in circuit.data:
+        op = instruction.operation
+        indices = [qubit_indices[qubit] for qubit in instruction.qubits]
+        if isinstance(op, ControlFlowOp):
+            for block in op.blocks:
+                _check_no_dt_delay(block, dict(zip(block.qubits, indices)))
+        elif isinstance(op, Delay) and op.unit == 'dt':
+            raise TranspilerError(
+                f'The delay of {op.duration} on qubits {indices} has the '
+                'unit "dt". The remote target has no dt value. Give the '
+                'delay duration in a time unit: s, ms, us, ns or ps.'
+            )
 
 
 def _qiskit_to_qir(circuit: QuantumCircuit) -> str:
