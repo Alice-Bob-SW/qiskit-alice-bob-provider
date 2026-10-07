@@ -3,7 +3,7 @@ from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 
 from qiskit_alice_bob_provider import AliceBobLocalProvider
-from qiskit_alice_bob_provider.custom_instructions import MeasureX
+from qiskit_alice_bob_provider.custom_instructions import MeasureX, MeasureY
 
 OPTIMIZATION_LEVELS = [0, 1, 2, 3]
 
@@ -43,6 +43,27 @@ def test_measure_x_measures_in_x_basis_on_aer(
     circ = QuantumCircuit(1, 1)
     circ.initialize(state, 0)
     circ.measure_x(0, 0)
+    backend = AerSimulator()
+    result = backend.run(transpile(circ, backend), shots=100).result()
+    assert result.get_counts() == {outcome: 100}
+
+
+def test_measure_y_method_appends_measure_y() -> None:
+    circ = QuantumCircuit(2, 2)
+    circ.measure_y(1, 0)
+    (inst,) = circ.data
+    assert isinstance(inst.operation, MeasureY)
+    assert circ.find_bit(inst.qubits[0]).index == 1
+    assert circ.find_bit(inst.clbits[0]).index == 0
+
+
+@pytest.mark.parametrize('state,outcome', [('r', '0'), ('l', '1')])
+def test_measure_y_measures_in_y_basis_on_aer(
+    state: str, outcome: str
+) -> None:
+    circ = QuantumCircuit(1, 1)
+    circ.initialize(state, 0)
+    circ.measure_y(0, 0)
     backend = AerSimulator()
     result = backend.run(transpile(circ, backend), shots=100).result()
     assert result.get_counts() == {outcome: 100}

@@ -24,6 +24,12 @@ def test_measure_x_emits_mx() -> None:
     assert _call('mx', Q0, R0) in circuit_to_qir(c)
 
 
+def test_measure_y_emits_my() -> None:
+    c = QuantumCircuit(1, 1)
+    c.measure_y(0, 0)
+    assert _call('my', Q0, R0) in circuit_to_qir(c)
+
+
 @pytest.mark.parametrize(
     'state, basis, value',
     [
@@ -31,6 +37,8 @@ def test_measure_x_emits_mx() -> None:
         ('1', 'z', 'true'),
         ('+', 'x', 'false'),
         ('-', 'x', 'true'),
+        ('r', 'y', 'false'),
+        ('l', 'y', 'true'),
     ],
 )
 def test_initialize_emits_prepare(state: str, basis: str, value: str) -> None:

@@ -324,3 +324,16 @@ def test_determine_translation_plugin(mocked_targets) -> None:
     assert (
         p.get_backend('H_T').get_translation_stage_plugin() == 'sk_synthesis'
     )
+
+
+def test_y_basis_circuit_converts(mocked_targets) -> None:
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('ALL_INSTRUCTIONS')
+    c = QuantumCircuit(2, 2)
+    c.initialize('lr')
+    c.measure_y(0, 0)
+    c.measure_y(1, 1)
+    qir = circuit_to_qir(transpile(c, backend))
+    assert 'call void @__quantum__qis__prepare_y__body(i1 false' in qir
+    assert 'call void @__quantum__qis__prepare_y__body(i1 true' in qir
+    assert qir.count('call void @__quantum__qis__my__body(') == 2

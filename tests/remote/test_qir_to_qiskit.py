@@ -12,7 +12,8 @@ def test_single_cat(single_cat_target: Dict) -> None:
 
 
 def test_all_instructions(all_instructions_target: Dict) -> None:
-    ab_target_to_qiskit_target(all_instructions_target)
+    target = ab_target_to_qiskit_target(all_instructions_target)
+    assert 'measure_y' in target
 
 
 def test_unknown_qis_instruction(all_instructions_target: Dict) -> None:

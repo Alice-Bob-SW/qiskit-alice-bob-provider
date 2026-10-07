@@ -43,7 +43,7 @@ from qiskit.circuit.library import (
 )
 from qiskit.transpiler import Target
 
-from ..custom_instructions import MeasureX
+from ..custom_instructions import MeasureX, MeasureY
 
 
 def ab_target_to_qiskit_target(ab_target: Dict) -> Target:
@@ -114,6 +114,8 @@ def _qir_signature_to_qiskit_instructions(
             ('initialize', Initialize([1 / np.sqrt(2), 1 / np.sqrt(2)])),
             ('initialize', Initialize([1 / np.sqrt(2), -1 / np.sqrt(2)])),
         ]
+    elif instr_short_name == 'prepare_y':
+        return [('initialize', Initialize([1 / np.sqrt(2), 1j / np.sqrt(2)]))]
     elif instr_short_name == 'rx':
         phi = Parameter('ϕ')
         return [('rx', RXGate(phi))]
@@ -141,6 +143,8 @@ def _qir_signature_to_qiskit_instructions(
         return [('z', ZGate())]
     elif instr_short_name == 'mx':
         return [('measure_x', MeasureX())]
+    elif instr_short_name == 'my':
+        return [('measure_y', MeasureY())]
     elif instr_short_name == 'rzz':
         phi = Parameter('ϕ')
         return [('rzz', RZZGate(phi))]

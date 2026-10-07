@@ -39,8 +39,30 @@ def _measure_x(
     return self.append(MeasureX(), [qubit], [cbit])
 
 
-# Patching the QuantumCircuit class to add a `measure_x` method.
+class MeasureY(Instruction):
+    """Quantum measurement in the Y basis."""
+
+    def __init__(self, label: Optional[str] = None):
+        """Create a new Y-measurement instruction."""
+        super().__init__('measure_y', 1, 1, [], label=label)
+        self._definition = QuantumCircuit(1, 1, name='measure_y')
+        self._definition.sdg(0)
+        self._definition.h(0)
+        self._definition.measure(0, 0)
+        self._definition.h(0)
+        self._definition.s(0)
+
+
+def _measure_y(
+    self: QuantumCircuit, qubit: QubitSpecifier, cbit: ClbitSpecifier
+) -> InstructionSet:
+    return self.append(MeasureY(), [qubit], [cbit])
+
+
+# Patching the QuantumCircuit class to add `measure_x` and `measure_y`
+# methods.
 QuantumCircuit.measure_x = _measure_x
+QuantumCircuit.measure_y = _measure_y
 
 
 # Add an equivalent from Reset to Initialize('0'). This is useful in the case

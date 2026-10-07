@@ -92,9 +92,11 @@ _PREPARATIONS: Dict[str, Tuple[str, bool]] = {
     '1': ('z', True),
     '+': ('x', False),
     '-': ('x', True),
+    'r': ('y', False),
+    'l': ('y', True),
 }
 
-_MEASUREMENTS = {'measure_x': 'mx'}
+_MEASUREMENTS = {'measure_x': 'mx', 'measure_y': 'my'}
 
 
 def circuit_to_qir(circuit: QuantumCircuit) -> str:
@@ -225,7 +227,7 @@ class _Emitter:
         if len(qubits) != 1 or state not in _PREPARATIONS:
             raise ValueError(
                 f'Cannot prepare the state {operation.params} in QIR. '
-                'Initialize one qubit at a time, in 0, 1, + or -.'
+                'Initialize one qubit at a time, in 0, 1, +, -, r or l.'
             )
         basis, is_excited = _PREPARATIONS[state]
         boolean = IntType(self._context, 1)
