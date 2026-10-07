@@ -14,17 +14,16 @@
 #    limitations under the License.
 ##############################################################################
 from copy import deepcopy
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import numpy as np
 from pydantic.alias_generators import to_camel, to_snake
 from qiskit import QuantumCircuit
-from qiskit.circuit import ControlFlowOp, Delay, Qubit
 from qiskit.providers import BackendV2, Options
-from qiskit.transpiler import PassManager, Target, TranspilerError
-from qiskit_qir import to_qir_module
+from qiskit.transpiler import PassManager, Target
 
 from ..plugins.state_preparation import EnsurePreparationPass
+from ..qir import circuit_to_qir
 from .api import jobs
 from .api.client import ApiClient
 from .display import display_current_line, display_new_line
@@ -102,7 +101,8 @@ class AliceBobRemoteBackend(BackendV2):
                 'Experiments input not supported by the Alice & Bob provider. '
                 'Please provide an instance of QuantumCircuit.'
             )
-        _check_no_dt_delay(run_input)
+        run_input = PassManager([EnsurePreparationPass()]).run(run_input)
+        qir = circuit_to_qir(run_input)
         if self._verbose:
             display_new_line()
             display_current_line('Sending circuit to the API...')
@@ -112,10 +112,7 @@ class AliceBobRemoteBackend(BackendV2):
         update_options_object(new_options, kwargs)
         input_params = _ab_input_params_from_options(new_options)
         job = jobs.create_job(self._api_client, self.name, input_params)
-        run_input = PassManager([EnsurePreparationPass()]).run(run_input)
-        jobs.upload_input(
-            self._api_client, job['id'], _qiskit_to_qir(run_input)
-        )
+        jobs.upload_input(self._api_client, job['id'], qir)
         return AliceBobRemoteJob(
             backend=self,
             api_client=self._api_client,
@@ -124,32 +121,6 @@ class AliceBobRemoteBackend(BackendV2):
             verbose=self._verbose,
             has_memory=input_params.get('memory', False),
         )
-
-
-def _check_no_dt_delay(
-    circuit: QuantumCircuit, qubit_indices: Optional[Dict[Qubit, int]] = None
-) -> None:
-    """Raise TranspilerError if a delay, also in a control-flow block, has
-    the unit dt."""
-    if qubit_indices is None:
-        qubit_indices = {qubit: i for i, qubit in enumerate(circuit.qubits)}
-    for instruction in circuit.data:
-        op = instruction.operation
-        indices = [qubit_indices[qubit] for qubit in instruction.qubits]
-        if isinstance(op, ControlFlowOp):
-            for block in op.blocks:
-                _check_no_dt_delay(block, dict(zip(block.qubits, indices)))
-        elif isinstance(op, Delay) and op.unit == 'dt':
-            raise TranspilerError(
-                f'The delay of {op.duration} on qubits {indices} has the '
-                'unit "dt". The remote target has no dt value. Give the '
-                'delay duration in a time unit: s, ms, us, ns or ps.'
-            )
-
-
-def _qiskit_to_qir(circuit: QuantumCircuit) -> str:
-    """Transform a Qiskit circuit into a human-readable QIR program"""
-    return str(to_qir_module(circuit)[0])
 
 
 def _options_from_ab_target(ab_target: Dict) -> Options:

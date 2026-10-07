@@ -26,11 +26,11 @@ from qiskit.result import Result
 from qiskit.transpiler.exceptions import TranspilerError
 from requests_mock.mocker import Mocker
 
+from qiskit_alice_bob_provider.qir import circuit_to_qir
 from qiskit_alice_bob_provider.remote.api.client import AliceBobApiException
 from qiskit_alice_bob_provider.remote.backend import (
     AliceBobRemoteBackend,
     _ab_input_params_from_options,
-    _qiskit_to_qir,
 )
 from qiskit_alice_bob_provider.remote.provider import AliceBobRemoteProvider
 
@@ -190,20 +190,6 @@ def test_failed_server_side_validation(failed_validation_job: Mocker) -> None:
         backend.run(c)
 
 
-def test_delay_instruction_recognized() -> None:
-    c = QuantumCircuit(1, 2)
-    c.initialize('+', 0)
-    c.measure_x(0, 0)
-    c.delay(3000, 0, unit='ns')
-    c.measure(0, 1)
-    qir = _qiskit_to_qir(c)
-    delay_call = (
-        'call void @__quantum__qis__delay__body'
-        '(double 3.000000e+00, %Qubit* null)'
-    )
-    assert delay_call in qir
-
-
 def _job_created(mocker: Mocker) -> bool:
     return any(
         r.method == 'POST' and r.path == '/v1/jobs/'
@@ -218,9 +204,7 @@ def test_dt_delay_refused_before_job_creation(successful_job: Mocker) -> None:
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
     transpiled = transpile(c, backend)
-    with pytest.raises(
-        TranspilerError, match=r'qubits \[0\] has the unit "dt"'
-    ):
+    with pytest.raises(ValueError, match=r'qubits \[0\] has the unit "dt"'):
         backend.run(transpiled)
     assert not _job_created(successful_job)
 
@@ -235,9 +219,7 @@ def test_dt_delay_in_if_test_refused_before_job_creation(
     c.measure(0, 0)
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
-    with pytest.raises(
-        TranspilerError, match=r'qubits \[0\] has the unit "dt"'
-    ):
+    with pytest.raises(ValueError, match=r'qubits \[0\] has the unit "dt"'):
         backend.run(c)
     assert not _job_created(successful_job)
 
@@ -251,7 +233,7 @@ def test_dt_delay_in_block_reports_the_outer_qubit(
         c.delay(100_000, 2, unit='dt')
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('ALL_INSTRUCTIONS')
-    with pytest.raises(TranspilerError, match=r'qubits \[2\] has the unit'):
+    with pytest.raises(ValueError, match=r'qubits \[2\] has the unit'):
         backend.run(c)
     assert not _job_created(successful_job)
 
@@ -305,7 +287,7 @@ def test_translation_plugin_and_qir(mocked_targets) -> None:
     c.measure_x(3, 1)
 
     transpiled = transpile(c, backend)
-    qir = _qiskit_to_qir(transpiled)
+    qir = circuit_to_qir(transpiled)
 
     assert (
         dedent(
