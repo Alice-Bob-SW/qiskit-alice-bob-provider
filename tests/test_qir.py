@@ -2,7 +2,7 @@ from textwrap import dedent
 
 import pytest
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
-from qiskit.circuit import Gate, Instruction
+from qiskit.circuit import Gate, Instruction, Parameter
 from qiskit.circuit.classical import expr
 
 import qiskit_alice_bob_provider  # noqa: F401
@@ -72,6 +72,15 @@ def test_delay_in_dt_raises() -> None:
     with c.if_test((c.clbits[0], 1)):
         c.delay(100, 1, unit='dt')
     with pytest.raises(ValueError, match=r'qubits \[1\] has the unit "dt"'):
+        circuit_to_qir(c)
+
+
+def test_unbound_parameter_raises() -> None:
+    c = QuantumCircuit(1, 1)
+    c.measure(0, 0)
+    with c.if_test((c.clbits[0], 1)):
+        c.rz(Parameter('theta'), 0)
+    with pytest.raises(ValueError, match=r"\['theta'\] are not bound"):
         circuit_to_qir(c)
 
 

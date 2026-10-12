@@ -108,10 +108,17 @@ def circuit_to_qir(circuit: QuantumCircuit) -> str:
         The QIR module, as LLVM text.
 
     Raises:
-        ValueError: If an instruction, a prepared state, an `if_else`
-            condition or a delay unit has no QIR equivalent.
+        ValueError: If a parameter is not bound, or if an instruction, a
+            prepared state, an `if_else` condition or a delay unit has no
+            QIR equivalent.
         RuntimeError: If PyQIR finds the produced module invalid.
     """
+    if circuit.parameters:
+        names = [parameter.name for parameter in circuit.parameters]
+        raise ValueError(
+            f'The parameters {names} are not bound. Bind them with '
+            '`assign_parameters` before the conversion to QIR.'
+        )
     module = pyqir.qir_module(Context(), circuit.name)
     _Emitter(module, circuit).emit()
     error = module.verify()

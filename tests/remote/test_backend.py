@@ -21,6 +21,7 @@ from textwrap import dedent
 import numpy as np
 import pytest
 from qiskit import QiskitError, QuantumCircuit, transpile
+from qiskit.circuit import Parameter
 from qiskit.providers import Options
 from qiskit.result import Result
 from qiskit.transpiler.exceptions import TranspilerError
@@ -235,6 +236,38 @@ def test_dt_delay_in_block_reports_the_outer_qubit(
     backend = provider.get_backend('ALL_INSTRUCTIONS')
     with pytest.raises(ValueError, match=r'qubits \[2\] has the unit'):
         backend.run(c)
+    assert not _job_created(successful_job)
+
+
+def _unbound_delay() -> QuantumCircuit:
+    c = QuantumCircuit(1, 1)
+    c.initialize('0', 0)
+    c.delay(Parameter('t'), 0, unit='us')
+    c.measure(0, 0)
+    return c
+
+
+def _two_qubit_initialize() -> QuantumCircuit:
+    c = QuantumCircuit(2, 2)
+    c.initialize('00')
+    c.measure([0, 1], [0, 1])
+    return c
+
+
+@pytest.mark.parametrize(
+    'circuit, message',
+    [
+        (_unbound_delay(), 'are not bound'),
+        (_two_qubit_initialize(), 'Cannot prepare the state'),
+    ],
+)
+def test_conversion_error_raised_before_job_creation(
+    successful_job: Mocker, circuit: QuantumCircuit, message: str
+) -> None:
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    with pytest.raises(ValueError, match=message):
+        backend.run(circuit)
     assert not _job_created(successful_job)
 
 
