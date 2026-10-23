@@ -317,6 +317,53 @@ def h_t_target() -> dict:
 
 
 @pytest.fixture
+def helium_target() -> dict:
+    return {
+        'name': 'EMU:18Q:HELIUM',
+        'numQubits': 18,
+        'instructions': [
+            {'signature': '__quantum__qis__sx__body:void (%Qubit*)'},
+            {'signature': '__quantum__qis__rz__body:void (double, %Qubit*)'},
+            {'signature': '__quantum__qis__x__body:void (%Qubit*)'},
+            {
+                'signature': (
+                    '__quantum__qis__cnot__body:void (%Qubit*, %Qubit*)'
+                )
+            },
+            {
+                'signature': (
+                    '__quantum__qis__prepare_z__body:void (i1, %Qubit*)'
+                )
+            },
+            {'signature': '__quantum__qis__mz__body:void (%Qubit*, %Result*)'},
+            {'signature': '__quantum__qis__reset_memory__body:void (%Qubit*)'},
+            {
+                'signature': (
+                    '__quantum__qis__delay__body:void (double, %Qubit*)'
+                )
+            },
+        ],
+        'connectivity': [
+            [even, (even + step) % 18]
+            for even in range(0, 18, 2)
+            for step in (1, -1)
+        ],
+        'inputParams': {
+            'nbShots': {
+                'required': True,
+                'default': 1000,
+                'constraints': [{'min': 1, 'max': 10000000}],
+            },
+            'averageNbPhotons': {
+                'required': False,
+                'default': None,
+                'constraints': [],
+            },
+        },
+    }
+
+
+@pytest.fixture
 def targets(
     single_cat_target: Dict,
     all_instructions_target: Dict,

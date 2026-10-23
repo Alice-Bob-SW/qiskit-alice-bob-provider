@@ -179,6 +179,8 @@ class _Emitter:
             )
         elif name in _MEASUREMENTS:
             self._call(_MEASUREMENTS[name], [*qubit_values, *results])
+        elif name == 'sx':
+            self._call('sx', qubit_values)
         elif name == 'id':
             # Same as qiskit-qir, see
             # https://github.com/qir-alliance/pyqir/issues/74
@@ -294,7 +296,7 @@ class _Emitter:
     def _call(
         self,
         name: str,
-        args: List[Value],
+        args: Sequence[Value],
     ) -> None:
         function = self._functions.get(name)
         if function is None:

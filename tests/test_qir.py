@@ -18,6 +18,15 @@ def _call(name: str, *args: str) -> str:
     return f'call void @__quantum__qis__{name}__body({", ".join(args)})'
 
 
+def test_sx_emits_sx() -> None:
+    c = QuantumCircuit(1)
+    c.sx(0)
+    qir = circuit_to_qir(c)
+    assert _call('sx', Q0) in qir
+    assert '__quantum__qis__h__body' not in qir
+    assert '__quantum__qis__s__' not in qir
+
+
 def test_measure_x_emits_mx() -> None:
     c = QuantumCircuit(1, 1)
     c.measure_x(0, 0)

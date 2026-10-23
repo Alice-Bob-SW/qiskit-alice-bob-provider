@@ -89,6 +89,9 @@ res = job.result()
 print(res.get_counts())
 ```
 
+On `QPU:18Q:HELIUM`, a `reset` prepares the qubit in the state 0, like
+`initialize('0')`. A reset in the middle of a circuit is at your own risk.
+
 ## Local emulation of cat qubit processors
 
 This project contains multiple emulators of multi cat qubit processors.

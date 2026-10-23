@@ -35,6 +35,7 @@ from qiskit.circuit.library import (
     SdgGate,
     SGate,
     SwapGate,
+    SXGate,
     TdgGate,
     TGate,
     XGate,
@@ -65,8 +66,12 @@ def ab_target_to_qiskit_target(ab_target: Dict) -> Target:
         for name, instr in qiskit_instrs:
             instructions[name] = instr
     target = Target(num_qubits=ab_target['numQubits'])
+    connectivity = ab_target.get('connectivity')
     for name, instr in instructions.items():
-        target.add_instruction(instr, name=name)
+        properties = None
+        if instr.num_qubits == 2 and connectivity is not None:
+            properties = {tuple(pair): None for pair in connectivity}
+        target.add_instruction(instr, properties, name=name)
     return target
 
 
@@ -85,10 +90,10 @@ def _qir_signature_to_qiskit_instructions(
     if instr_short_name is None:
         warn(_UNSUPPORTED_WARNING.format(signature))
         return []
-    elif instr_short_name == 'read_result':
+    elif instr_short_name in {'read_result', 'reset_memory'}:
         # For reasons outside the scope of this provider, the API must return
-        # this function in the list of supported instructions.
-        # Since this function is not supported by Qiskit, we just ignore it.
+        # these functions in the list of supported instructions.
+        # Since Qiskit has no equivalent, we just ignore them.
         return []
     elif instr_short_name == 'barrier':
         return [('barrier', Barrier(0))]
@@ -131,6 +136,8 @@ def _qir_signature_to_qiskit_instructions(
         return [('sdg', SdgGate())]
     elif instr_short_name == 'swap':
         return [('swap', SwapGate())]
+    elif instr_short_name == 'sx':
+        return [('sx', SXGate())]
     elif instr_short_name == 't':
         return [('t', TGate())]
     elif instr_short_name == 'tdg':
