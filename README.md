@@ -91,6 +91,9 @@ print(res.get_counts())
 
 On `QPU:18Q:HELIUM`, a `reset` prepares the qubit in the state 0, like
 `initialize('0')`. A reset in the middle of a circuit is at your own risk.
+An X or Y preparation or measurement becomes a Z one plus one Q gate. After
+an X or Y measurement, the qubit stays in the Z basis, because a measurement
+on Helium destroys the qubit.
 
 ## Local emulation of cat qubit processors
 

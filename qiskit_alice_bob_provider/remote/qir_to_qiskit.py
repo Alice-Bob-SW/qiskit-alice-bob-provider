@@ -118,9 +118,13 @@ def _qir_signature_to_qiskit_instructions(
         return [
             ('initialize', Initialize([1 / np.sqrt(2), 1 / np.sqrt(2)])),
             ('initialize', Initialize([1 / np.sqrt(2), -1 / np.sqrt(2)])),
+            ('prepare_x', Instruction('prepare_x', 1, 0, [])),
         ]
     elif instr_short_name == 'prepare_y':
-        return [('initialize', Initialize([1 / np.sqrt(2), 1j / np.sqrt(2)]))]
+        return [
+            ('initialize', Initialize([1 / np.sqrt(2), 1j / np.sqrt(2)])),
+            ('prepare_y', Instruction('prepare_y', 1, 0, [])),
+        ]
     elif instr_short_name == 'rx':
         phi = Parameter('ϕ')
         return [('rx', RXGate(phi))]

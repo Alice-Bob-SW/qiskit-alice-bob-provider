@@ -14,12 +14,12 @@
 #    limitations under the License.
 ##############################################################################
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
-from qiskit.circuit import Instruction, Qubit, Reset
+from qiskit.circuit import Instruction, Measure, Qubit, Reset
 from qiskit.circuit.equivalence_library import SessionEquivalenceLibrary
-from qiskit.circuit.library import Initialize, RZGate
+from qiskit.circuit.library import Initialize, RZGate, SGate, SXGate
 from qiskit.dagcircuit import DAGCircuit, DAGInNode, DAGOpNode
 from qiskit.passmanager import ConditionalController
 from qiskit.transpiler import (
@@ -230,6 +230,60 @@ class BreakDownInitializePass(TransformationPass):
         return dag
 
 
+def _xy_lowering(
+    node: DAGOpNode,
+) -> Optional[Tuple[str, List[Instruction]]]:
+    if node.name == 'measure_x':
+        return 'measure_x', [SGate(), SXGate(), Measure()]
+    if node.name == 'measure_y':
+        return 'measure_y', [SXGate(), Measure()]
+    if node.name != 'initialize':
+        return None
+    state = node.op.params[0]
+    if state == '+':
+        return 'prepare_x', [Initialize('0'), SXGate(), SGate()]
+    if state == '-':
+        return 'prepare_x', [Initialize('1'), SXGate(), SGate()]
+    if state == 'r':
+        return 'prepare_y', [Initialize('1'), SXGate()]
+    if state == 'l':
+        return 'prepare_y', [Initialize('0'), SXGate()]
+    return None
+
+
+class LowerXYBasisPass(TransformationPass):
+    """Rewrites X and Y preparations and measurements into Z ones and Q
+    gates, for a target that has Q (`sx`) but does not announce the basis.
+
+    A lowered measurement leaves the qubit in the Z basis, unlike Qiskit's
+    `measure_x` and `measure_y`, because a measurement on Helium destroys
+    the qubit.
+    """
+
+    def __init__(self, target: Target):
+        super().__init__()
+        self._target = target
+
+    def run(self, dag: DAGCircuit) -> DAGCircuit:
+        if 'sx' not in self._target:
+            return dag
+        for node in dag.op_nodes():
+            lowering = _xy_lowering(node)
+            if lowering is None or lowering[0] in self._target:
+                continue
+            new_dag = DAGCircuit()
+            new_dag.add_qubits(node.qargs)
+            new_dag.add_clbits(node.cargs)
+            for operation in lowering[1]:
+                new_dag.apply_operation_back(
+                    operation,
+                    qargs=node.qargs,
+                    cargs=node.cargs if operation.num_clbits else (),
+                )
+            dag.substitute_node_with_dag(node, new_dag)
+        return dag
+
+
 class ReverseCnotPass(TransformationPass):
     """Reverses the CNOTs that are not in a direction of the coupling map,
     then translates the circuit to the target basis again.
@@ -277,6 +331,8 @@ class StatePreparationPlugin(PassManagerStagePlugin):
     the extra operations:
     - Ensure all qubits are initialized with a known state among 0, 1, +, -.
     - Format and break down the initialize gates.
+    - Rewrite X and Y preparations and measurements into Z ones and Q gates
+      on a target with Q that does not announce the basis.
     - Ensure we unroll custom gate definitions before applying synthesis.
     - Reverse the CNOTs that are not in a direction of a directed coupling
       map.
@@ -293,6 +349,7 @@ class StatePreparationPlugin(PassManagerStagePlugin):
         custom_pm.append(EnsurePreparationPass(lambda: Initialize('0')))
         custom_pm.append(IntToLabelInitializePass())
         custom_pm.append(BreakDownInitializePass())
+        custom_pm.append(LowerXYBasisPass(pass_manager_config.target))
 
         # Can probably be removed (replaced by HighLevelSynthesis?)
         custom_pm.append(

@@ -16,7 +16,12 @@
 from inspect import isclass
 from typing import Set
 
-from qiskit.circuit import ControlFlowOp, Instruction, ParameterExpression
+from qiskit.circuit import (
+    ControlFlowOp,
+    Gate,
+    Instruction,
+    ParameterExpression,
+)
 from qiskit.circuit.library.standard_gates import (
     get_standard_gate_name_mapping,
 )
@@ -102,6 +107,8 @@ class SKSynthesisPlugin(PassManagerStagePlugin):
                 continue
 
             assert isinstance(instr, Instruction)
+            if not isinstance(instr, Gate):
+                continue
             if len(instr.params) != 0 or instr.name in {
                 'measure',
                 'measure_x',
