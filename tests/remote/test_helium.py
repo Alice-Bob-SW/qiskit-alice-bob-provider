@@ -16,7 +16,7 @@
 
 import re
 import warnings
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import pytest
 from qiskit import QuantumCircuit, transpile
@@ -270,3 +270,47 @@ def test_preparation_marker_is_not_a_synthesis_gate(
         c, _helium_backend(h_t_target, requests_mock), optimization_level=level
     )
     assert set(transpiled.count_ops()) <= {'initialize', 'h', 't', 'measure'}
+
+
+def _reversal_warnings(
+    helium_target: Dict,
+    requests_mock: Mocker,
+    circuit: QuantumCircuit,
+    level: int,
+) -> List[str]:
+    backend = _helium_backend(helium_target, requests_mock)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        transpile(
+            circuit,
+            backend,
+            optimization_level=level,
+            layout_method='trivial',
+        )
+    return [
+        str(w.message) for w in caught if 'Reversed the cx' in str(w.message)
+    ]
+
+
+@pytest.mark.parametrize('level', [0, 1, 2, 3])
+def test_reversed_cx_warns_once_with_each_pair_and_its_cost(
+    helium_target: Dict, requests_mock: Mocker, level: int
+) -> None:
+    c = QuantumCircuit(4)
+    c.cx(1, 0)
+    c.cx(2, 1)
+    c.cx(1, 0)
+    c.cx(3, 2)
+    assert _reversal_warnings(helium_target, requests_mock, c, level) == [
+        'Reversed the cx on physical qubits (1, 0) x2, (3, 2) to match the '
+        'wiring. This adds 12 Q gates before optimization, which cost bias.'
+    ]
+
+
+@pytest.mark.parametrize('level', [0, 1, 2, 3])
+def test_wired_cx_gives_no_reversal_warning(
+    helium_target: Dict, requests_mock: Mocker, level: int
+) -> None:
+    c = QuantumCircuit(2)
+    c.cx(0, 1)
+    assert _reversal_warnings(helium_target, requests_mock, c, level) == []

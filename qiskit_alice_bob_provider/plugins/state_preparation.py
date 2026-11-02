@@ -13,6 +13,8 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 ##############################################################################
+import warnings
+from collections import Counter
 from copy import deepcopy
 from typing import Callable, List, Optional, Tuple
 
@@ -303,11 +305,16 @@ class ReverseCnotPass(TransformationPass):
         self._translate = translate
 
     def run(self, dag: DAGCircuit) -> DAGCircuit:
-        reversed_pairs = []
+        pair_counts: Counter = Counter()
         for node in dag.op_nodes():
             pair = tuple(dag.find_bit(qubit).index for qubit in node.qargs)
             if node.name == 'cx' and pair not in self._edges:
-                reversed_pairs.append(str(pair))
+                pair_counts[pair] += 1
+        reversed_pairs = [
+            f'{pair} x{n}' if n > 1 else str(pair)
+            for pair, n in pair_counts.items()
+        ]
+        before = Counter(dag.count_ops())
         dag = self._gate_direction.run(dag)
         try:
             for translation in self._translate:
@@ -323,6 +330,19 @@ class ReverseCnotPass(TransformationPass):
                 'coupling map. The target basis has no gates to do the '
                 'reversal.'
             ) from exc
+        if reversed_pairs:
+            added = Counter(dag.count_ops()) - before
+            cost = (
+                f'{added["sx"]} Q gates before optimization, which cost bias'
+                if 'sx' in added
+                else ', '.join(f'{n} {name}' for name, n in added.items())
+                + ' gates before optimization'
+            )
+            warnings.warn(
+                'Reversed the cx on physical qubits '
+                f'{", ".join(reversed_pairs)} to match the wiring. This adds '
+                f'{cost}.'
+            )
         return dag
 
 
