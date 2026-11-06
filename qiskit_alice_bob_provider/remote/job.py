@@ -248,32 +248,19 @@ class AliceBobRemoteJob(JobV1):
         status = self.status()
         assert self._last_response is not None
         success = status == JobStatus.DONE
-        return Result(
+        return build_job_result(
+            backend=self._backend_v2,
             job_id=self.job_id(),
-            backend_name=self._backend_v2.name,
-            backend_version=self._backend_v2.backend_version,
-            success=success,
-            status=status.value,
-            results=[
-                ExperimentResult(
-                    shots=self._last_response['inputParams']['nbShots'],
-                    success=success,
-                    status=str(self._last_response['errors']),
-                    header={
-                        'name': self._circuit.name,
-                        'input_params': self._last_response['inputParams'],
-                        'memory_slots': self._circuit.num_clbits,
-                    },
-                    data=ExperimentResultData(
-                        counts=self._get_counts() if success else None,
-                        memory=self._get_memory()
-                        if success and self._has_memory
-                        else None,
-                        input_qir=self._get_input_qir(),
-                        transpiled_qir=self._get_transpiled_qir(),
-                    ),
-                )
-            ],
+            circuit=self._circuit,
+            status=status,
+            input_params=self._last_response['inputParams'],
+            errors=self._last_response['errors'],
+            counts=self._get_counts() if success else None,
+            memory=self._get_memory()
+            if success and self._has_memory
+            else None,
+            input_qir=self._get_input_qir(),
+            transpiled_qir=self._get_transpiled_qir(),
         )
 
     def cancel(self) -> None:
@@ -286,6 +273,51 @@ class AliceBobRemoteJob(JobV1):
         """Return the status of the job, among the values of ``JobStatus``."""
         self._refresh()
         return self._status
+
+
+def build_job_result(
+    backend: BackendV2,
+    job_id: str,
+    circuit: QuantumCircuit,
+    status: JobStatus,
+    input_params: Dict[str, Any],
+    errors: Any,
+    counts: Optional[Dict[str, int]],
+    memory: Optional[list[str]],
+    input_qir: Optional[str],
+    transpiled_qir: Optional[str],
+) -> Result:
+    """Build the Qiskit result of a job run on an Alice & Bob API target.
+
+    Args:
+        counts: the counts with hexadecimal keys, as Qiskit expects them.
+    """
+    success = status == JobStatus.DONE
+    return Result(
+        job_id=job_id,
+        backend_name=backend.name,
+        backend_version=backend.backend_version,
+        success=success,
+        status=status.value,
+        results=[
+            ExperimentResult(
+                shots=input_params['nbShots'],
+                success=success,
+                status=str(errors),
+                header={
+                    'name': circuit.name,
+                    'input_params': input_params,
+                    'memory_slots': circuit.num_clbits,
+                },
+                data=ExperimentResultData(
+                    counts=counts,
+                    memory=memory,
+                    input_qir=input_qir,
+                    transpiled_qir=transpiled_qir,
+                ),
+            )
+        ],
+    )
 
 
 def _format_nanoseconds(time_ns: int) -> str:
