@@ -14,7 +14,7 @@
 #    limitations under the License.
 ##############################################################################
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 import numpy as np
 from pydantic.alias_generators import to_camel, to_snake
@@ -31,27 +31,21 @@ from .job import AliceBobRemoteJob
 from .qir_to_qiskit import ab_target_to_qiskit_target
 
 
-class AliceBobRemoteBackend(BackendV2):
-    """Class representing the targets accessible via the Alice & Bob API."""
+class AliceBobTargetBackend(BackendV2):
+    """Base class of the backends built from an Alice & Bob API target."""
 
-    def __init__(self, api_client: ApiClient, target_description: Dict):
-        """This class should be instantiated by the AliceBobRemoteProvider.
-
+    def __init__(self, target_description: Dict):
+        """
         Args:
-            api_client (ApiClient): a client for the Alice & Bob API.
             target_description (dict): a description of the API target behind
                 the Qiskit backend, as returned by the Alice & Bob API targets
                 endpoint.
         """
         super().__init__(name=target_description['name'], backend_version=1)
-        self._api_client = api_client
         self._target = ab_target_to_qiskit_target(target_description)
         self._options = _options_from_ab_target(target_description)
         self._translation_plugin = _determine_translation_plugin(self._target)
         self._verbose = True
-
-    def __repr__(self) -> str:
-        return f'<AliceBobRemoteBackend(name={self.name})>'
 
     @property
     def target(self) -> Target:
@@ -77,6 +71,46 @@ class AliceBobRemoteBackend(BackendV2):
         update_options_object(self.options, option_updates)
         return self.options
 
+    def _prepare_run(
+        self, run_input: QuantumCircuit, option_updates: Dict[str, Any]
+    ) -> Tuple[QuantumCircuit, str, Dict]:
+        """Return the circuit to run, its QIR and the API input params of a
+        run with the backend options updated by ``option_updates``."""
+        if not isinstance(run_input, QuantumCircuit):
+            # Qiskit's execute() allows also for list[QuantumCircuit],
+            # Schedule and list[Schedule] as inputs. These types of experiments
+            # are not yet handled by the provider.
+            raise NotImplementedError(
+                'Experiments input not supported by the Alice & Bob provider. '
+                'Please provide an instance of QuantumCircuit.'
+            )
+        run_input = PassManager([EnsurePreparationPass()]).run(run_input)
+        qir = circuit_to_qir(run_input)
+        # Copy value instead of reference to avoid modifying backend options
+        # definitively
+        new_options = deepcopy(self.options)
+        update_options_object(new_options, option_updates)
+        return run_input, qir, _ab_input_params_from_options(new_options)
+
+
+class AliceBobRemoteBackend(AliceBobTargetBackend):
+    """Class representing the targets accessible via the Alice & Bob API."""
+
+    def __init__(self, api_client: ApiClient, target_description: Dict):
+        """This class should be instantiated by the AliceBobRemoteProvider.
+
+        Args:
+            api_client (ApiClient): a client for the Alice & Bob API.
+            target_description (dict): a description of the API target behind
+                the Qiskit backend, as returned by the Alice & Bob API targets
+                endpoint.
+        """
+        super().__init__(target_description)
+        self._api_client = api_client
+
+    def __repr__(self) -> str:
+        return f'<AliceBobRemoteBackend(name={self.name})>'
+
     def run(self, run_input: QuantumCircuit, **kwargs) -> AliceBobRemoteJob:
         """Run the quantum circuit on the Alice & Bob backend by calling the
         Alice & Bob API.
@@ -93,24 +127,10 @@ class AliceBobRemoteBackend(BackendV2):
                 Wait for the results by calling
                 :func:`AliceBobRemoteJob.result`.
         """
-        if not isinstance(run_input, QuantumCircuit):
-            # Qiskit's execute() allows also for list[QuantumCircuit],
-            # Schedule and list[Schedule] as inputs. These types of experiments
-            # are not yet handled by the provider.
-            raise NotImplementedError(
-                'Experiments input not supported by the Alice & Bob provider. '
-                'Please provide an instance of QuantumCircuit.'
-            )
-        run_input = PassManager([EnsurePreparationPass()]).run(run_input)
-        qir = circuit_to_qir(run_input)
+        run_input, qir, input_params = self._prepare_run(run_input, kwargs)
         if self._verbose:
             display_new_line()
             display_current_line('Sending circuit to the API...')
-        # Copy value instead of reference to avoid modifying backend options
-        # definitively
-        new_options = deepcopy(self.options)
-        update_options_object(new_options, kwargs)
-        input_params = _ab_input_params_from_options(new_options)
         job = jobs.create_job(self._api_client, self.name, input_params)
         jobs.upload_input(self._api_client, job['id'], qir)
         return AliceBobRemoteJob(

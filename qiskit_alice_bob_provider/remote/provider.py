@@ -15,9 +15,9 @@
 ##############################################################################
 
 import logging
-from typing import List, Optional
+from abc import ABC, abstractmethod
+from typing import Dict, Generic, List, Optional, TypeVar
 
-from qiskit.providers import BackendV2
 from qiskit.providers.exceptions import QiskitBackendNotFoundError
 from qiskit.providers.providerutils import filter_backends
 
@@ -28,10 +28,80 @@ from qiskit_alice_bob_provider.remote.api.version import (
 
 from .api.client import ApiClient
 from .api.targets import list_targets
-from .backend import AliceBobRemoteBackend
+from .backend import AliceBobRemoteBackend, AliceBobTargetBackend
+
+BackendT = TypeVar('BackendT', bound=AliceBobTargetBackend)
 
 
-class AliceBobRemoteProvider:
+class AliceBobTargetProvider(ABC, Generic[BackendT]):
+    """Base class of the providers of backends built from Alice & Bob API
+    targets. A subclass sets ``_targets`` and defines ``_make_backend``."""
+
+    _targets: List[Dict]
+
+    @abstractmethod
+    def _make_backend(self, ab_target: Dict) -> BackendT: ...
+
+    def get_backend(self, name=None, verbose=True, **kwargs) -> BackendT:
+        """Return a single backend matching by its name.
+
+        Args:
+            name (str): name of the backend
+            verbose (bool): if True, will display information about the jobs
+                execution.
+                Defaults to True.
+            **kwargs: additional backend parameters
+                (see targets documentation).
+
+        Returns:
+            BackendT: backend matching the given name.
+        """
+        backend = self._get_single_backend(name)
+        # We allow to set the options when getting the backend,
+        # to align with what we do in the local provider.
+        if kwargs:
+            backend.update_options(kwargs)
+        backend._verbose = verbose
+        return backend
+
+    def _get_single_backend(self, name=None, **kwargs) -> BackendT:
+        backends = self.backends(name, **kwargs)
+        if len(backends) > 1:
+            raise QiskitBackendNotFoundError(
+                'More than one backend matches the criteria'
+            )
+        if not backends:
+            raise QiskitBackendNotFoundError('No backend matches the criteria')
+        return backends[0]
+
+    def backends(self, name: Optional[str] = None, **kwargs) -> List[BackendT]:
+        """Return a list of backends matching the specified filtering.
+
+        Args:
+            name (str): if provided, only backends with this name will be
+                returned (there should be only one such backend).
+            **kwargs: additional parameters for filtering
+
+        Returns:
+            List[Backend]: the list of matching backends.
+        """
+        # backends are loaded from targets dynamically each time to create
+        # instances and avoid shared references
+        backends_from_targets = [
+            self._make_backend(ab_target) for ab_target in self._targets
+        ]
+        if name:
+            backends = [
+                backend
+                for backend in backends_from_targets
+                if backend.name == name
+            ]
+        else:
+            backends = backends_from_targets
+        return filter_backends(backends, **kwargs)
+
+
+class AliceBobRemoteProvider(AliceBobTargetProvider[AliceBobRemoteBackend]):
     """
     Class listing and providing access to all Alice & Bob remote backends.
     """
@@ -69,68 +139,5 @@ class AliceBobRemoteProvider:
                 '"pip install -U qiskit-alice-bob-provider".'
             )
 
-    def get_backend(
-        self, name=None, verbose=True, **kwargs
-    ) -> AliceBobRemoteBackend:
-        """Return a single backend matching by its name.
-
-        Args:
-            name (str): name of the backend
-            verbose (bool): if True, will display information about the jobs
-                execution.
-                Defaults to True.
-            **kwargs: additional backend parameters
-                (see targets documentation).
-
-        Returns:
-            AliceBobRemoteBackend: backend matching the given name.
-        """
-        backend = self._get_single_backend(name)
-        # We allow to set the options when getting the backend,
-        # to align with what we do in the local provider.
-        if kwargs:
-            backend.update_options(kwargs)
-
-        backend._verbose = verbose
-        return backend
-
-    def _get_single_backend(
-        self, name=None, **kwargs
-    ) -> AliceBobRemoteBackend:
-        backends = self.backends(name, **kwargs)
-        if len(backends) > 1:
-            raise QiskitBackendNotFoundError(
-                'More than one backend matches the criteria'
-            )
-        if not backends:
-            raise QiskitBackendNotFoundError('No backend matches the criteria')
-        return backends[0]
-
-    def backends(
-        self, name: Optional[str] = None, **kwargs
-    ) -> List[BackendV2]:
-        """Return a list of backends matching the specified filtering.
-
-        Args:
-            name (str): if provided, only backends with this name will be
-                returned (there should be only one such backend).
-            **kwargs: additional parameters for filtering
-
-        Returns:
-            List[Backend]: the list of matching backends.
-        """
-        # backends are loaded from targets dynamically each time to create
-        # instances and avoid shared references
-        backends_from_targets = [
-            AliceBobRemoteBackend(self.client, ab_target)
-            for ab_target in self._targets
-        ]
-        if name:
-            backends = [
-                backend
-                for backend in backends_from_targets
-                if backend.name == name
-            ]
-        else:
-            backends = backends_from_targets
-        return filter_backends(backends, **kwargs)
+    def _make_backend(self, ab_target: Dict) -> AliceBobRemoteBackend:
+        return AliceBobRemoteBackend(self.client, ab_target)
