@@ -40,6 +40,9 @@ dependencies = [
     "tenacity"
 ]
 
+[project.optional-dependencies]
+qaptiva = ["myqlm>=1.14.0"]
+
 [dependency-groups]
 dev = [
     "mock==5.1.0",
@@ -86,6 +89,7 @@ disable_error_code = ['index']
 
 [[tool.mypy.overrides]]
 module = [
+    "qat.*",
     "qiskit.*",
     "qiskit_aer.*",
     "scipy.*"

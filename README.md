@@ -95,6 +95,36 @@ An X or Y preparation or measurement becomes a Z one plus one Q gate. After
 an X or Y measurement, the qubit stays in the Z basis, because a measurement
 on Helium destroys the qubit.
 
+## Execution through Qaptiva: use a myQLM server
+
+A Qaptiva node can have no access to the Alice & Bob API. On such a node, the
+provider sends its jobs through an anb-myqlm-server, which runs them on the
+API. Install the `qaptiva` extra, which adds
+myQLM:
+
+```bash
+pip install "qiskit-alice-bob-provider[qaptiva]"
+```
+
+Connect the provider to the server with a myQLM `RemoteQPU`. The backends
+take the same options as the remote backends:
+
+```python
+from qat.qpus import RemoteQPU
+from qiskit import transpile
+from qiskit_alice_bob_provider.qaptiva import AliceBobQaptivaProvider
+
+ab = AliceBobQaptivaProvider(RemoteQPU(port=1235, ip='10.0.0.1'))
+backend = ab.get_backend('EMU:1Q:LESCANNE_2020', average_nb_photons=6.0)
+job = backend.run(transpile(c, backend), shots=500)
+print(job.result().get_counts())
+```
+
+`run` waits until the server returns the counts. The `memory` option is not
+available through Qaptiva. The provider refuses a server with another
+protocol version: use the anb-myqlm-server release that matches the
+provider.
+
 ## Local emulation of cat qubit processors
 
 This project contains multiple emulators of multi cat qubit processors.
