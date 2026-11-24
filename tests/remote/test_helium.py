@@ -17,7 +17,7 @@
 import re
 import warnings
 from math import pi
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pytest
 from qiskit import QuantumCircuit, transpile
@@ -294,7 +294,7 @@ def _reversal_warnings(
 
 
 @pytest.mark.parametrize('level', [0, 1, 2, 3])
-def test_reversed_cx_warns_once_with_each_pair_and_its_cost(
+def test_reversed_cx_warns_once_with_each_pair(
     helium_target: Dict, requests_mock: Mocker, level: int
 ) -> None:
     c = QuantumCircuit(4)
@@ -304,8 +304,111 @@ def test_reversed_cx_warns_once_with_each_pair_and_its_cost(
     c.cx(3, 2)
     assert _reversal_warnings(helium_target, requests_mock, c, level) == [
         'Reversed the cx on physical qubits (1, 0) x2, (3, 2) to match the '
-        'wiring. This adds 12 Q gates before optimization, which cost bias.'
+        'wiring.'
     ]
+
+
+def _q_warnings(caught: List[warnings.WarningMessage]) -> List[str]:
+    return [str(w.message) for w in caught if 'Q gate' in str(w.message)]
+
+
+@pytest.mark.parametrize(
+    'level, message',
+    [
+        (
+            0,
+            'The transpiled circuit holds 2 Q gates (sx). A Q gate breaks '
+            'the noise bias of a cat qubit.',
+        ),
+        (1, None),
+        (2, None),
+        (3, None),
+    ],
+)
+def test_transpile_warns_with_the_final_count_of_q_gates(
+    helium_target: Dict,
+    requests_mock: Mocker,
+    level: int,
+    message: Optional[str],
+) -> None:
+    c = QuantumCircuit(1)
+    c.sx(0)
+    c.sx(0)
+    backend = _helium_backend(helium_target, requests_mock)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        transpile(c, backend, optimization_level=level)
+    assert _q_warnings(caught) == ([message] if message else [])
+
+
+def test_transpile_warns_about_one_q_gate(
+    helium_target: Dict, requests_mock: Mocker
+) -> None:
+    c = QuantumCircuit(1)
+    c.h(0)
+    backend = _helium_backend(helium_target, requests_mock)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        transpile(c, backend, optimization_level=0)
+    assert _q_warnings(caught) == [
+        'The transpiled circuit holds 1 Q gate (sx). A Q gate breaks the '
+        'noise bias of a cat qubit.'
+    ]
+
+
+def test_run_warns_with_the_count_of_q_gates(
+    helium_target: Dict, successful_job: Mocker
+) -> None:
+    successful_job.register_uri('GET', '/v1/targets/', json=[helium_target])
+    backend = AliceBobRemoteProvider(api_key='foo').get_backend(
+        helium_target['name']
+    )
+    c = QuantumCircuit(1, 1)
+    c.initialize('0', 0)
+    c.sx(0)
+    c.sx(0)
+    c.measure(0, 0)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        backend.run(c)
+    assert _q_warnings(caught) == [
+        'The circuit sent to EMU:18Q:HELIUM holds 2 Q gates (sx). A Q gate '
+        'breaks the noise bias of a cat qubit.'
+    ]
+
+
+def test_run_counts_the_q_gates_inside_a_block(
+    helium_target: Dict, successful_job: Mocker
+) -> None:
+    successful_job.register_uri('GET', '/v1/targets/', json=[helium_target])
+    backend = AliceBobRemoteProvider(api_key='foo').get_backend(
+        helium_target['name']
+    )
+    c = QuantumCircuit(1, 1)
+    c.initialize('0', 0)
+    c.measure(0, 0)
+    with c.if_test((c.clbits[0], 1)):
+        c.sx(0)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        backend.run(c)
+    assert _q_warnings(caught) == [
+        'The circuit sent to EMU:18Q:HELIUM holds 1 Q gate (sx). A Q gate '
+        'breaks the noise bias of a cat qubit.'
+    ]
+
+
+def test_run_gives_no_q_warning_on_a_target_without_q(
+    successful_job: Mocker,
+) -> None:
+    backend = AliceBobRemoteProvider(api_key='foo').get_backend('H')
+    c = QuantumCircuit(1, 1)
+    c.sx(0)
+    c.measure(0, 0)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        backend.run(c)
+    assert _q_warnings(caught) == []
 
 
 @pytest.mark.parametrize('level', [0, 1, 2, 3])

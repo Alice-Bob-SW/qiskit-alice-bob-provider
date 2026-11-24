@@ -389,7 +389,6 @@ class ReverseCnotPass(TransformationPass):
             f'{pair} x{n}' if n > 1 else str(pair)
             for pair, n in pair_counts.items()
         ]
-        before = Counter(dag.count_ops())
         dag = self._gate_direction.run(dag)
         try:
             for translation in self._translate:
@@ -406,17 +405,9 @@ class ReverseCnotPass(TransformationPass):
                 'reversal.'
             ) from exc
         if reversed_pairs:
-            added = Counter(dag.count_ops()) - before
-            cost = (
-                f'{added["sx"]} Q gates before optimization, which cost bias'
-                if 'sx' in added
-                else ', '.join(f'{n} {name}' for name, n in added.items())
-                + ' gates before optimization'
-            )
             warnings.warn(
                 'Reversed the cx on physical qubits '
-                f'{", ".join(reversed_pairs)} to match the wiring. This adds '
-                f'{cost}.'
+                f'{", ".join(reversed_pairs)} to match the wiring.'
             )
         return dag
 

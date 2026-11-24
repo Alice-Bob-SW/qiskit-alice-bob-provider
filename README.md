@@ -95,6 +95,13 @@ An X or Y preparation or measurement becomes a Z one plus one Q gate. After
 an X or Y measurement, the qubit stays in the Z basis, because a measurement
 on Helium destroys the qubit.
 
+A Q gate (`sx`) breaks the noise bias of a cat qubit: it turns phase flips into
+bit flips. At optimization level 0, the transpilation writes each X or Y
+rotation with Q gates and `rz`. `rx(±π/2)`, `ry(±π/2)` and `sxdg` take one Q
+gate, `rx(0)`, `ry(0)`, `rx(π)` and `ry(π)` take none, and any other angle
+takes two. An angle counts modulo 2π. The transpilation and `run` warn with the
+count of Q gates of the circuit.
+
 ## Execution through Qaptiva: use a myQLM server
 
 A Qaptiva node can have no access to the Alice & Bob API. On such a node, the

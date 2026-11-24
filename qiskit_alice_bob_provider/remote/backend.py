@@ -19,9 +19,11 @@ from typing import Any, Dict, Tuple
 import numpy as np
 from pydantic.alias_generators import to_camel, to_snake
 from qiskit import QuantumCircuit
+from qiskit.converters import circuit_to_dag
 from qiskit.providers import BackendV2, Options
 from qiskit.transpiler import PassManager, Target
 
+from ..plugins.scheduling import warn_q_gates
 from ..plugins.state_preparation import EnsurePreparationPass
 from ..qir import circuit_to_qir
 from .api import jobs
@@ -67,6 +69,11 @@ class AliceBobTargetBackend(BackendV2):
         """
         return self._translation_plugin
 
+    def get_scheduling_stage_plugin(self) -> str:
+        """This hook tells Qiskit to end the transpilation with a warning
+        that counts the Q gates of the transpiled circuit."""
+        return 'alice_bob_scheduling'
+
     def update_options(self, option_updates: Dict[str, Any]) -> Options:
         update_options_object(self.options, option_updates)
         return self.options
@@ -90,6 +97,11 @@ class AliceBobTargetBackend(BackendV2):
         # definitively
         new_options = deepcopy(self.options)
         update_options_object(new_options, option_updates)
+        if 'sx' in self.target:
+            warn_q_gates(
+                circuit_to_dag(run_input).count_ops(recurse=True).get('sx', 0),
+                f'The circuit sent to {self.name}',
+            )
         return run_input, qir, _ab_input_params_from_options(new_options)
 
 

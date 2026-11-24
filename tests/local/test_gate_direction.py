@@ -85,7 +85,7 @@ def test_cnot_is_flipped_to_the_native_direction(
     assert pairs == [(0, 1)]
 
 
-def test_reversal_warning_names_the_gates_of_the_target() -> None:
+def test_reversal_warning_names_the_reversed_pair() -> None:
     circ = QuantumCircuit(2, 2)
     circ.cx(1, 0)
     circ.measure([0, 1], [0, 1])
@@ -97,8 +97,7 @@ def test_reversal_warning_names_the_gates_of_the_target() -> None:
             initial_layout=[0, 1],
         )
     assert [str(w.message) for w in caught] == [
-        'Reversed the cx on physical qubits (1, 0) to match the wiring. '
-        'This adds 4 h gates before optimization.'
+        'Reversed the cx on physical qubits (1, 0) to match the wiring.'
     ]
 
 

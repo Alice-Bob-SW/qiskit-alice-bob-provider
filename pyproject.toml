@@ -60,6 +60,7 @@ dev = [
 
 [project.entry-points."qiskit.transpiler.scheduling"]
 ab_asap = "qiskit_alice_bob_provider.plugins.ab_asap:AliceBobASAPSchedulingPlugin"
+alice_bob_scheduling = "qiskit_alice_bob_provider.plugins.scheduling:AliceBobSchedulingPlugin"
 
 [project.entry-points."qiskit.transpiler.translation"]
 state_preparation = "qiskit_alice_bob_provider.plugins.state_preparation:StatePreparationPlugin"
