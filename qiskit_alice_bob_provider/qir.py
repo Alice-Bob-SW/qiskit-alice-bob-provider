@@ -197,7 +197,7 @@ class _Emitter:
         elif name == 'barrier':
             pass
         elif name == 'delay':
-            self._delay(operation, qubit_values)
+            self._delay(operation, qubits, qubit_values)
         elif name == 'initialize':
             self._initialize(operation, qubit_values)
         elif isinstance(operation, IfElseOp):
@@ -223,11 +223,16 @@ class _Emitter:
                 [clbits[block.find_bit(c).index] for c in instruction.clbits],
             )
 
-    def _delay(self, operation: Instruction, qubits: Sequence[Value]) -> None:
+    def _delay(
+        self,
+        operation: Instruction,
+        qubits: Sequence[Bit],
+        qubit_values: Sequence[Value],
+    ) -> None:
         duration, unit = operation.duration, operation.unit
 
         def error(problem: str) -> ValueError:
-            indices = [pyqir.qubit_id(qubit) for qubit in qubits]
+            indices = [self._qubits[bit] for bit in qubits]
             return ValueError(
                 f'The delay of {duration} {unit} on qubits {indices} {problem}'
             )
@@ -251,7 +256,7 @@ class _Emitter:
                 f'is longer than the longest delay, {_LONGEST_DELAY_NS} ns.'
             )
         i64 = IntType(self._context, 64)
-        self._call('delay', [const(i64, nanoseconds), *qubits])
+        self._call('delay', [const(i64, nanoseconds), *qubit_values])
 
     def _initialize(
         self, operation: Instruction, qubits: Sequence[Value]

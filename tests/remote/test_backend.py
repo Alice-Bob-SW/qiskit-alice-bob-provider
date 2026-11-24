@@ -319,8 +319,7 @@ def test_transpiled_delay_runs_in_whole_nanoseconds(
         if r.method == 'POST' and r.path == '/v1/jobs/my-job/input'
     )
     delay_call = (
-        'call void @__quantum__qis__delay__body'
-        f'(i64 {nanoseconds}, %Qubit* null)'
+        f'call void @__quantum__qis__delay__body(i64 {nanoseconds}, ptr null)'
     )
     assert delay_call in upload.body.decode()
 

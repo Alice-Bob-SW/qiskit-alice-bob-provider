@@ -2115,13 +2115,17 @@ wheels = [
 
 [[package]]
 name = "pyqir"
-version = "0.10.9"
+version = "0.12.8"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/61/f5/28d72e7fe3f7d9b24ad69f3b63b2dd76b8572d3ec7ca61cf9d91b0de384b/pyqir-0.10.9-cp38-abi3-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:fc8a468dbab8c8ca5d6b87a834d390665e2978ffa23f847987603f4a5a57ce87", size = 3513219, upload-time = "2025-03-20T20:43:32.93Z" },
-    { url = "https://files.pythonhosted.org/packages/0b/08/f08a8e292f7fd1c4d7d6267166e2ee943b1d92f611f7d7aec6ca3cdd78d4/pyqir-0.10.9-cp38-abi3-manylinux_2_31_x86_64.whl", hash = "sha256:2ab9c9fe9804e4794be8a1fa5afb085adef581599ef755864535615e82b89b91", size = 2340015, upload-time = "2025-03-20T20:43:34.934Z" },
-    { url = "https://files.pythonhosted.org/packages/1c/6f/2c32811234e81fccbc7fc8636cda77bc5cfcd4ea5b7934814660dedef15c/pyqir-0.10.9-cp38-abi3-manylinux_2_34_aarch64.whl", hash = "sha256:c0fdf06f7a0d38ca1f4587ef98f5b59591875a26a28ea345e7bf7cccebf144cd", size = 2258550, upload-time = "2025-03-20T20:43:36.667Z" },
-    { url = "https://files.pythonhosted.org/packages/ce/8a/1a1a6b1f5d95be2ad1de81188fee3aad304494b87d063a34f116e953c165/pyqir-0.10.9-cp38-abi3-win_amd64.whl", hash = "sha256:4e7d3953d6b993bbd2066219c66748669dc55457b5a42b8f65ec1c708a2b7eb3", size = 1737741, upload-time = "2025-03-20T20:43:38.482Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/b8/91e44aa8c9da59ce1d1cd50a29443fb4f12a21303a4d030c60ab1a73a414/pyqir-0.12.8-cp315-abi3.abi3t-manylinux_2_28_aarch64.whl", hash = "sha256:f0734feb441dd714cdacff439f9b422ff12cb9c1d1bba2f417f3465a247517f5", size = 2182163, upload-time = "2026-10-30T20:53:17.682Z" },
+    { url = "https://files.pythonhosted.org/packages/86/de/fd44ec4d24354be87726fe90945181e653fafa61c4d9dc2c5255067bf9f8/pyqir-0.12.8-cp315-abi3.abi3t-manylinux_2_28_x86_64.whl", hash = "sha256:9c34959a2a2e8165c1739f82cbea807654971e96f3b07ce451fa90534de59100", size = 2176235, upload-time = "2026-10-30T20:53:20.115Z" },
+    { url = "https://files.pythonhosted.org/packages/90/6e/30e7b9d83daf48bdcac07e6a4faf7573cb936b0ffd2bc08c90e1f8771d94/pyqir-0.12.8-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:d53e27d3dd9badf417f8747e111ec140d0abb6235a117f29077e7f928292f9b7", size = 2157533, upload-time = "2026-10-30T20:53:22.108Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/fe/9f8cb12c8e0d446a162ffb3ee3a2c6f9ea87b217f9213a25a07d7ee2d471/pyqir-0.12.8-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:4dc166cb442cc8560b72ee4c25374452ab2a6a36cc8cb8aa67376335748a7c9b", size = 2109186, upload-time = "2026-10-30T20:53:24.133Z" },
+    { url = "https://files.pythonhosted.org/packages/32/65/3235dcfdf7026587407e5e6607bce53120b28512ff110e36f8c5e928bcd4/pyqir-0.12.8-cp39-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:60b762a4452540ed139a2a0d37b8c2e85b4f09c3b0f7816968d15fe61fa0b6eb", size = 2118306, upload-time = "2026-10-30T20:53:26.312Z" },
+    { url = "https://files.pythonhosted.org/packages/67/92/9fef0c50986482846d85de5ac62a9967b6f6a1a807bcb95eec6bad377109/pyqir-0.12.8-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:47ff49878ef42e24a21516445c4f9c479ef8695f8be1a97e9999f1122ae2842b", size = 2084968, upload-time = "2026-10-30T20:53:28.426Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/26/bfbdeba86777a6f427e0eb7436dc37f80f19c4a971ea1dd082b842773933/pyqir-0.12.8-cp39-abi3-win_amd64.whl", hash = "sha256:f62b0554e62607cc5a6d1aefd3bec64d8779a76fb0454584c5c5f16bd5b6555b", size = 1970377, upload-time = "2026-10-30T20:53:30.502Z" },
+    { url = "https://files.pythonhosted.org/packages/88/ee/e36ef07b44face43aa342fca1a58b4f4690814fe1b085b5ae3cdfe22cca9/pyqir-0.12.8-cp39-abi3-win_arm64.whl", hash = "sha256:23d0f5dd8e1000baddfd42a9b23d9911d535b1b35da0d0a20a532fd7de0f4441", size = 1869302, upload-time = "2026-10-30T20:53:32.169Z" },
 ]
 
 [[package]]
@@ -2906,7 +2910,7 @@ requires-dist = [
     { name = "ipywidgets" },
     { name = "myqlm", marker = "extra == 'qaptiva'", specifier = ">=1.14.0" },
     { name = "pydantic", specifier = ">=2.0" },
-    { name = "pyqir", specifier = ">=0.10,<0.11" },
+    { name = "pyqir", specifier = ">=0.12.6,<0.13" },
     { name = "qiskit", specifier = ">=2.5,<3.0" },
     { name = "qiskit-aer", specifier = ">=0.17,<0.18" },
     { name = "requests", specifier = ">=1.26" },

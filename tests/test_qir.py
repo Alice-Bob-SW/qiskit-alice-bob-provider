@@ -1,6 +1,5 @@
 from textwrap import dedent
 
-import pyqir
 import pytest
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.circuit import Gate, Instruction, Parameter
@@ -9,10 +8,10 @@ from qiskit.circuit.classical import expr
 import qiskit_alice_bob_provider  # noqa: F401
 from qiskit_alice_bob_provider.qir import circuit_to_qir
 
-Q0 = '%Qubit* null'
-Q1 = '%Qubit* inttoptr (i64 1 to %Qubit*)'
-R0 = '%Result* null'
-R1 = '%Result* inttoptr (i64 1 to %Result*)'
+Q0 = 'ptr null'
+Q1 = 'ptr inttoptr (i64 1 to ptr)'
+R0 = 'ptr null'
+R1 = 'ptr inttoptr (i64 1 to ptr)'
 
 
 def _call(name: str, *args: str) -> str:
@@ -78,7 +77,7 @@ def test_delay_emits_whole_nanoseconds(
     c.delay(duration, 0, unit=unit)
     qir = circuit_to_qir(c)
     assert _call('delay', f'i64 {nanoseconds}', Q0) in qir
-    assert 'declare void @__quantum__qis__delay__body(i64, %Qubit*)' in qir
+    assert 'declare void @__quantum__qis__delay__body(i64, ptr)' in qir
 
 
 @pytest.mark.parametrize(
@@ -100,16 +99,6 @@ def test_delay_longer_than_an_i64_raises(duration: float) -> None:
     c.delay(duration, 0, unit='ns')
     with pytest.raises(ValueError, match='longer than the longest delay'):
         circuit_to_qir(c)
-
-
-def test_valid_delay_needs_no_qubit_index(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    # pyqir 0.12, which some servers use, has no `qubit_id`.
-    monkeypatch.delattr(pyqir, 'qubit_id')
-    c = QuantumCircuit(1)
-    c.delay(8, 0, unit='ns')
-    assert _call('delay', 'i64 8', Q0) in circuit_to_qir(c)
 
 
 def test_delay_in_dt_names_the_unit() -> None:
@@ -254,11 +243,11 @@ def test_output_is_recorded_per_register() -> None:
         QuantumRegister(1), ClassicalRegister(2), ClassicalRegister(1)
     )
     expected = [
-        'array_record_output(i64 2, i8* null)',
-        'result_record_output(%Result* inttoptr (i64 1 to %Result*), i8* null)',
-        'result_record_output(%Result* null, i8* null)',
-        'array_record_output(i64 1, i8* null)',
-        'result_record_output(%Result* inttoptr (i64 2 to %Result*), i8* null)',
+        'array_record_output(i64 2, ptr null)',
+        'result_record_output(ptr inttoptr (i64 1 to ptr), ptr null)',
+        'result_record_output(ptr null, ptr null)',
+        'array_record_output(i64 1, ptr null)',
+        'result_record_output(ptr inttoptr (i64 2 to ptr), ptr null)',
     ]
     records = '\n'.join(f'  call void @__quantum__rt__{r}' for r in expected)
     assert records in circuit_to_qir(c)
