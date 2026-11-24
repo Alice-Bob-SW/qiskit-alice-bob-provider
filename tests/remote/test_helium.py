@@ -16,7 +16,8 @@
 
 import re
 import warnings
-from typing import Dict, List, Tuple
+from math import pi
+from typing import Any, Callable, Dict, List, Tuple
 
 import pytest
 from qiskit import QuantumCircuit, transpile
@@ -314,3 +315,233 @@ def test_wired_cx_gives_no_reversal_warning(
     c = QuantumCircuit(2)
     c.cx(0, 1)
     assert _reversal_warnings(helium_target, requests_mock, c, level) == []
+
+
+def _ring_backend(helium_target: Dict, requests_mock: Mocker):
+    """A Helium backend cut to a directed ring of 4 qubits, small enough to
+    compute the unitary of a transpiled circuit."""
+    ring = {
+        **helium_target,
+        'numQubits': 4,
+        'connectivity': [
+            [even, (even + step) % 4] for even in (0, 2) for step in (1, -1)
+        ],
+    }
+    return _helium_backend(ring, requests_mock)
+
+
+def _on_qubit(circuit: QuantumCircuit, qubit: int) -> List[Any]:
+    """The instructions that act on one qubit, in circuit order."""
+    return [
+        instruction
+        for instruction in circuit.data
+        if qubit in {circuit.find_bit(q).index for q in instruction.qubits}
+    ]
+
+
+def _wire(circuit: QuantumCircuit, qubit: int) -> List[Tuple[Any, ...]]:
+    """The gates on one qubit, in circuit order, without preparations and
+    measurements."""
+    return [
+        (instruction.name, *instruction.operation.params)
+        for instruction in _on_qubit(circuit, qubit)
+        if instruction.name not in {'initialize', 'measure'}
+    ]
+
+
+def _cx_pairs(circuit: QuantumCircuit) -> List[Tuple[int, ...]]:
+    return [
+        tuple(circuit.find_bit(qubit).index for qubit in instruction.qubits)
+        for instruction in circuit.data
+        if instruction.operation.name == 'cx'
+    ]
+
+
+def _rz(angle: float) -> Tuple[Any, ...]:
+    return ('rz', pytest.approx(angle))
+
+
+_SX = ('sx',)
+_X = ('x',)
+_CX = ('cx',)
+_H = [_rz(pi / 2), _SX, _rz(pi / 2)]
+
+
+@pytest.mark.parametrize(
+    'gate, form',
+    [
+        ('h', _H),
+        ('s', [_rz(pi / 2)]),
+        ('sdg', [_rz(-pi / 2)]),
+        ('t', [_rz(pi / 4)]),
+        ('tdg', [_rz(-pi / 4)]),
+        ('z', [_rz(pi)]),
+        ('y', [_rz(pi), _X]),
+    ],
+)
+def test_single_qubit_gate_has_its_native_form_at_level_0(
+    helium_target: Dict,
+    requests_mock: Mocker,
+    gate: str,
+    form: List[Tuple[Any, ...]],
+) -> None:
+    c = QuantumCircuit(1)
+    getattr(c, gate)(0)
+    transpiled = transpile(
+        c, _helium_backend(helium_target, requests_mock), optimization_level=0
+    )
+    assert _wire(transpiled, 0) == form
+
+
+@pytest.mark.parametrize(
+    'gate, qubits, wire_0, wire_1',
+    [
+        ('cx', (1, 0), _H + [_CX] + _H, _H + [_CX] + _H),
+        ('cz', (0, 1), [_CX], _H + [_CX] + _H),
+        (
+            'swap',
+            (0, 1),
+            [_CX] + _H + [_CX] + _H + [_CX],
+            [_CX] + _H + [_CX] + _H + [_CX],
+        ),
+    ],
+)
+def test_two_qubit_gate_has_its_native_form_at_level_0(
+    helium_target: Dict,
+    requests_mock: Mocker,
+    gate: str,
+    qubits: Tuple[int, int],
+    wire_0: List[Tuple[Any, ...]],
+    wire_1: List[Tuple[Any, ...]],
+) -> None:
+    c = QuantumCircuit(2)
+    getattr(c, gate)(*qubits)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        transpiled = transpile(
+            c,
+            _helium_backend(helium_target, requests_mock),
+            optimization_level=0,
+        )
+    assert _wire(transpiled, 0) == wire_0
+    assert _wire(transpiled, 1) == wire_1
+    assert set(_cx_pairs(transpiled)) == {(0, 1)}
+
+
+@pytest.mark.parametrize('level', [0, 1, 2, 3])
+def test_reset_becomes_a_preparation_of_zero(
+    helium_target: Dict, requests_mock: Mocker, level: int
+) -> None:
+    c = QuantumCircuit(1, 1)
+    c.x(0)
+    c.reset(0)
+    c.measure(0, 0)
+    transpiled = transpile(
+        c,
+        _helium_backend(helium_target, requests_mock),
+        optimization_level=level,
+    )
+    assert 'reset' not in transpiled.count_ops()
+    preparations = [
+        i.operation.params for i in transpiled.data if i.name == 'initialize'
+    ]
+    assert preparations[-1] == ['0']
+
+
+def test_native_circuit_is_kept_at_level_0(
+    helium_target: Dict, requests_mock: Mocker
+) -> None:
+    c = QuantumCircuit(2, 1)
+    c.initialize('0', 0)
+    c.initialize('1', 1)
+    c.x(0)
+    c.sx(0)
+    c.rz(0.3, 1)
+    c.cx(0, 1)
+    c.delay(16, 0, unit='ns')
+    c.measure(1, 0)
+    transpiled = transpile(
+        c, _helium_backend(helium_target, requests_mock), optimization_level=0
+    )
+
+    def operations(circuit: QuantumCircuit, qubit: int) -> List[Tuple]:
+        return [
+            (i.name, *(circuit.find_bit(q).index for q in i.qubits))
+            for i in _on_qubit(circuit, qubit)
+        ]
+
+    for qubit in (0, 1):
+        assert operations(transpiled, qubit) == operations(c, qubit)
+
+
+def test_initialize_splits_one_qubit_at_a_time(
+    helium_target: Dict, requests_mock: Mocker
+) -> None:
+    helium_target['instructions'].append(
+        {'signature': '__quantum__qis__prepare_x__body:void (i1, %Qubit*)'}
+    )
+    c = QuantumCircuit(3)
+    c.initialize('+-0', [0, 1, 2])
+    transpiled = transpile(
+        c, _helium_backend(helium_target, requests_mock), optimization_level=0
+    )
+    assert sorted(
+        (transpiled.find_bit(i.qubits[0]).index, i.operation.params)
+        for i in transpiled.data
+        if i.name == 'initialize'
+    ) == [(0, ['0']), (1, ['-']), (2, ['+'])]
+
+
+def _unitary(circuit: QuantumCircuit) -> Operator:
+    gates = circuit.copy_empty_like()
+    for instruction in circuit.data:
+        if instruction.operation.name != 'initialize':
+            gates.append(instruction)
+    return Operator.from_circuit(gates)
+
+
+_GATES: List[Tuple[str, Callable[[QuantumCircuit], Any]]] = [
+    ('h', lambda c: c.h(0)),
+    ('s', lambda c: c.s(0)),
+    ('sdg', lambda c: c.sdg(0)),
+    ('t', lambda c: c.t(0)),
+    ('tdg', lambda c: c.tdg(0)),
+    ('x', lambda c: c.x(0)),
+    ('y', lambda c: c.y(0)),
+    ('z', lambda c: c.z(0)),
+    ('sx', lambda c: c.sx(0)),
+    ('sxdg', lambda c: c.sxdg(0)),
+    ('rx(0.3)', lambda c: c.rx(0.3, 0)),
+    ('rx(pi/2)', lambda c: c.rx(pi / 2, 0)),
+    ('rx(-pi/2)', lambda c: c.rx(-pi / 2, 0)),
+    ('rx(pi)', lambda c: c.rx(pi, 0)),
+    ('ry(0.3)', lambda c: c.ry(0.3, 0)),
+    ('rz(0.3)', lambda c: c.rz(0.3, 0)),
+    ('cx(1,0)', lambda c: c.cx(1, 0)),
+    ('cx(1,3)', lambda c: c.cx(1, 3)),
+    ('cz(0,1)', lambda c: c.cz(0, 1)),
+    ('cz(1,0)', lambda c: c.cz(1, 0)),
+    ('swap(1,0)', lambda c: c.swap(1, 0)),
+]
+
+
+@pytest.mark.parametrize('level', [0, 1, 2, 3])
+@pytest.mark.parametrize(
+    'build', [build for _, build in _GATES], ids=[name for name, _ in _GATES]
+)
+def test_translation_keeps_the_unitary(
+    helium_target: Dict,
+    requests_mock: Mocker,
+    build: Callable[[QuantumCircuit], Any],
+    level: int,
+) -> None:
+    c = QuantumCircuit(4)
+    build(c)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        transpiled = transpile(
+            c,
+            _ring_backend(helium_target, requests_mock),
+            optimization_level=level,
+        )
+    assert _unitary(transpiled).equiv(Operator(c))
