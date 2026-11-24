@@ -13,15 +13,16 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 ##############################################################################
+import math
 import warnings
 from collections import Counter
 from copy import deepcopy
-from typing import Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 import numpy as np
 from qiskit.circuit import Instruction, Measure, Qubit, Reset
 from qiskit.circuit.equivalence_library import SessionEquivalenceLibrary
-from qiskit.circuit.library import Initialize, RZGate, SGate, SXGate
+from qiskit.circuit.library import Initialize, RZGate, SGate, SXGate, XGate
 from qiskit.dagcircuit import DAGCircuit, DAGInNode, DAGOpNode
 from qiskit.passmanager import ConditionalController
 from qiskit.transpiler import (
@@ -234,32 +235,102 @@ class BreakDownInitializePass(TransformationPass):
 
 def _xy_lowering(
     node: DAGOpNode,
-) -> Optional[Tuple[str, List[Instruction]]]:
+) -> Optional[Tuple[Tuple[str, ...], List[Instruction], float]]:
+    """The native operations that each keep `node` as it is, then the form
+    of `node` with Z operations and Q gates, and the global phase of that
+    form."""
     if node.name == 'measure_x':
-        return 'measure_x', [SGate(), SXGate(), Measure()]
+        return ('measure_x',), [SGate(), SXGate(), Measure()], 0.0
     if node.name == 'measure_y':
-        return 'measure_y', [SXGate(), Measure()]
-    if node.name != 'initialize':
+        return ('measure_y',), [SXGate(), Measure()], 0.0
+    if node.name == 'initialize':
+        state = node.op.params[0]
+        if state == '+':
+            return ('prepare_x',), [Initialize('0'), SXGate(), SGate()], 0.0
+        if state == '-':
+            return ('prepare_x',), [Initialize('1'), SXGate(), SGate()], 0.0
+        if state == 'r':
+            return ('prepare_y',), [Initialize('1'), SXGate()], 0.0
+        if state == 'l':
+            return ('prepare_y',), [Initialize('0'), SXGate()], 0.0
         return None
-    state = node.op.params[0]
-    if state == '+':
-        return 'prepare_x', [Initialize('0'), SXGate(), SGate()]
-    if state == '-':
-        return 'prepare_x', [Initialize('1'), SXGate(), SGate()]
-    if state == 'r':
-        return 'prepare_y', [Initialize('1'), SXGate()]
-    if state == 'l':
-        return 'prepare_y', [Initialize('0'), SXGate()]
-    return None
+    if node.name == 'sxdg':
+        return ('sxdg', 'rx'), _rx_form(-np.pi / 2)[0], np.pi / 2
+    if node.name not in {'rx', 'ry'}:
+        return None
+    theta, turn_phase = _reduced(node.op.params[0])
+    form, phase = (_rx_form if node.name == 'rx' else _ry_form)(theta)
+    return (node.name, 'rx'), form, phase + turn_phase
+
+
+def _reduced(theta: Any) -> Tuple[Any, float]:
+    """`theta` brought into ]-π, π], and the global phase of the shift: a
+    rotation by `theta + 2π` is the rotation by `theta` times -1."""
+    if not isinstance(theta, (int, float)):
+        return theta, 0.0
+    reduced = math.remainder(theta, 2 * np.pi)
+    if _is_angle(reduced, -np.pi):
+        reduced = np.pi
+    turns = round((theta - reduced) / (2 * np.pi))
+    return reduced, turns * np.pi
+
+
+def _rx_form(theta: Any) -> Tuple[List[Instruction], float]:
+    if _is_angle(theta, 0):
+        return [], 0.0
+    if _is_angle(theta, np.pi / 2):
+        return [SXGate()], -np.pi / 4
+    if _is_angle(theta, -np.pi / 2):
+        return [RZGate(np.pi), SXGate(), RZGate(np.pi)], 3 * np.pi / 4
+    if _is_angle(theta, np.pi):
+        return [XGate()], -np.pi / 2
+    form = [
+        RZGate(np.pi / 2),
+        SXGate(),
+        RZGate(theta - np.pi),
+        SXGate(),
+        RZGate(np.pi / 2),
+    ]
+    return form, -np.pi / 2
+
+
+def _ry_form(theta: Any) -> Tuple[List[Instruction], float]:
+    if _is_angle(theta, 0):
+        return [], 0.0
+    if _is_angle(theta, np.pi / 2):
+        return [RZGate(-np.pi / 2), SXGate(), RZGate(np.pi / 2)], -np.pi / 4
+    if _is_angle(theta, -np.pi / 2):
+        return [RZGate(np.pi / 2), SXGate(), RZGate(-np.pi / 2)], -np.pi / 4
+    if _is_angle(theta, np.pi):
+        return [XGate(), RZGate(np.pi)], -np.pi / 2
+    form = [SXGate(), RZGate(theta - np.pi), SXGate(), RZGate(np.pi)]
+    return form, -np.pi / 2
+
+
+# The tolerance of Qiskit to compare the parameters of two gates.
+_ANGLE_TOLERANCE = 1e-10
+
+
+def _is_angle(theta: Any, angle: float) -> bool:
+    return (
+        isinstance(theta, (int, float))
+        and abs(theta - angle) <= _ANGLE_TOLERANCE
+    )
 
 
 class LowerXYBasisPass(TransformationPass):
-    """Rewrites X and Y preparations and measurements into Z ones and Q
-    gates, for a target that has Q (`sx`) but does not announce the basis.
+    """Rewrites X and Y preparations, measurements and rotations into Z ones
+    and Q gates (`sx`), for a target that has Q but not the operation.
 
     A lowered measurement leaves the qubit in the Z basis, unlike Qiskit's
     `measure_x` and `measure_y`, because a measurement on Helium destroys
     the qubit.
+
+    `rx(0)` and `ry(0)` are removed. `rx(π/2)` is one Q gate, `rx(-π/2)`
+    and `sxdg` are one Q gate between two `rz(π)`, and `rx(π)` is an `x`.
+    `ry(±π/2)` is one Q gate between two `rz`, and `ry(π)` is an `x` and an
+    `rz(π)`. An angle counts modulo 2π, and any other angle takes two Q
+    gates. A target that has the rotation or `rx` keeps it.
     """
 
     def __init__(self, target: Target):
@@ -271,12 +342,16 @@ class LowerXYBasisPass(TransformationPass):
             return dag
         for node in dag.op_nodes():
             lowering = _xy_lowering(node)
-            if lowering is None or lowering[0] in self._target:
+            if lowering is None or any(
+                name in self._target for name in lowering[0]
+            ):
                 continue
+            _, form, phase = lowering
             new_dag = DAGCircuit()
             new_dag.add_qubits(node.qargs)
             new_dag.add_clbits(node.cargs)
-            for operation in lowering[1]:
+            new_dag.global_phase = phase
+            for operation in form:
                 new_dag.apply_operation_back(
                     operation,
                     qargs=node.qargs,
@@ -351,8 +426,8 @@ class StatePreparationPlugin(PassManagerStagePlugin):
     the extra operations:
     - Ensure all qubits are initialized with a known state among 0, 1, +, -.
     - Format and break down the initialize gates.
-    - Rewrite X and Y preparations and measurements into Z ones and Q gates
-      on a target with Q that does not announce the basis.
+    - Rewrite X and Y preparations, measurements and rotations into Z ones
+      and Q gates on a target with Q that does not announce them.
     - Ensure we unroll custom gate definitions before applying synthesis.
     - Reverse the CNOTs that are not in a direction of a directed coupling
       map.
@@ -379,6 +454,8 @@ class StatePreparationPlugin(PassManagerStagePlugin):
                 target=pass_manager_config.target,
             )
         )
+        # Lowers the operations that the unrolled custom gates hold.
+        custom_pm.append(LowerXYBasisPass(pass_manager_config.target))
 
         # Replace passes from qiskit generate_translation_passmanager() with
         # passes that work for us.

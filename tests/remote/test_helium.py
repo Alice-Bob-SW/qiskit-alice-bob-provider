@@ -393,6 +393,114 @@ def test_single_qubit_gate_has_its_native_form_at_level_0(
     assert _wire(transpiled, 0) == form
 
 
+_Q_DAGGER = [_rz(pi), _SX, _rz(pi)]
+
+
+@pytest.mark.parametrize(
+    'build, form',
+    [
+        (lambda c: c.rx(pi / 2, 0), [_SX]),
+        (lambda c: c.rx(-pi / 2, 0), _Q_DAGGER),
+        (lambda c: c.rx(pi, 0), [_X]),
+        (
+            lambda c: c.rx(0.3, 0),
+            [_rz(pi / 2), _SX, _rz(0.3 - pi), _SX, _rz(pi / 2)],
+        ),
+        (lambda c: c.sxdg(0), _Q_DAGGER),
+        (lambda c: c.ry(0.3, 0), [_SX, _rz(0.3 - pi), _SX, _rz(pi)]),
+        (lambda c: c.ry(pi / 2, 0), [_rz(-pi / 2), _SX, _rz(pi / 2)]),
+        (lambda c: c.ry(-pi / 2, 0), [_rz(pi / 2), _SX, _rz(-pi / 2)]),
+        (lambda c: c.ry(pi, 0), [_X, _rz(pi)]),
+        (lambda c: c.rx(3 * pi, 0), [_X]),
+        (lambda c: c.rx(-pi, 0), [_X]),
+        (lambda c: c.rx(5 * pi / 2, 0), [_SX]),
+        (lambda c: c.rx(-3 * pi / 2, 0), [_SX]),
+        (lambda c: c.ry(-pi, 0), [_X, _rz(pi)]),
+        (lambda c: c.ry(5 * pi / 2, 0), [_rz(-pi / 2), _SX, _rz(pi / 2)]),
+        (
+            lambda c: c.rx(0.3 + 2 * pi, 0),
+            [_rz(pi / 2), _SX, _rz(0.3 - pi), _SX, _rz(pi / 2)],
+        ),
+        (lambda c: c.rx(pi + 1e-12, 0), [_X]),
+        (
+            lambda c: c.rx(pi + 2e-5, 0),
+            [_rz(pi / 2), _SX, _rz(-2 * pi + 2e-5), _SX, _rz(pi / 2)],
+        ),
+        (lambda c: c.rx(0, 0), []),
+        (lambda c: c.ry(0, 0), []),
+        (lambda c: c.rx(2 * pi, 0), []),
+        (lambda c: c.ry(-4 * pi, 0), []),
+        (lambda c: c.rx(1e-12, 0), []),
+    ],
+    ids=[
+        'rx(pi/2)',
+        'rx(-pi/2)',
+        'rx(pi)',
+        'rx(0.3)',
+        'sxdg',
+        'ry(0.3)',
+        'ry(pi/2)',
+        'ry(-pi/2)',
+        'ry(pi)',
+        'rx(3pi)',
+        'rx(-pi)',
+        'rx(5pi/2)',
+        'rx(-3pi/2)',
+        'ry(-pi)',
+        'ry(5pi/2)',
+        'rx(0.3+2pi)',
+        'rx(pi+1e-12)',
+        'rx(pi+2e-5)',
+        'rx(0)',
+        'ry(0)',
+        'rx(2pi)',
+        'ry(-4pi)',
+        'rx(1e-12)',
+    ],
+)
+def test_x_and_y_rotations_have_their_native_form_at_level_0(
+    helium_target: Dict,
+    requests_mock: Mocker,
+    build: Callable[[QuantumCircuit], Any],
+    form: List[Tuple[Any, ...]],
+) -> None:
+    c = QuantumCircuit(4)
+    build(c)
+    transpiled = transpile(
+        c, _ring_backend(helium_target, requests_mock), optimization_level=0
+    )
+    assert _wire(transpiled, 0) == form
+    assert _unitary(transpiled) == Operator(c)
+
+
+def test_x_rotation_is_kept_on_a_target_that_has_it(
+    helium_target: Dict, requests_mock: Mocker
+) -> None:
+    helium_target['instructions'].append(
+        {'signature': '__quantum__qis__rx__body:void (double, %Qubit*)'}
+    )
+    c = QuantumCircuit(1)
+    c.rx(0.3, 0)
+    transpiled = transpile(
+        c, _helium_backend(helium_target, requests_mock), optimization_level=0
+    )
+    assert _wire(transpiled, 0) == [('rx', pytest.approx(0.3))]
+
+
+def test_y_rotation_is_kept_on_a_target_that_has_it(
+    helium_target: Dict, requests_mock: Mocker
+) -> None:
+    helium_target['instructions'].append(
+        {'signature': '__quantum__qis__ry__body:void (double, %Qubit*)'}
+    )
+    c = QuantumCircuit(1)
+    c.ry(0.3, 0)
+    transpiled = transpile(
+        c, _helium_backend(helium_target, requests_mock), optimization_level=0
+    )
+    assert _wire(transpiled, 0) == [('ry', pytest.approx(0.3))]
+
+
 @pytest.mark.parametrize(
     'gate, qubits, wire_0, wire_1',
     [
@@ -545,3 +653,16 @@ def test_translation_keeps_the_unitary(
             optimization_level=level,
         )
     assert _unitary(transpiled).equiv(Operator(c))
+
+
+def test_rotation_inside_a_custom_gate_has_its_native_form(
+    helium_target: Dict, requests_mock: Mocker
+) -> None:
+    custom = QuantumCircuit(1, name='custom')
+    custom.rx(pi / 2, 0)
+    c = QuantumCircuit(1)
+    c.append(custom.to_gate(), [0])
+    transpiled = transpile(
+        c, _helium_backend(helium_target, requests_mock), optimization_level=0
+    )
+    assert _wire(transpiled, 0) == [_SX]
