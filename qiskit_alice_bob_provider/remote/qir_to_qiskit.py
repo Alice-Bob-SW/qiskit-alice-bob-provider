@@ -111,7 +111,7 @@ def _qir_signature_to_qiskit_instructions(
         return [('reset', Reset())]
     elif instr_short_name == 'delay':
         duration = Parameter('t')
-        return [('delay', Delay(duration, unit='us'))]
+        return [('delay', Delay(duration, unit='ns'))]
     elif instr_short_name == 'prepare_z':
         return [('initialize', Reset()), ('initialize', Initialize([0, 1]))]
     elif instr_short_name == 'prepare_x':

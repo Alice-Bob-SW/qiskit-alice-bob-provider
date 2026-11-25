@@ -70,8 +70,9 @@ class AliceBobTargetBackend(BackendV2):
         return self._translation_plugin
 
     def get_scheduling_stage_plugin(self) -> str:
-        """This hook tells Qiskit to end the transpilation with a warning
-        that counts the Q gates of the transpiled circuit."""
+        """This hook tells Qiskit to end the transpilation with the
+        conversion of each delay to whole nanoseconds and a warning that
+        counts the Q gates of the transpiled circuit."""
         return 'alice_bob_scheduling'
 
     def update_options(self, option_updates: Dict[str, Any]) -> Options:

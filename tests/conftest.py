@@ -144,11 +144,7 @@ def single_cat_target() -> dict:
                 )
             },
             {'signature': '__quantum__qis__reset__body:void (%Qubit*)'},
-            {
-                'signature': (
-                    '__quantum__qis__delay__body:void (double, %Qubit*)'
-                )
-            },
+            {'signature': ('__quantum__qis__delay__body:void (i64, %Qubit*)')},
             {
                 'signature': (
                     '__quantum__qis__prepare_x__body:void (i1, %Qubit*)'
@@ -195,11 +191,7 @@ def all_instructions_target() -> dict:
             {'signature': '__quantum__qis__mx__body:void (%Qubit*, %Result*)'},
             {'signature': '__quantum__qis__my__body:void (%Qubit*, %Result*)'},
             {'signature': '__quantum__qis__reset__body:void (%Qubit*)'},
-            {
-                'signature': (
-                    '__quantum__qis__delay__body:void (double, %Qubit*)'
-                )
-            },
+            {'signature': ('__quantum__qis__delay__body:void (i64, %Qubit*)')},
             {
                 'signature': (
                     '__quantum__qis__prepare_x__body:void (i1, %Qubit*)'
@@ -337,11 +329,7 @@ def helium_target() -> dict:
             },
             {'signature': '__quantum__qis__mz__body:void (%Qubit*, %Result*)'},
             {'signature': '__quantum__qis__reset_memory__body:void (%Qubit*)'},
-            {
-                'signature': (
-                    '__quantum__qis__delay__body:void (double, %Qubit*)'
-                )
-            },
+            {'signature': ('__quantum__qis__delay__body:void (i64, %Qubit*)')},
         ],
         'connectivity': [
             [even, (even + step) % 18]

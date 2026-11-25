@@ -102,6 +102,12 @@ gate, `rx(0)`, `ry(0)`, `rx(π)` and `ry(π)` take none, and any other angle
 takes two. An angle counts modulo 2π. The transpilation and `run` warn with the
 count of Q gates of the circuit.
 
+The remote backends run each delay as a whole number of nanoseconds. The
+transpilation for the backend converts each delay to nanoseconds, rounds it to
+the nearest whole number, a half to the even number, and warns at each
+rounding. `run` accepts a delay in s, ms, us, ns or ps that is a whole number
+of nanoseconds, and refuses the others. The longest delay is 2^63 - 1 ns.
+
 ## Execution through Qaptiva: use a myQLM server
 
 A Qaptiva node can have no access to the Alice & Bob API. On such a node, the

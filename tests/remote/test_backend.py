@@ -198,15 +198,43 @@ def _job_created(mocker: Mocker) -> bool:
     )
 
 
-def test_dt_delay_refused_before_job_creation(successful_job: Mocker) -> None:
+def test_dt_delay_refused_at_transpilation(successful_job: Mocker) -> None:
     c = QuantumCircuit(1, 1)
     c.delay(100_000, 0, unit='dt')
     c.measure(0, 0)
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
-    transpiled = transpile(c, backend)
-    with pytest.raises(ValueError, match=r'qubits \[0\] has the unit "dt"'):
-        backend.run(transpiled)
+    with pytest.raises(TranspilerError, match='a unit of time'):
+        transpile(c, backend)
+
+
+def test_untranspiled_whole_delay_runs_in_nanoseconds(
+    successful_job: Mocker,
+) -> None:
+    c = QuantumCircuit(1, 1)
+    c.delay(1.5, 0, unit='us')
+    c.measure(0, 0)
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    backend.run(c)
+    upload = next(
+        r
+        for r in successful_job.request_history
+        if r.method == 'POST' and r.path == '/v1/jobs/my-job/input'
+    )
+    assert '__quantum__qis__delay__body(i64 1500,' in upload.body.decode()
+
+
+def test_untranspiled_fraction_of_a_nanosecond_refused_before_job_creation(
+    successful_job: Mocker,
+) -> None:
+    c = QuantumCircuit(1, 1)
+    c.delay(7.5, 0, unit='ns')
+    c.measure(0, 0)
+    provider = AliceBobRemoteProvider(api_key='foo')
+    backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
+    with pytest.raises(ValueError, match='transpile the circuit'):
+        backend.run(c)
     assert not _job_created(successful_job)
 
 
@@ -220,7 +248,7 @@ def test_dt_delay_in_if_test_refused_before_job_creation(
     c.measure(0, 0)
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('EMU:1Q:LESCANNE_2020')
-    with pytest.raises(ValueError, match=r'qubits \[0\] has the unit "dt"'):
+    with pytest.raises(ValueError, match=r'dt on qubits \[0\]'):
         backend.run(c)
     assert not _job_created(successful_job)
 
@@ -234,7 +262,7 @@ def test_dt_delay_in_block_reports_the_outer_qubit(
         c.delay(100_000, 2, unit='dt')
     provider = AliceBobRemoteProvider(api_key='foo')
     backend = provider.get_backend('ALL_INSTRUCTIONS')
-    with pytest.raises(ValueError, match=r'qubits \[2\] has the unit'):
+    with pytest.raises(ValueError, match=r'dt on qubits \[2\]'):
         backend.run(c)
     assert not _job_created(successful_job)
 
@@ -272,11 +300,11 @@ def test_conversion_error_raised_before_job_creation(
 
 
 @pytest.mark.parametrize(
-    'duration, unit, qir_duration',
-    [(100, 'us', '1.000000e+02'), (3000, 'ns', '3.000000e+00')],
+    'duration, unit, nanoseconds',
+    [(100, 'us', 100_000), (3000, 'ns', 3000), (7.5, 'ns', 8)],
 )
-def test_time_unit_delay_runs(
-    successful_job: Mocker, duration: int, unit: str, qir_duration: str
+def test_transpiled_delay_runs_in_whole_nanoseconds(
+    successful_job: Mocker, duration: float, unit: str, nanoseconds: int
 ) -> None:
     c = QuantumCircuit(1, 1)
     c.delay(duration, 0, unit=unit)
@@ -292,7 +320,7 @@ def test_time_unit_delay_runs(
     )
     delay_call = (
         'call void @__quantum__qis__delay__body'
-        f'(double {qir_duration}, %Qubit* null)'
+        f'(i64 {nanoseconds}, %Qubit* null)'
     )
     assert delay_call in upload.body.decode()
 

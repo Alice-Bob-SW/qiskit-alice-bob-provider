@@ -37,6 +37,7 @@
 # IN THE SOFTWARE.
 ##############################################################################
 
+from fractions import Fraction
 from typing import Callable, Dict, List, Sequence, Tuple
 
 import pyqir
@@ -79,13 +80,19 @@ _GATES: Dict[str, Callable[..., None]] = {
     'z': qis.z,
 }
 
-_MICROSECONDS_PER_UNIT = {
-    's': 1e6,
-    'ms': 1e3,
-    'us': 1,
-    'ns': 1e-3,
-    'ps': 1e-6,
+NANOSECONDS_PER_UNIT = {
+    's': Fraction(10**9),
+    'ms': Fraction(10**6),
+    'us': Fraction(10**3),
+    'ns': Fraction(1),
+    'ps': Fraction(1, 1000),
 }
+
+# A delay converted to nanoseconds holds the noise of a float product:
+# 1.001 us gives 1000.9999999999999 ns.
+FLOAT_NOISE_NS = 1e-6
+
+_LONGEST_DELAY_NS = 2**63 - 1
 
 _PREPARATIONS: Dict[str, Tuple[str, bool]] = {
     '0': ('z', False),
@@ -108,9 +115,10 @@ def circuit_to_qir(circuit: QuantumCircuit) -> str:
         The QIR module, as LLVM text.
 
     Raises:
-        ValueError: If a parameter is not bound, or if an instruction, a
-            prepared state, an `if_else` condition or a delay unit has no
-            QIR equivalent.
+        ValueError: If a parameter is not bound, if an instruction, a
+            prepared state or an `if_else` condition has no QIR
+            equivalent, or if a delay is not a whole number of
+            nanoseconds or is longer than 2^63 - 1 ns.
         RuntimeError: If PyQIR finds the produced module invalid.
     """
     if circuit.parameters:
@@ -216,18 +224,34 @@ class _Emitter:
             )
 
     def _delay(self, operation: Instruction, qubits: Sequence[Value]) -> None:
-        if operation.unit not in _MICROSECONDS_PER_UNIT:
+        duration, unit = operation.duration, operation.unit
+
+        def error(problem: str) -> ValueError:
             indices = [pyqir.qubit_id(qubit) for qubit in qubits]
-            raise ValueError(
-                f'The delay of {operation.duration} on qubits {indices} has '
-                f'the unit "{operation.unit}", which QIR does not support. '
-                'Give the delay duration in a time unit: s, ms, us, ns or ps.'
+            return ValueError(
+                f'The delay of {duration} {unit} on qubits {indices} {problem}'
             )
-        double = pyqir.Type.double(self._context)
-        duration = (
-            float(operation.duration) * _MICROSECONDS_PER_UNIT[operation.unit]
-        )
-        self._call('delay', [const(double, duration), *qubits])
+
+        if unit not in NANOSECONDS_PER_UNIT:
+            raise error(
+                f'has the unit "{unit}", which has no duration in '
+                'nanoseconds. Give each delay in s, ms, us, ns or ps.'
+            )
+        exact = duration * NANOSECONDS_PER_UNIT[unit]
+        nanoseconds = round(exact)
+        if abs(exact - nanoseconds) > FLOAT_NOISE_NS:
+            raise error(
+                'is not a whole number of nanoseconds. Give each delay as a '
+                'whole number of nanoseconds, or transpile the circuit for '
+                'the backend after you bind its parameters: the '
+                'transpilation rounds each delay to whole nanoseconds.'
+            )
+        if nanoseconds > _LONGEST_DELAY_NS:
+            raise error(
+                f'is longer than the longest delay, {_LONGEST_DELAY_NS} ns.'
+            )
+        i64 = IntType(self._context, 64)
+        self._call('delay', [const(i64, nanoseconds), *qubits])
 
     def _initialize(
         self, operation: Instruction, qubits: Sequence[Value]

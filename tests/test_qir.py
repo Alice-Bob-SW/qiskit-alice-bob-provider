@@ -1,5 +1,6 @@
 from textwrap import dedent
 
+import pyqir
 import pytest
 from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.circuit import Gate, Instruction, Parameter
@@ -57,30 +58,80 @@ def test_initialize_emits_prepare(state: str, basis: str, value: str) -> None:
 
 
 @pytest.mark.parametrize(
-    'duration, unit, microseconds',
+    'duration, unit, nanoseconds',
     [
-        (2.0, 's', '2.000000e+06'),
-        (3.0, 'ms', '3.000000e+03'),
-        (1.5, 'us', '1.500000e+00'),
-        (100, 'us', '1.000000e+02'),
-        (3000, 'ns', '3.000000e+00'),
-        (2000, 'ps', '2.000000e-03'),
+        (0, 'ns', 0),
+        (8, 'ns', 8),
+        (8.0, 'ns', 8),
+        (1000.9999999999999, 'ns', 1001),
+        (1.5, 'us', 1500),
+        (2, 's', 2_000_000_000),
+        (1.2000000000000002e-08, 's', 12),
+        (2000, 'ps', 2),
+        (2**63 - 1, 'ns', 2**63 - 1),
     ],
 )
-def test_delay_emits_microseconds(
-    duration: float, unit: str, microseconds: str
+def test_delay_emits_whole_nanoseconds(
+    duration: float, unit: str, nanoseconds: int
 ) -> None:
     c = QuantumCircuit(1)
     c.delay(duration, 0, unit=unit)
-    assert _call('delay', f'double {microseconds}', Q0) in circuit_to_qir(c)
+    qir = circuit_to_qir(c)
+    assert _call('delay', f'i64 {nanoseconds}', Q0) in qir
+    assert 'declare void @__quantum__qis__delay__body(i64, %Qubit*)' in qir
 
 
-def test_delay_in_dt_raises() -> None:
+@pytest.mark.parametrize(
+    'duration, unit',
+    [(7.5, 'ns'), (1.1, 'ns'), (1500, 'ps'), (0.0125, 'us')],
+)
+def test_delay_not_in_whole_nanoseconds_raises(
+    duration: float, unit: str
+) -> None:
+    c = QuantumCircuit(1)
+    c.delay(duration, 0, unit=unit)
+    with pytest.raises(ValueError, match='as a whole number of nanoseconds'):
+        circuit_to_qir(c)
+
+
+@pytest.mark.parametrize('duration', [2**63, 2**64, 1e19])
+def test_delay_longer_than_an_i64_raises(duration: float) -> None:
+    c = QuantumCircuit(1)
+    c.delay(duration, 0, unit='ns')
+    with pytest.raises(ValueError, match='longer than the longest delay'):
+        circuit_to_qir(c)
+
+
+def test_valid_delay_needs_no_qubit_index(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # pyqir 0.12, which some servers use, has no `qubit_id`.
+    monkeypatch.delattr(pyqir, 'qubit_id')
+    c = QuantumCircuit(1)
+    c.delay(8, 0, unit='ns')
+    assert _call('delay', 'i64 8', Q0) in circuit_to_qir(c)
+
+
+def test_delay_in_dt_names_the_unit() -> None:
+    c = QuantumCircuit(1)
+    c.delay(2, 0, unit='dt')
+    with pytest.raises(ValueError, match='has the unit "dt", which has no'):
+        circuit_to_qir(c)
+
+
+def test_stretch_delay_raises_value_error() -> None:
+    c = QuantumCircuit(1)
+    c.delay(c.add_stretch('a'), 0)
+    with pytest.raises(ValueError, match='no duration in nanoseconds'):
+        circuit_to_qir(c)
+
+
+def test_delay_error_names_the_qubit_inside_a_block() -> None:
     c = QuantumCircuit(2, 1)
     c.measure(0, 0)
     with c.if_test((c.clbits[0], 1)):
         c.delay(100, 1, unit='dt')
-    with pytest.raises(ValueError, match=r'qubits \[1\] has the unit "dt"'):
+    with pytest.raises(ValueError, match=r'100 dt on qubits \[1\]'):
         circuit_to_qir(c)
 
 
@@ -97,8 +148,8 @@ def test_each_intrinsic_is_declared_once() -> None:
     c = QuantumCircuit(1, 2)
     c.initialize('+', 0)
     c.initialize('-', 0)
-    c.delay(1.0, 0, unit='us')
-    c.delay(2.0, 0, unit='us')
+    c.delay(1, 0, unit='ns')
+    c.delay(2, 0, unit='ns')
     c.measure_x(0, 0)
     c.measure_x(0, 1)
     qir = circuit_to_qir(c)

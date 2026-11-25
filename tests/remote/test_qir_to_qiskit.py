@@ -36,3 +36,8 @@ def test_signature_without_arguments(all_instructions_target: Dict) -> None:
     all_instructions_target['instructions'].append({'signature': 'foo:void'})
     with pytest.warns():
         ab_target_to_qiskit_target(all_instructions_target)
+
+
+def test_delay_is_in_nanoseconds(single_cat_target: Dict) -> None:
+    target = ab_target_to_qiskit_target(single_cat_target)
+    assert target.operation_from_name('delay').unit == 'ns'
